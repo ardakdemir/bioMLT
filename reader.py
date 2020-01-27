@@ -3,7 +3,7 @@ from transformers import *
 import random
 import collections
 import logging
-
+import torch
 random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'read_logger'
@@ -15,38 +15,41 @@ MaskedLmInstance = collections.namedtuple("MaskedLmInstance",
                                               ["index", "label"])
 
 class TrainingInstance(object):
-  """A single training instance (sentence pair)."""
+    """A single training instance (sentence pair)."""
 
-  def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels,
+    def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels,
                is_random_next):
-    self.tokens = tokens
-    self.segment_ids = segment_ids
-    self.is_random_next = is_random_next
-    self.masked_lm_positions = masked_lm_positions
-    self.masked_lm_labels = masked_lm_labels
+        self.tokens = tokens
+        self.segment_ids = segment_ids
+        self.is_random_next = is_random_next
+        self.masked_lm_positions = masked_lm_positions
+        self.masked_lm_labels = masked_lm_labels
 
-  def __str__(self):
-    s = ""
-    s += "tokens: %s\n" % (" ".join(
-        [tokenization.printable_text(x) for x in self.tokens]))
-    s += "segment_ids: %s\n" % (" ".join([str(x) for x in self.segment_ids]))
-    s += "is_random_next: %s\n" % self.is_random_next
-    s += "masked_lm_positions: %s\n" % (" ".join(
-        [str(x) for x in self.masked_lm_positions]))
-    s += "masked_lm_labels: %s\n" % (" ".join(
-        [tokenization.printable_text(x) for x in self.masked_lm_labels]))
-    s += "\n"
-    return s
+    def __str__(self):
+        s = ""
+        s += "tokens: %s\n" % (" ".join(
+            [tokenization.printable_text(x) for x in self.tokens]))
+        s += "segment_ids: %s\n" % (" ".join([str(x) for x in self.segment_ids]))
+        s += "is_random_next: %s\n" % self.is_random_next
+        s += "masked_lm_positions: %s\n" % (" ".join(
+            [str(x) for x in self.masked_lm_positions]))
+        s += "masked_lm_labels: %s\n" % (" ".join(
+            [tokenization.printable_text(x) for x in self.masked_lm_labels]))
+        s += "\n"
+        return s
 
-  def __repr__(self):
-    return self.__str__()
+    def __repr__(self):
+        return self.__str__()
+
+
 class BertPretrainReader():
-    def __init__(self,tokenizer,flags = None, vocab=None):
+    def __init__(self,read_dir,tokenizer,flags = None, vocab=None):
         self.FLAGS = flags
-        self.read_dir = "."
+        self.read_dir = read_dir
         self.do_whole_word_mask = True
         self.vocab = vocab
         self.tokenizer=tokenizer
+        self.dataset = self.create_training_instances(self.read_dir,self.tokenizer)
         if self.vocab:
             self.inv_vocab = {v:k for k,v in self.vocab.items()}
     def create_training_instances(self,input_files, tokenizer, max_seq_length = 128,
@@ -297,13 +300,29 @@ class BertPretrainReader():
         # We want to sometimes truncate from the front and sometimes from the
         # back to add more randomness and avoid biases.
         if rng.random() < 0.5:
-          del trunc_tokens[0]
+            del trunc_tokens[0]
         else:
-          trunc_tokens.pop()
+            trunc_tokens.pop()
+    def __getitem__(self,ind):
+        instance = self.dataset[ind]
 
+        ## if we get them as batch we have to reapply this step
+        token_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(instance.tokens))
+        mask_label_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(instance.masked_lm_labels))
+        masked_lm_positions = torch.tensor(instance.masked_lm_positions)
+        mask = torch.ones(token_ids.shape,dtype=torch.bool)
+        mask[masked_lm_positions] = 0
+        mask_labels = token_ids.masked_fill(mask,-100)
+        mask_labels[masked_lm_positions] = mask_label_ids
+        mask_labels.unsqueeze_(0)
+        token_ids.unsqueeze_(0)
+        print("Token id shape {} ".format(token_ids.shape))
+        next_label = torch.tensor([ 0 if instance.is_random_next  else  1])
+        token_type_ids = torch.tensor(instance.segment_ids).unsqueeze(0)
+        return token_ids, mask_labels, next_label, token_type_ids
 if __name__ == "__main__":
     file_list = ["PMC6961255.txt"]
     bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
-    reader = BertPretrainReader(bert_tokenizer)
-    dataset = reader.create_training_instances(file_list,bert_tokenizer)
-    logging.info(dataset[1])
+    reader = BertPretrainReader(file_list,bert_tokenizer)
+    #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
+    print(reader[0])

@@ -9,6 +9,7 @@ import tokenization
 from nerreader import DataReader
 from nermodel import NerModel
 import argparse
+from torch.nn import CrossEntropyLoss, MSELoss
 
 pretrained_bert_name  = 'bert-base-cased'
 
@@ -66,36 +67,42 @@ class BioMLT():
     ##parallel reading not implemented for training
     def pretrain(self):
         file_list = ["PMC6961255.txt"]
-        reader = BertPretrainReader(self.bert_tokenizer)
-        dataset = reader.create_training_instances(file_list,self.bert_tokenizer)
-        tokens = dataset[1].tokens
+        reader = BertPretrainReader(file_list,self.bert_tokenizer)
+        #dataset = reader.create_training_instances(file_list,self.bert_tokenizer)
+        tokens = reader.dataset[1].tokens
         logging.info(tokens)
         input_ids = torch.tensor(self.bert_tokenizer.convert_tokens_to_ids(tokens)).unsqueeze(0) # Batch size 1
-        token_type_ids= torch.tensor(dataset[1].segment_ids).unsqueeze(0)
-        print(input_ids.shape)
-        print(dataset[1].segment_ids)
-        next_label = torch.tensor([ 0 if dataset[1].is_random_next  else  1])
+        #token_type_ids= torch.tensor(dataset[1].segment_ids).unsqueeze(0)
+        #print(input_ids.shape)
+        #print(dataset[1].segment_ids)
+        #next_label = torch.tensor([ 0 if dataset[1].is_random_next  else  1])
+        token_ids, mask_labels, next_label, token_type_ids = reader[0]
+        loss_fct = CrossEntropyLoss(ignore_index=-100)
+
         for i in range(10):
             self.bert_optimizer.zero_grad()
-            outputs = self.bert_model(input_ids,token_type_ids= token_type_ids, \
-                masked_lm_labels=input_ids, next_sentence_label=next_label)
-            loss, prediction_scores, seq_relationship_scores = outputs[:3]
-
-            print("Loss {} ".format(loss))
+            #print("Input shape {}".format(token_ids.shape))
+            outputs = self.bert_model(token_ids,token_type_ids= token_type_ids)
+            prediction_scores, seq_relationship_scores = outputs[:2]
+            vocab_dim = prediction_scores.shape[-1]
+            masked_lm_loss = loss_fct(prediction_scores.view(-1, vocab_dim), mask_labels.view(-1))
+            next_sent_loss = loss_fct(seq_relationship_scores.view(-1,2),next_label.view(-1))
+            loss = masked_lm_loss + next_sent_loss
             loss.backward()
-            #self.bert_optimizer.step()
+            self.bert_optimizer.step()
+        pred_tokens = self.bert_tokenizer.convert_ids_to_tokens(torch.argmax(prediction_scores,dim=2).detach().numpy()[0])
+        logging.info("{} {} ".format("Real tokens", tokens))
+        logging.info("{} {} ".format("Predictions", pred_tokens))
     def train_ner(self):
         self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer)
         self.args['ner_label_vocab'] = self.ner_reader.label_voc
         self.ner_head = NerModel(self.args)
-
-        for i in range(2):
-            print("Starting training")
+        print("Starting training")
+        for i in range(10):
             self.ner_head.optimizer.zero_grad()
             tokens, bert_batch_after_padding, data = self.ner_reader[0]
             sent_lens, masks, tok_inds, ner_inds,\
                  bert_batch_ids,  bert_seq_ids, bert2toks, cap_inds = data
-            print(bert_batch_ids.shape)
             outputs = self.bert_model(bert_batch_ids,token_type_ids= bert_seq_ids)
             bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
             loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
@@ -104,16 +111,17 @@ class BioMLT():
             self.ner_head.optimizer.step()
         self.eval_ner()
     def eval_ner(self):
-        tokens, bert_batch_after_padding, data = self.ner_reader[1]
+        tokens, bert_batch_after_padding, data = self.ner_reader[0]
         sent_lens, masks, tok_inds, ner_inds,\
              bert_batch_ids,  bert_seq_ids, bert2toks, cap_inds = data
+
         outputs = self.bert_model(bert_batch_ids,token_type_ids= bert_seq_ids)
         bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
         loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-        print("Predictions ")
+        print("Predictions {}".format(out_logits.shape))
         print(torch.argmax(out_logits,dim=2))
         print("Labels")
         print(ner_inds)
 if __name__=="__main__":
     biomlt = BioMLT()
-    biomlt.train_ner()
+    biomlt.pretrain()

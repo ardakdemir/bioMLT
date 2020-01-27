@@ -1,5 +1,6 @@
 from transformers import *
 import logging
+import torch
 log_path = "trial_log"
 logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path, 'w', 'utf-8')], format='%(levelname)s - %(message)s')
 
@@ -9,6 +10,7 @@ tokens = tokenizer.tokenize("[MASK] [CLS] [SEP] [UNK]  [PAD]")
 
 special_tokens = ['[MASK]', '[CLS]', '[SEP]', '[UNK]', '[PAD]']
 special_token_ids = [103, 101, 102, 100, 0]
-print(tokens)
-print(tokenizer.convert_tokens_to_ids(tokens))
-logging.info(tokenizer.vocab.keys())
+inds = torch.randn(118)
+mask = torch.ones(inds.shape)
+mask[[0,1,2]] = torch.tensor([10.0,200,300])
+print(mask)

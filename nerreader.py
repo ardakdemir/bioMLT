@@ -104,7 +104,7 @@ def group_into_batch(dataset, batch_size):
         current.append(x)
         max_len = max(len(x),max_len) ##
         current_len +=len(x)
-        if current_len  > batch_size:
+        if current_len > batch_size:
             #print(current)
             current, lens  = pad_trunc_batch(current, max_len)
             batched_dataset.append(current)
@@ -330,7 +330,7 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
         if torch.is_tensor(idx):
             idx = idx.tolist()
         if not self.for_eval:
-            idx = np.random.randint(len(self.batched_dataset))
+            #idx = np.random.randint(len(self.batched_dataset))
             idx = idx%len(self.batched_dataset)
         batch = self.batched_dataset[idx]
         lens = self.sentence_lens[idx]
