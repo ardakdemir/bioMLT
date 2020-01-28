@@ -235,7 +235,7 @@ class BioMLT():
         device = self.args['device']
         huggins_args =hugging_parse_args()
         file_list = ["PMC6961255.txt","PMC6958785.txt"]
-        train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = 32)
+        train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = 128)
         print("Dataset size {} ".format(len(train_dataset)))
         train_sampler = RandomSampler(train_dataset)
         def collate(examples):
@@ -243,27 +243,31 @@ class BioMLT():
 
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(
-            train_dataset, sampler=train_sampler, batch_size=1, collate_fn=collate
+            train_dataset, sampler=train_sampler, batch_size=10, collate_fn=collate
         )
         #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
         self.bert_model.to(device)
         self.bert_model.train()
         print("Model is being trained on {} ".format(next(self.bert_model.parameters()).device))
-        for step, batch in enumerate(epoch_iterator):
-            #print("Batch shape {} ".format(batch.shape))
-            #print("First input {} ".format(batch[0]))
-            self.bert_optimizer.zero_grad()            ## update mask_tokens to apply curriculum learnning!!!!
-            inputs, labels = mask_tokens(batch, self.bert_tokenizer, huggins_args)
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-            outputs = self.bert_model(inputs,masked_lm_labels=labels)
-            loss = outputs[0]
-            logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
-            loss.backward()
-            self.bert_optimizer.step()
-            if step == 2:
-                break
+        train_iterator = trange(
+        epochs_trained, int(huggins_args.num_train_epochs), desc="Epoch")
+    #set_seed(args)  # Added here for reproducibility
+        for _ in train_iterator:
+            for step, batch in enumerate(epoch_iterator):
+                #print("Batch shape {} ".format(batch.shape))
+                #print("First input {} ".format(batch[0]))
+                self.bert_optimizer.zero_grad()            ## update mask_tokens to apply curriculum learnning!!!!
+                inputs, labels = mask_tokens(batch, self.bert_tokenizer, huggins_args)
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = self.bert_model(inputs,masked_lm_labels=labels)
+                loss = outputs[0]
+                logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
+                loss.backward()
+                self.bert_optimizer.step()
+                #if step == 2:
+                    #break
         self.save_model()
 
     ##parallel reading not implemented for training
