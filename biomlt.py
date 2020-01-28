@@ -2,9 +2,13 @@ from transformers import *
 import torch
 import torchvision
 import random
+import os
 import torch.nn as nn
 import torch.optim as optim
-from reader import TrainingInstance, BertPretrainReader
+from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tokens
+from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
+from tqdm import tqdm
+from torch.nn.utils.rnn import pad_sequence
 import tokenization
 from nerreader import DataReader
 from nermodel import NerModel
@@ -17,17 +21,164 @@ random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'main_logger'
 logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path, 'w', 'utf-8')], format='%(levelname)s - %(message)s')
+def hugging_parse_args():
+    parser = argparse.ArgumentParser()
+
+    # Required parameters
+    parser.add_argument(
+        "--train_data_file", default=None, type=str, required=False, help="The input training data file (a text file)."
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        required=False,
+        help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument(
+        "--model_type", type=str,default='bert', required=False, help="The model architecture to be trained or fine-tuned.",
+    )
+
+    # Other parameters
+    parser.add_argument(
+        "--eval_data_file",
+        default=None,
+        type=str,
+        help="An optional input evaluation data file to evaluate the perplexity on (a text file).",
+    )
+    parser.add_argument(
+        "--line_by_line",
+        action="store_true",
+        help="Whether distinct lines of text in the dataset are to be handled as distinct sequences.",
+    )
+    parser.add_argument(
+        "--should_continue", action="store_true", help="Whether to continue from latest checkpoint in output_dir"
+    )
+    parser.add_argument(
+        "--model_name_or_path",
+        default=None,
+        type=str,
+        help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
+    )
+
+    parser.add_argument(
+        "--mlm", action="store_true", help="Train with masked-language modeling loss instead of language modeling."
+    )
+    parser.add_argument(
+        "--mlm_probability", type=float, default=0.15, help="Ratio of tokens to mask for masked language modeling loss"
+    )
+
+    parser.add_argument(
+        "--config_name",
+        default=None,
+        type=str,
+        help="Optional pretrained config name or path if not the same as model_name_or_path. If both are None, initialize a new config.",
+    )
+    parser.add_argument(
+        "--tokenizer_name",
+        default=None,
+        type=str,
+        help="Optional pretrained tokenizer name or path if not the same as model_name_or_path. If both are None, initialize a new tokenizer.",
+    )
+    parser.add_argument(
+        "--cache_dir",
+        default=None,
+        type=str,
+        help="Optional directory to store the pre-trained models downloaded from s3 (instead of the default one)",
+    )
+    parser.add_argument(
+        "--block_size",
+        default=-1,
+        type=int,
+        help="Optional input sequence length after tokenization."
+        "The training dataset will be truncated in block of this size for training."
+        "Default to the model max input length for single sentence inputs (take into account special tokens).",
+    )
+    parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
+    parser.add_argument("--do_eval", action="store_true", help="Whether to run eval on the dev set.")
+    parser.add_argument(
+        "--evaluate_during_training", action="store_true", help="Run evaluation during training at each logging step."
+    )
+
+    parser.add_argument("--per_gpu_train_batch_size", default=4, type=int, help="Batch size per GPU/CPU for training.")
+    parser.add_argument(
+        "--per_gpu_eval_batch_size", default=4, type=int, help="Batch size per GPU/CPU for evaluation."
+    )
+    parser.add_argument(
+        "--gradient_accumulation_steps",
+        type=int,
+        default=1,
+        help="Number of updates steps to accumulate before performing a backward/update pass.",
+    )
+    parser.add_argument("--learning_rate", default=5e-5, type=float, help="The initial learning rate for Adam.")
+    parser.add_argument("--weight_decay", default=0.0, type=float, help="Weight decay if we apply some.")
+    parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
+    parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
+    parser.add_argument(
+        "--num_train_epochs", default=1.0, type=float, help="Total number of training epochs to perform."
+    )
+    parser.add_argument(
+        "--max_steps",
+        default=-1,
+        type=int,
+        help="If > 0: set total number of training steps to perform. Override num_train_epochs.",
+    )
+    parser.add_argument("--warmup_steps", default=0, type=int, help="Linear warmup over warmup_steps.")
+
+    parser.add_argument("--logging_steps", type=int, default=50, help="Log every X updates steps.")
+    parser.add_argument("--save_steps", type=int, default=50, help="Save checkpoint every X updates steps.")
+    parser.add_argument(
+        "--save_total_limit",
+        type=int,
+        default=None,
+        help="Limit the total amount of checkpoints, delete the older checkpoints in the output_dir, does not delete by default",
+    )
+    parser.add_argument(
+        "--eval_all_checkpoints",
+        action="store_true",
+        help="Evaluate all checkpoints starting with the same prefix as model_name_or_path ending and ending with step number",
+    )
+    parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
+    parser.add_argument(
+        "--overwrite_output_dir", action="store_true", help="Overwrite the content of the output directory"
+    )
+    parser.add_argument(
+        "--overwrite_cache", action="store_true", help="Overwrite the cached training and evaluation sets"
+    )
+    parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
+
+    parser.add_argument(
+        "--fp16",
+        action="store_true",
+        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit",
+    )
+    parser.add_argument(
+        "--fp16_opt_level",
+        type=str,
+        default="O1",
+        help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
+        "See details at https://nvidia.github.io/apex/amp.html",
+    )
+    parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
+    parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
+    parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
+    args = parser.parse_args()
+    return args
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
+    parser.add_argument('--output_dir', type=str, default='save_dir', help='training file for ner')
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
+    parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
     args = vars(parser.parse_args())
     return args
 class BioMLT():
     def __init__(self):
         self.args = parse_args()
-        self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name,output_hidden_states=True)
+        if self.args['mlm'] :
+            self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name,output_hidden_states=True)
+        else:
+            self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
         #print(self.bert_model)
         self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
         self.ner_path = self.args['ner_train_file']
@@ -63,6 +214,48 @@ class BioMLT():
             sent_hiddens = torch.stack(my_hiddens)
             batch_my_hiddens.append(sent_hiddens)
         return torch.stack(batch_my_hiddens)
+    def save_model(self):
+        out_dir =self.args['output_dir']
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+        logger.info("Saving model checkpoint to %s", out_dir)
+        # Save a trained model, configuration and tokenizer using `save_pretrained()`.
+        # They can then be reloaded using `from_pretrained()`
+        model_to_save = self.bert_model
+        model_to_save.save_pretrained(out_dir)
+        self.bert_tokenizer.save_pretrained(out_dir)
+        # Good practice: save your training arguments together with the trained model
+        torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
+
+    def pretrain_mlm(self):
+        huggins_args =hugging_parse_args()
+        file_list = ["PMC6961255.txt","PMC6958785.txt"]
+        train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = 32)
+        print("Dataset size {} ".format(len(train_dataset)))
+        train_sampler = RandomSampler(train_dataset)
+        def collate(examples):
+            return pad_sequence(examples, batch_first=True, padding_value=self.bert_tokenizer.pad_token_id)
+
+        train_sampler = RandomSampler(train_dataset)
+        train_dataloader = DataLoader(
+            train_dataset, sampler=train_sampler, batch_size=1, collate_fn=collate
+        )
+        #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
+        epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+        self.bert_model.train()
+        for step, batch in enumerate(epoch_iterator):
+            #print("Batch shape {} ".format(batch.shape))
+            #print("First input {} ".format(batch[0]))
+            self.bert_optimizer.zero_grad()            ## update mask_tokens to apply curriculum learnning!!!!
+            inputs, labels = mask_tokens(batch, self.bert_tokenizer, huggins_args)
+            outputs = self.bert_model(inputs,masked_lm_labels=labels)
+            loss = outputs[0]
+            logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
+            loss.backward()
+            self.bert_optimizer.step()
+            if step == 2:
+                break
+        self.save_model()
 
     ##parallel reading not implemented for training
     def pretrain(self):
@@ -124,4 +317,4 @@ class BioMLT():
         print(ner_inds)
 if __name__=="__main__":
     biomlt = BioMLT()
-    biomlt.pretrain()
+    biomlt.pretrain_mlm()

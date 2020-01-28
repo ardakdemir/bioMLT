@@ -4,6 +4,12 @@ import random
 import collections
 import logging
 import torch
+import pickle
+import os
+import argparse
+from tqdm import tqdm
+from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'read_logger'
@@ -41,7 +47,66 @@ class TrainingInstance(object):
     def __repr__(self):
         return self.__str__()
 
+class MyTextDataset(Dataset):
+    def __init__(self, tokenizer: PreTrainedTokenizer, args, file_list: str, block_size=128):
+        for file_path in file_list:
+            assert os.path.isfile(file_path)
+            directory, filename = os.path.split(file_path)
+            cached_features_file = os.path.join(
+                directory, args.model_type + "_cached_lm_" + str(block_size) + "_" + filename
+            )
 
+            if os.path.exists(cached_features_file) and not args.overwrite_cache:
+                logger.info("Loading features from cached file %s", cached_features_file)
+                with open(cached_features_file, "rb") as handle:
+                    self.examples = pickle.load(handle)
+            else:
+                logger.info("Creating features from dataset file at %s", directory)
+
+                self.examples = []
+                with open(file_path, encoding="utf-8") as f:
+                    text = f.read()
+
+                tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+
+                for i in range(0, len(tokenized_text) - block_size + 1, block_size):  # Truncate in block of block_size
+                    self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i : i + block_size]))
+                # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
+                # If your dataset is small, first you should loook for a bigger one :-) and second you
+                # can change this behavior by adding (model specific) padding.
+
+                logger.info("Saving features into cached file %s", cached_features_file)
+                with open(cached_features_file, "wb") as handle:
+                    pickle.dump(self.examples, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def __len__(self):
+        return len(self.examples)
+
+    def __getitem__(self, item):
+        return torch.tensor(self.examples[item])
+class MyLineByLineTextDataset(Dataset):
+    def __init__(self, tokenizer: PreTrainedTokenizer, args, file_list: str, block_size=512):
+        self.examples = []
+        for file_path in file_list:
+            assert os.path.isfile(file_path)
+            # Here, we do not cache the features, operating under the assumption
+            # that we will soon use fast multithreaded tokenizers from the
+            # `tokenizers` repo everywhere =)
+            logger.info("Creating features from dataset file at %s", file_path)
+
+            with open(file_path, encoding="utf-8") as f:
+                lines = [line for line in f.read().splitlines() if len(line) > 0]
+            example = tokenizer.batch_encode_plus(lines, max_length=block_size)["input_ids"]
+            self.examples.extend(example)
+
+    def __len__(self):
+        return len(self.examples)
+
+    def __getitem__(self, i):
+        return torch.tensor(self.examples[i])
+
+## Code taken from BERT original source code
+## For both next sentence and masked language modeling
 class BertPretrainReader():
     def __init__(self,read_dir,tokenizer,flags = None, vocab=None):
         self.FLAGS = flags
@@ -320,9 +385,55 @@ class BertPretrainReader():
         next_label = torch.tensor([ 0 if instance.is_random_next  else  1])
         token_type_ids = torch.tensor(instance.segment_ids).unsqueeze(0)
         return token_ids, mask_labels, next_label, token_type_ids
+
+
+def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args):
+    """ Prepare masked tokens inputs/labels for masked language modeling: 80% MASK, 10% random, 10% original. """
+    labels = inputs.clone()
+    # We sample a few tokens in each sequence for masked-LM training (with probability args.mlm_probability defaults to 0.15 in Bert/RoBERTa)
+    probability_matrix = torch.full(labels.shape, args.mlm_probability)
+    special_tokens_mask = [
+        tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True) for val in labels.tolist()
+    ]
+    probability_matrix.masked_fill_(torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0)
+    padding_mask = labels.eq(tokenizer.pad_token_id)
+    probability_matrix.masked_fill_(padding_mask, value=0.0)
+    masked_indices = torch.bernoulli(probability_matrix).bool()
+    labels[~masked_indices] = -100  # We only compute loss on masked tokens
+
+    # 80% of the time, we replace masked input tokens with tokenizer.mask_token ([MASK])
+    indices_replaced = torch.bernoulli(torch.full(labels.shape, 0.8)).bool() & masked_indices
+    inputs[indices_replaced] = tokenizer.convert_tokens_to_ids(tokenizer.mask_token)
+
+    # 10% of the time, we replace masked input tokens with random word
+    indices_random = torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
+    random_words = torch.randint(len(tokenizer), labels.shape, dtype=torch.long)
+    inputs[indices_random] = random_words[indices_random]
+    # The rest of the time (10% of the time) we keep the masked input tokens unchanged
+    return inputs, labels
+
 if __name__ == "__main__":
     file_list = ["PMC6961255.txt"]
+    args = parse_args()
     bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
-    reader = BertPretrainReader(file_list,bert_tokenizer)
+    #train_dataset = LineByLineTextDataset(bert_tokenizer,args, file_list)
+    train_dataset = MyTextDataset(bert_tokenizer,args,file_list)
+    #print("Padding var mii", train_dataset[-1])
+
+    #print(train_dataset[0])
+    train_sampler = RandomSampler(train_dataset)
+    def collate(examples):
+        return pad_sequence(examples, batch_first=True, padding_value=bert_tokenizer.pad_token_id)
+
+    train_sampler = RandomSampler(train_dataset)
+    train_dataloader = DataLoader(
+        train_dataset, sampler=train_sampler, batch_size=10, collate_fn=collate
+    )
     #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
-    print(reader[0])
+    epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+    for step, batch in enumerate(epoch_iterator):
+        print("Padding var mi inside ", batch.shape)
+        #print("Batch shape {} ".format(batch.shape))
+        #print("First input {} ".format(batch[0]))
+        inputs, labels = mask_tokens(batch, bert_tokenizer, args)
+        #print(inputs.shape)
