@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tokens
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from torch.nn.utils.rnn import pad_sequence
 import tokenization
 from nerreader import DataReader
