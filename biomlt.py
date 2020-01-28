@@ -21,6 +21,25 @@ random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'main_logger'
 logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path, 'w', 'utf-8')], format='%(levelname)s - %(message)s')
+
+def pubmed_files(root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"):
+    if not os.path.isdir(root):
+        return ["PMC6961255.txt","PMC6958785.txt"]
+    #root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"
+    folder_list = os.listdir(root)
+    file_list = []
+    names = set()
+    for folder in folder_list:
+        fold_path = os.path.join(root,folder)
+        if os.path.isdir(fold_path):
+            for file in os.listdir(fold_path):
+                if file.endswith(".txt"):
+                    if file in names:
+                        print("File with name {} exists in multiple folders")
+                    names.add(file)
+                    file_list.append(os.path.join(root,folder,file))
+    print("Read {} files ".format(len(file_list)))
+    return file_list
 def hugging_parse_args():
     parser = argparse.ArgumentParser()
 
@@ -248,7 +267,7 @@ class BioMLT():
         block_size = 128
         huggins_args =hugging_parse_args()
         self.huggins_args = huggins_args
-        file_list = ["PMC6961255.txt","PMC6958785.txt"]
+        file_list = pubmed_files()
         train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = block_size)
         print("Dataset size {} ".format(len(train_dataset)))
         train_sampler = RandomSampler(train_dataset)

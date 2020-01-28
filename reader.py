@@ -54,17 +54,17 @@ class MyTextDataset(Dataset):
             assert os.path.isfile(file_path)
             directory, filename = os.path.split(file_path)
             cached_features_file = os.path.join(
-                directory, cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_" + filename
+                cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_" + filename
             )
 
             if os.path.exists(cached_features_file) and not args.overwrite_cache:
                 logger.info("Loading features from cached file %s", cached_features_file)
                 with open(cached_features_file, "rb") as handle:
-                    self.examples = pickle.load(handle)
+                    self.examples = pickle.load(handle) 
             else:
                 logger.info("Creating features from dataset file at %s", directory)
-                if not os.path.isdir(os.path.join(directory,cache_folder)):
-                    os.makedirs(os.path.join(directory,cache_folder))
+                if not os.path.isdir(os.path.join(cache_folder)):
+                    os.makedirs(os.path.join(cache_folder))
                 self.examples = []
                 with open(file_path, encoding="utf-8") as f:
                     text = f.read()

@@ -3,3 +3,5 @@
 *_cache_*
 bioner_data
 save_dir
+*log*
+*__pycache__*
