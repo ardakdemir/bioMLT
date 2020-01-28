@@ -36,4 +36,4 @@ class LineByLineTextDataset(Dataset):
 linebyline_dataset = LineByLineTextDataset()
 
 for i in range(10):
-    print("Line by line {} ".format(linebyline_dataset[i]))
+    print(linebyline_dataset[i].device)

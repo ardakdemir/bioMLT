@@ -165,12 +165,15 @@ def hugging_parse_args():
     return args
 
 def parse_args():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Working  on {}".format(device))
     parser = argparse.ArgumentParser()
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
     parser.add_argument('--output_dir', type=str, default='save_dir', help='training file for ner')
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
     parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
     args = vars(parser.parse_args())
+    args['device'] = device
     return args
 class BioMLT():
     def __init__(self):
@@ -218,6 +221,7 @@ class BioMLT():
         out_dir =self.args['output_dir']
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
+        print("Saving model checkpoint to %s", out_dir)
         logger.info("Saving model checkpoint to %s", out_dir)
         # Save a trained model, configuration and tokenizer using `save_pretrained()`.
         # They can then be reloaded using `from_pretrained()`
@@ -228,6 +232,7 @@ class BioMLT():
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
 
     def pretrain_mlm(self):
+        device = self.args['device']
         huggins_args =hugging_parse_args()
         file_list = ["PMC6961255.txt","PMC6958785.txt"]
         train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = 32)
@@ -242,12 +247,16 @@ class BioMLT():
         )
         #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+        self.bert_model.to(device)
         self.bert_model.train()
+        print("Model is being trained on {} ".format(next(self.bert_model.parameters()).device))
         for step, batch in enumerate(epoch_iterator):
             #print("Batch shape {} ".format(batch.shape))
             #print("First input {} ".format(batch[0]))
             self.bert_optimizer.zero_grad()            ## update mask_tokens to apply curriculum learnning!!!!
             inputs, labels = mask_tokens(batch, self.bert_tokenizer, huggins_args)
+            inputs.to(device)
+            labels.to(device)
             outputs = self.bert_model(inputs,masked_lm_labels=labels)
             loss = outputs[0]
             logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
@@ -316,5 +325,6 @@ class BioMLT():
         print("Labels")
         print(ner_inds)
 if __name__=="__main__":
+
     biomlt = BioMLT()
     biomlt.pretrain_mlm()
