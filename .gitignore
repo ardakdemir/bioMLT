@@ -1,6 +1,8 @@
 *_data
+squad_data
 *_cached_*
 *_cache_*
+squad_cache
 bioner_data
 save_dir
 *log*

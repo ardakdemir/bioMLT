@@ -1,5 +1,6 @@
 import tokenization
 from transformers import *
+from transformers import squad_convert_examples_to_features
 import random
 import collections
 import logging
@@ -10,6 +11,8 @@ import argparse
 from tqdm import tqdm
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
+
+from transformers.data.processors.squad import SquadResult, SquadV1Processor, SquadV2Processor
 random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'read_logger'
@@ -19,6 +22,102 @@ pretrained_bert_name  = 'bert-base-uncased'
 
 MaskedLmInstance = collections.namedtuple("MaskedLmInstance",
                                               ["index", "label"])
+
+def pubmed_files(root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"):
+    if not os.path.isdir(root):
+        return ["PMC6961255.txt","PMC6958785.txt"]
+    #root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"
+    folder_list = os.listdir(root)
+    file_list = []
+    names = set()
+    for folder in folder_list:
+        fold_path = os.path.join(root,folder)
+        if os.path.isdir(fold_path):
+            for file in os.listdir(fold_path):
+                if file.endswith(".txt"):
+                    if file in names:
+                        print("File with name {} exists in multiple folders")
+                    names.add(file)
+                    file_list.append(os.path.join(root,folder,file))
+    print("Read {} files ".format(len(file_list)))
+    return file_list
+
+
+def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
+    if args.local_rank not in [-1, 0] and not evaluate:
+        # Make sure only the first process in distributed training process the dataset, and the others will use the cache
+        torch.distributed.barrier()
+
+    # Load data features from cache or dataset file
+    cache_folder = "squad_cache"
+    #input_dir = args.squad_dir if args.data_dir else "."
+    input_dir = args.squad_dir
+    cached_features_file = os.path.join(cache_folder,
+        input_dir,
+        "cached_{}_{}_{}".format(
+            "dev" if evaluate else "train",
+            list(filter(None, args.model_name_or_path.split("/"))).pop(),
+            str(args.max_seq_length)+".txt",
+        ),
+    )
+    print("Cache path {} ".format(cached_features_file))
+    # Init features and dataset from cache if it exists
+    if os.path.exists(cached_features_file) and not args.overwrite_cache:
+        logger.info("Loading features from cached file %s", cached_features_file)
+        features_and_dataset = torch.load(cached_features_file)
+        features, dataset, examples = (
+            features_and_dataset["features"],
+            features_and_dataset["dataset"],
+            features_and_dataset["examples"],
+        )
+    else:
+        logger.info("Creating features from dataset file at %s", input_dir)
+
+        if not input_dir and ((evaluate and not args.predict_file) or (not evaluate and not args.train_file)):
+            try:
+                import tensorflow_datasets as tfds
+            except ImportError:
+                raise ImportError("If not data_dir is specified, tensorflow_datasets needs to be installed.")
+
+            if args.version_2_with_negative:
+                logger.warn("tensorflow_datasets does not handle version 2 of SQuAD.")
+
+            tfds_examples = tfds.load("squad")
+            examples = SquadV1Processor().get_examples_from_dataset(tfds_examples, evaluate=evaluate)
+        else:
+            #processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
+            processor = SquadV2Processor()
+            if evaluate:
+                examples = processor.get_dev_examples(input_dir, filename=args.squad_predict_file)
+            else:
+                examples = processor.get_train_examples(input_dir, filename=args.squad_train_file)
+        print("Generated {} examples ".format(len(examples)))
+        examples = examples[:10]
+        features, dataset = squad_convert_examples_to_features(
+            examples=examples,
+            tokenizer=tokenizer,
+            max_seq_length=args.max_seq_length,
+            doc_stride=args.doc_stride,
+            max_query_length=args.max_query_length,
+            is_training=not evaluate,
+            return_dataset="pt",
+            threads=args.threads,
+        )
+
+        if args.local_rank in [-1, 0]:
+            if not os.path.exists(cached_features_file):
+                os.makedirs(os.path.split(cached_features_file)[0])
+            logger.info("Saving features into cached file %s", cached_features_file)
+            torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
+
+    if args.local_rank == 0 and not evaluate:
+        # Make sure only the first process in distributed training process the dataset, and the others will use the cache
+        torch.distributed.barrier()
+
+    if output_examples:
+        return dataset, examples, features
+    return dataset
+
 
 class TrainingInstance(object):
     """A single training instance (sentence pair)."""
@@ -50,6 +149,7 @@ class TrainingInstance(object):
 class MyTextDataset(Dataset):
     def __init__(self, tokenizer: PreTrainedTokenizer, args, file_list: str, block_size=128):
         cache_folder = args.cache_folder
+        skipped = 0
         for file_path in file_list:
             assert os.path.isfile(file_path)
             directory, filename = os.path.split(file_path)
@@ -60,27 +160,31 @@ class MyTextDataset(Dataset):
             if os.path.exists(cached_features_file) and not args.overwrite_cache:
                 logger.info("Loading features from cached file %s", cached_features_file)
                 with open(cached_features_file, "rb") as handle:
-                    self.examples = pickle.load(handle) 
+                    self.examples = pickle.load(handle)
             else:
                 logger.info("Creating features from dataset file at %s", directory)
                 if not os.path.isdir(os.path.join(cache_folder)):
                     os.makedirs(os.path.join(cache_folder))
                 self.examples = []
-                with open(file_path, encoding="utf-8") as f:
-                    text = f.read()
+                try:
+                    with open(file_path, encoding="utf-8") as f:
+                        text = f.read()
 
-                tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+                    tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
 
-                for i in range(0, len(tokenized_text) - block_size + 1, block_size):  # Truncate in block of block_size
-                    self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i : i + block_size]))
-                # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
-                # If your dataset is small, first you should loook for a bigger one :-) and second you
-                # can change this behavior by adding (model specific) padding.
+                    for i in range(0, len(tokenized_text) - block_size + 1, block_size):  # Truncate in block of block_size
+                        self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i : i + block_size]))
+                    # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
+                    # If your dataset is small, first you should loook for a bigger one :-) and second you
+                    # can change this behavior by adding (model specific) padding.
 
-                logger.info("Saving features into cached file %s", cached_features_file)
-                with open(cached_features_file, "wb") as handle:
-                    pickle.dump(self.examples, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
+                    logger.info("Saving features into cached file %s", cached_features_file)
+                    with open(cached_features_file, "wb") as handle:
+                        pickle.dump(self.examples, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                except:
+                    logging.info("Skipping {} because of encoding")
+                    skipped += 1
+        print("{} files are skipped in total ".format(skipped))
     def __len__(self):
         return len(self.examples)
 
@@ -387,6 +491,7 @@ class BertPretrainReader():
         next_label = torch.tensor([ 0 if instance.is_random_next  else  1])
         token_type_ids = torch.tensor(instance.segment_ids).unsqueeze(0)
         return token_ids, mask_labels, next_label, token_type_ids
+
 
 
 def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args):

@@ -5,7 +5,7 @@ import random
 import os
 import torch.nn as nn
 import torch.optim as optim
-from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tokens
+from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tokens, pubmed_files, squad_load_and_cache_examples
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
 from torch.nn.utils.rnn import pad_sequence
@@ -22,24 +22,8 @@ rng = random.Random(random_seed)
 log_path = 'main_logger'
 logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path, 'w', 'utf-8')], format='%(levelname)s - %(message)s')
 
-def pubmed_files(root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"):
-    if not os.path.isdir(root):
-        return ["PMC6961255.txt","PMC6958785.txt"]
-    #root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"
-    folder_list = os.listdir(root)
-    file_list = []
-    names = set()
-    for folder in folder_list:
-        fold_path = os.path.join(root,folder)
-        if os.path.isdir(fold_path):
-            for file in os.listdir(fold_path):
-                if file.endswith(".txt"):
-                    if file in names:
-                        print("File with name {} exists in multiple folders")
-                    names.add(file)
-                    file_list.append(os.path.join(root,folder,file))
-    print("Read {} files ".format(len(file_list)))
-    return file_list
+
+
 def hugging_parse_args():
     parser = argparse.ArgumentParser()
 
@@ -57,6 +41,7 @@ def hugging_parse_args():
         "--model_type", type=str,default='bert', required=False, help="The model architecture to be trained or fine-tuned.",
     )
 
+
     # Other parameters
     parser.add_argument(
         "--eval_data_file",
@@ -65,11 +50,55 @@ def hugging_parse_args():
         help="An optional input evaluation data file to evaluate the perplexity on (a text file).",
     )
     parser.add_argument(
+        "--squad_dir",
+        default='squad_data',
+        type=str,
+        help="The input data dir. Should contain the .json files for the task."
+        + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+    parser.add_argument(
         "--cache_folder",
         default="mlm_cache_folder",
         type=str,
         help="Directory to cache the mlm features",
     )
+    parser.add_argument(
+        "--max_seq_length",
+        default=384,
+        type=int,
+        help="The maximum total input sequence length after WordPiece tokenization. Sequences "
+        "longer than this will be truncated, and sequences shorter than this will be padded.",
+    )
+    parser.add_argument(
+        "--squad_train_file",
+        default="train-v2.0.json",
+        type=str,
+        help="The input training file. If a data dir is specified, will look for the file there"
+        + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+
+    parser.add_argument(
+        "--squad_predict_file",
+        default="dev-v2.0.json",
+        type=str,
+        help="The input evaluation file. If a data dir is specified, will look for the file there"
+        + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+    parser.add_argument(
+        "--doc_stride",
+        default=128,
+        type=int,
+        help="When splitting up a long document into chunks, how much stride to take between chunks.",
+    )
+    parser.add_argument(
+        "--max_query_length",
+        default=64,
+        type=int,
+        help="The maximum number of tokens for the question. Questions longer than this will "
+        "be truncated to this length.",
+    )
+    parser.add_argument("--threads", type=int, default=1, help="multiple threads for converting example to features")
+
     parser.add_argument(
         "--line_by_line",
         action="store_true",
@@ -80,7 +109,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--model_name_or_path",
-        default=None,
+        default=pretrained_bert_name,
         type=str,
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
@@ -197,8 +226,9 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, default='save_dir', help='training file for ner')
 
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
-    parser.add_argument('--batch_size', type=int, default=10, help='Batch size')
-    parser.add_argument('--epoch_num', type=int, default=50, help='Number of epochs')
+    parser.add_argument('--batch_size', type=int, default=2, help='Batch size')
+    parser.add_argument('--block_size', type=int, default=32, help='Batch size')
+    parser.add_argument('--epoch_num', type=int, default=1, help='Number of epochs')
     parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
     args = vars(parser.parse_args())
     args['device'] = device
@@ -206,6 +236,7 @@ def parse_args():
 class BioMLT():
     def __init__(self):
         self.args = parse_args()
+        self.qa_output_labels = 2
         if self.args['mlm'] :
             self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name,output_hidden_states=True)
         else:
@@ -223,6 +254,8 @@ class BioMLT():
          ]
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
         print("BERT output dim {}".format(self.bert_out_dim))
+
+        self.qas_head  = nn.Linear(self.bert_out_dim, self.qa_output_labels)
         self.args['bert_output_dim'] = self.bert_out_dim
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                          lr=2e-5)
@@ -259,12 +292,59 @@ class BioMLT():
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
 
+
+
+    def train_squad(self):
+        device = self.args['device']
+        args =hugging_parse_args()
+        train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
+        args.train_batch_size = self.args['batch_size']
+        #train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+        train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+        train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
+        t_totals = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
+        no_decay = ["bias", "LayerNorm.weight"]
+        optimizer_grouped_parameters = [{"params": self.qas_head.parameters(), "weight_decay": 0.0}]
+        self.bert_squad_optimizer =AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+        scheduler = get_linear_schedule_with_warmup(
+        self.bert_squad_optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_totals)
+        tr_loss, logging_loss = 0.0, 0.0
+        steps_trained_in_current_epoch = 0
+        epochs_trained = 0
+        self.bert_optimizer.zero_grad()
+        self.bert_squad_optimizer.zero_grad()
+        train_iterator = trange(
+            epochs_trained, int(args.num_train_epochs), desc="Epoch")
+        # Added here for reproductibility
+        self.bert_model.to(device)
+        self.qas_head.to(device)
+        for _ in train_iterator:
+            epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            for step, batch in enumerate(epoch_iterator):
+                self.bert_model.train()
+                batch = tuple(t.to(device) for t in batch)
+
+                squad_inputs = {
+                    "input_ids": batch[0],
+                    "attention_mask": batch[1],
+                    "token_type_ids": batch[2],
+                    "start_positions": batch[3],
+                    "end_positions": batch[4],
+                }
+                bert_inputs = {
+                    "input_ids": batch[0],
+                    "attention_mask": batch[1],
+                    "token_type_ids": batch[2],
+                }
+                outputs = self.bert_model(**bert_inputs)
+                # model outputs are always tuple in transformers (see doc)
+                print("Bert output shape {} ".format(outputs[-1][-2].shape))
     def pretrain_mlm(self):
         device = self.args['device']
         epochs_trained = 0
         epoch_num = self.args['epoch_num']
         batch_size = self.args['batch_size']
-        block_size = 128
+        block_size = self.args['block_size']
         huggins_args =hugging_parse_args()
         self.huggins_args = huggins_args
         file_list = pubmed_files()
@@ -300,6 +380,8 @@ class BioMLT():
                 logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
                 loss.backward()
                 self.bert_optimizer.step()
+                if step ==2:
+                    break
         #self.save_model()
         logging.info("Training is finished moving to evaluation")
         self.mlm_evaluate()
@@ -424,4 +506,5 @@ class BioMLT():
 if __name__=="__main__":
 
     biomlt = BioMLT()
-    biomlt.pretrain_mlm()
+    biomlt.train_squad()
+    #biomlt.pretrain_mlm()
