@@ -34,6 +34,4 @@ class LineByLineTextDataset(Dataset):
         return torch.tensor(self.examples[i])
 
 linebyline_dataset = LineByLineTextDataset()
-
-for i in range(10):
-    print(linebyline_dataset[i].device)
+print(torch.tensor([1,2,3,4]).clamp_(2.2,3.1))

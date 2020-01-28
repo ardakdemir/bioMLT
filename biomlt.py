@@ -12,6 +12,7 @@ from torch.nn.utils.rnn import pad_sequence
 import tokenization
 from nerreader import DataReader
 from nermodel import NerModel
+from qasmodel import QasModel
 import argparse
 from torch.nn import CrossEntropyLoss, MSELoss
 
@@ -222,13 +223,23 @@ def parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Working  on {}".format(device))
     parser = argparse.ArgumentParser()
+
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
     parser.add_argument('--output_dir', type=str, default='save_dir', help='training file for ner')
 
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
-    parser.add_argument('--batch_size', type=int, default=2, help='Batch size')
-    parser.add_argument('--block_size', type=int, default=32, help='Batch size')
+    parser.add_argument("--qas_lr", default=5e-5, type=float, help="The initial learning rate for Qas.")
+    parser.add_argument("--qas_adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
+
+
+    parser.add_argument('--qas_out_dim', type=int, default=2, help='Output dimension for question answering head')
+
+
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
+    parser.add_argument('--block_size', type=int, default=32, help='Block size')
     parser.add_argument('--epoch_num', type=int, default=1, help='Number of epochs')
+
+
     parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
     args = vars(parser.parse_args())
     args['device'] = device
@@ -236,7 +247,6 @@ def parse_args():
 class BioMLT():
     def __init__(self):
         self.args = parse_args()
-        self.qa_output_labels = 2
         if self.args['mlm'] :
             self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name,output_hidden_states=True)
         else:
@@ -253,10 +263,11 @@ class BioMLT():
          'weight_decay_rate': 0.0}
          ]
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
+        self.args['bert_output_dim'] = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
-        self.qas_head  = nn.Linear(self.bert_out_dim, self.qa_output_labels)
-        self.args['bert_output_dim'] = self.bert_out_dim
+        self.qas_head  = QasModel(self.args)
+
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                          lr=2e-5)
 
@@ -294,13 +305,13 @@ class BioMLT():
 
 
 
-    def train_squad(self):
+    def train_qas(self):
         device = self.args['device']
         args =hugging_parse_args()
         train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
         args.train_batch_size = self.args['batch_size']
         #train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
-        train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+        train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
         t_totals = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
         no_decay = ["bias", "LayerNorm.weight"]
@@ -322,6 +333,7 @@ class BioMLT():
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
             for step, batch in enumerate(epoch_iterator):
                 self.bert_model.train()
+                #logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
                 batch = tuple(t.to(device) for t in batch)
 
                 squad_inputs = {
@@ -337,8 +349,11 @@ class BioMLT():
                     "token_type_ids": batch[2],
                 }
                 outputs = self.bert_model(**bert_inputs)
+
                 # model outputs are always tuple in transformers (see doc)
                 print("Bert output shape {} ".format(outputs[-1][-2].shape))
+                print("Start positions {} ".format(batch[3].shape))
+                print("End positions {} ".format(batch[4].shape))
     def pretrain_mlm(self):
         device = self.args['device']
         epochs_trained = 0
@@ -474,6 +489,8 @@ class BioMLT():
         pred_tokens = self.bert_tokenizer.convert_ids_to_tokens(torch.argmax(prediction_scores,dim=2).detach().numpy()[0])
         logging.info("{} {} ".format("Real tokens", tokens))
         logging.info("{} {} ".format("Predictions", pred_tokens))
+
+
     def train_ner(self):
         self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer)
         self.args['ner_label_vocab'] = self.ner_reader.label_voc
@@ -506,5 +523,5 @@ class BioMLT():
 if __name__=="__main__":
 
     biomlt = BioMLT()
-    biomlt.train_squad()
+    biomlt.train_qas()
     #biomlt.pretrain_mlm()
