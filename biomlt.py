@@ -255,8 +255,8 @@ class BioMLT():
             #print("First input {} ".format(batch[0]))
             self.bert_optimizer.zero_grad()            ## update mask_tokens to apply curriculum learnning!!!!
             inputs, labels = mask_tokens(batch, self.bert_tokenizer, huggins_args)
-            inputs.to(device)
-            labels.to(device)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
             outputs = self.bert_model(inputs,masked_lm_labels=labels)
             loss = outputs[0]
             logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
