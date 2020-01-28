@@ -233,6 +233,7 @@ class BioMLT():
 
     def pretrain_mlm(self):
         device = self.args['device']
+        epochs_trained = 0
         huggins_args =hugging_parse_args()
         file_list = ["PMC6961255.txt","PMC6958785.txt"]
         train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = 128)
