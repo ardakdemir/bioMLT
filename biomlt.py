@@ -46,6 +46,12 @@ def hugging_parse_args():
         help="An optional input evaluation data file to evaluate the perplexity on (a text file).",
     )
     parser.add_argument(
+        "--cache_folder",
+        default="mlm_cache_folder",
+        type=str,
+        help="Directory to cache the mlm features",
+    )
+    parser.add_argument(
         "--line_by_line",
         action="store_true",
         help="Whether distinct lines of text in the dataset are to be handled as distinct sequences.",
@@ -170,7 +176,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
     parser.add_argument('--output_dir', type=str, default='save_dir', help='training file for ner')
+
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
+    parser.add_argument('--batch_size', type=int, default=10, help='Batch size')
+    parser.add_argument('--epoch_num', type=int, default=50, help='Number of epochs')
     parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
     args = vars(parser.parse_args())
     args['device'] = device
@@ -234,9 +243,13 @@ class BioMLT():
     def pretrain_mlm(self):
         device = self.args['device']
         epochs_trained = 0
+        epoch_num = self.args['epoch_num']
+        batch_size = self.args['batch_size']
+        block_size = 128
         huggins_args =hugging_parse_args()
+        self.huggins_args = huggins_args
         file_list = ["PMC6961255.txt","PMC6958785.txt"]
-        train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = 128)
+        train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = block_size)
         print("Dataset size {} ".format(len(train_dataset)))
         train_sampler = RandomSampler(train_dataset)
         def collate(examples):
@@ -244,7 +257,7 @@ class BioMLT():
 
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(
-            train_dataset, sampler=train_sampler, batch_size=10, collate_fn=collate
+            train_dataset, sampler=train_sampler, batch_size=batch_size, collate_fn=collate
         )
         #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
@@ -252,7 +265,8 @@ class BioMLT():
         self.bert_model.train()
         print("Model is being trained on {} ".format(next(self.bert_model.parameters()).device))
         train_iterator = trange(
-        epochs_trained, int(huggins_args.num_train_epochs), desc="Epoch")
+        #epochs_trained, int(huggins_args.num_train_epochs), desc="Epoch")
+        epochs_trained, int(epoch_num), desc="Epoch")
     #set_seed(args)  # Added here for reproducibility
         for _ in train_iterator:
             for step, batch in enumerate(epoch_iterator):
@@ -267,9 +281,68 @@ class BioMLT():
                 logging.info("Loss obtained for batch of {} is {} ".format(batch.shape,loss.item()))
                 loss.backward()
                 self.bert_optimizer.step()
-                #if step == 2:
-                    #break
-        self.save_model()
+        #self.save_model()
+        logging.info("Training is finished moving to evaluation")
+        self.mlm_evaluate()
+
+    def mlm_evaluate(self,prefix=""):
+    # Loop to handle MNLI double evaluation (matched, mis-matched)
+        eval_output_dir = out_dir =self.args['output_dir']
+
+        #eval_dataset = load_and_cache_examples(args, tokenizer, evaluate=True)
+
+        eval_batch_size = 1
+        file_list = ["PMC6958785.txt"]
+        eval_dataset = MyTextDataset(self.bert_tokenizer,self.huggins_args,file_list,block_size = 128)
+        #args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
+        # Note that DistributedSampler samples randomly
+
+        def collate(examples):
+            return pad_sequence(examples, batch_first=True, padding_value=self.bert_tokenizer.pad_token_id)
+
+        eval_sampler = SequentialSampler(eval_dataset)
+        eval_dataloader = DataLoader(
+            eval_dataset, sampler=eval_sampler, batch_size=eval_batch_size, collate_fn=collate
+        )
+
+        # multi-gpu evaluate
+        #if args.n_gpu > 1:
+        #    model = torch.nn.DataParallel(model)
+
+        # Eval!
+        model = self.bert_model
+        logger.info("***** Running evaluation on {} *****".format(file_list))
+        logger.info("  Num examples = %d", len(eval_dataset))
+        logger.info("  Batch size = %d", eval_batch_size)
+        eval_loss = 0.0
+        nb_eval_steps = 0
+        model.eval()
+
+        for batch in tqdm(eval_dataloader, desc="Evaluating"):
+            inputs, labels = mask_tokens(batch, self.bert_tokenizer, self.huggins_args)
+            inputs = inputs.to(self.args['device'])
+            labels = labels.to(self.args['device'])
+
+            with torch.no_grad():
+                outputs = model(inputs, masked_lm_labels=labels)
+                lm_loss = outputs[0]
+                eval_loss += lm_loss.mean().item()
+            nb_eval_steps += 1
+
+        eval_loss = eval_loss / nb_eval_steps
+        perplexity = torch.exp(torch.tensor(eval_loss))
+
+        result = {"perplexity": perplexity}
+
+        output_eval_file = os.path.join(eval_output_dir, prefix, "eval_results.txt")
+        with open(output_eval_file, "w") as writer:
+            logger.info("***** Eval results {} *****".format(prefix))
+            for key in sorted(result.keys()):
+                logger.info("  %s = %s", key, str(result[key]))
+                writer.write("%s = %s\n" % (key, str(result[key])))
+
+        return result
+
 
     ##parallel reading not implemented for training
     def pretrain(self):

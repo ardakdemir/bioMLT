@@ -49,11 +49,12 @@ class TrainingInstance(object):
 
 class MyTextDataset(Dataset):
     def __init__(self, tokenizer: PreTrainedTokenizer, args, file_list: str, block_size=128):
+        cache_folder = args.cache_folder
         for file_path in file_list:
             assert os.path.isfile(file_path)
             directory, filename = os.path.split(file_path)
             cached_features_file = os.path.join(
-                directory, args.model_type + "_cached_lm_" + str(block_size) + "_" + filename
+                directory, cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_" + filename
             )
 
             if os.path.exists(cached_features_file) and not args.overwrite_cache:
@@ -62,7 +63,8 @@ class MyTextDataset(Dataset):
                     self.examples = pickle.load(handle)
             else:
                 logger.info("Creating features from dataset file at %s", directory)
-
+                if not os.path.isdir(os.path.join(directory,cache_folder)):
+                    os.makedirs(os.path.join(directory,cache_folder))
                 self.examples = []
                 with open(file_path, encoding="utf-8") as f:
                     text = f.read()

@@ -67,11 +67,14 @@ INFO - Weights from pretrained model not used in BertForMaskedLM: ['cls.seq_rela
 DEBUG - Starting new HTTPS connection (1): s3.amazonaws.com:443
 DEBUG - https://s3.amazonaws.com:443 "HEAD /models.huggingface.co/bert/bert-base-cased-vocab.txt HTTP/1.1" 200 0
 INFO - loading file https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-cased-vocab.txt from cache at /root/.cache/torch/transformers/5e8a2b4893d13790ed4150ca1906be5f7a03d6c4ddf62296c383f6db42814db2.e13dbb970cb325137104fb2e5f36fe865f27746c6b526f6352861b1980eb80b1
-INFO - Loading features from cached file bert_cached_lm_32_PMC6961255.txt
-INFO - Loading features from cached file bert_cached_lm_32_PMC6958785.txt
-INFO - Loss obtained for batch of torch.Size([1, 34]) is 0.0 
-INFO - Loss obtained for batch of torch.Size([1, 34]) is 3.627652168273926 
-INFO - Loss obtained for batch of torch.Size([1, 34]) is 2.9141809940338135 
-INFO - Saving model checkpoint to save_dir
-INFO - Configuration saved in save_dir/config.json
-INFO - Model weights saved in save_dir/pytorch_model.bin
+INFO - Loading features from cached file mlm_cache_folder/bert_cached_lm_128_PMC6961255.txt
+INFO - Loading features from cached file mlm_cache_folder/bert_cached_lm_128_PMC6958785.txt
+INFO - Loss obtained for batch of torch.Size([1, 130]) is 3.90604305267334 
+INFO - Loss obtained for batch of torch.Size([1, 130]) is 3.3916282653808594 
+INFO - Loss obtained for batch of torch.Size([1, 130]) is 4.506444931030273 
+INFO - Loading features from cached file mlm_cache_folder/bert_cached_lm_128_PMC6958785.txt
+INFO - ***** Running evaluation  *****
+INFO -   Num examples = 125
+INFO -   Batch size = 1
+INFO - ***** Eval results  *****
+INFO -   perplexity = tensor(17.6846)
