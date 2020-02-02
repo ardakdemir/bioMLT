@@ -65,7 +65,14 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--max_seq_length",
-        default=384,
+        default=100,
+        type=int,
+        help="The maximum total input sequence length after WordPiece tokenization. Sequences "
+        "longer than this will be truncated, and sequences shorter than this will be padded.",
+    )
+    parser.add_argument(
+        "--example_num",
+        default=10,
         type=int,
         help="The maximum total input sequence length after WordPiece tokenization. Sequences "
         "longer than this will be truncated, and sequences shorter than this will be padded.",
@@ -253,7 +260,15 @@ class BioMLT():
             self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
         #print(self.bert_model)
         self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
+        self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
+        self.args['bert_output_dim'] = self.bert_out_dim
+        print("BERT output dim {}".format(self.bert_out_dim))
+
         self.ner_path = self.args['ner_train_file']
+        self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 30)
+        self.args['ner_label_vocab'] = self.ner_reader.label_voc
+        self.ner_head = NerModel(self.args)
+
         param_optimizer = list(self.bert_model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
         optimizer_grouped_parameters = [
@@ -262,15 +277,16 @@ class BioMLT():
         {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
          'weight_decay_rate': 0.0}
          ]
-        self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
-        self.args['bert_output_dim'] = self.bert_out_dim
-        print("BERT output dim {}".format(self.bert_out_dim))
+
 
         self.qas_head  = QasModel(self.args)
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                          lr=2e-5)
 
+    ## We are now averaging over the bert layer outputs for the NER task
+    ## We may want to do this for QAS as well?
+    ## This is very slow, right?
     def _get_bert_batch_hidden(self, hiddens , bert2toks, layers=[-2,-3,-4]):
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]),0)
         batch_my_hiddens = []
@@ -289,6 +305,55 @@ class BioMLT():
             sent_hiddens = torch.stack(my_hiddens)
             batch_my_hiddens.append(sent_hiddens)
         return torch.stack(batch_my_hiddens)
+
+
+    def _get_token_to_bert_predictions(self,predictions, bert2toks):
+        logging.info("Predictions shape {}".format(predictions.shape))
+
+        logging.info("Bert2toks shape {}".format(bert2toks.shape))
+        bert_predictions = []
+        for pred,b2t in zip(predictions,bert2toks):
+            bert_preds = []
+            for b in b2t:
+                bert_preds.append(pred[b])
+            stack = torch.stack(bert_preds)
+            #print(stack.shape)
+            bert_predictions.append(stack)
+        stackk = torch.stack(bert_predictions)
+        print(stackk.shape)
+        return stackk
+
+
+    def _get_squad_bert_batch_hidden(self,hiddens, layers = [-2,-3,-4]):
+        return torch.mean(torch.stack([hiddens[i] for i in layers]),0)
+
+    def _get_squad_to_ner_bert_batch_hidden(self, hiddens , bert2toks, layers=[-2,-3,-4]):
+        pad_size = hiddens[-1].shape[1]
+        hidden_dim = hiddens[-1].shape[2]
+        pad_vector = torch.tensor([0.0 for i in range(hidden_dim)])
+        meanss = torch.mean(torch.stack([hiddens[i] for i in layers]),0)
+        batch_my_hiddens = []
+        batch_lens = []
+        for means,bert2tok in zip(meanss,bert2toks):
+            my_token_hids = []
+            my_hiddens = []
+            for i,b2t in enumerate(bert2tok):
+                if i>0 and b2t!=bert2tok[i-1]:
+                    my_hiddens.append(torch.mean(torch.stack(my_token_hids),0))
+                    #my_token_hids = [means[i+1]]  ## we skip the CLS token
+                    my_token_hids = [means[i]] ## Now I dont skip the CLS token
+                else:
+                    #my_token_hids.append(means[i+1])
+                    my_token_hids = [means[i]] ## Now I dont skip the CLS token
+            my_hiddens.append(torch.mean(torch.stack(my_token_hids),0))
+            batch_lens.append(len(my_hiddens))
+            for i in range(pad_size - len(my_hiddens)):
+                my_hiddens.append(pad_vector)
+            sent_hiddens = torch.stack(my_hiddens)
+            batch_my_hiddens.append(sent_hiddens)
+        #for sent_hidden in batch_my_hiddens:
+            #logging.info("Squad squeezed sent shape {}".format(sent_hidden.shape))
+        return torch.stack(batch_my_hiddens),torch.tensor(batch_lens)
     def save_model(self):
         out_dir =self.args['output_dir']
         if not os.path.isdir(out_dir):
@@ -304,11 +369,130 @@ class BioMLT():
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
 
 
+    def qas_predict(self,batch):
+        ## batch_size = 1
+        if len(batch[0].shape)==1:
+            batch = tuple(t.unsqueeze_(0) for t in batch)
+
+        ## Not sure if these update in-place?>?>?> Have to check betweenn pytorch versions
+        self.bert_model.eval()
+        self.qas_head.eval()
+        squad_inputs = {
+            "input_ids": batch[0],
+            "attention_mask": batch[1],
+            "token_type_ids": batch[2],
+            "start_positions": batch[3],
+            "end_positions": batch[4],
+        }
+        bert_inputs = {
+            "input_ids": batch[0],
+            "attention_mask": batch[1],
+            "token_type_ids": batch[2],
+        }
+        outputs = self.bert_model(**bert_inputs)
+        squad_inputs["bert_outputs"] = outputs[-1][-2]
+        start_pred,end_pred = self.qas_head.predict(**squad_inputs)
+        length = torch.sum(batch[1])
+        tokens = self.bert_tokenizer.convert_ids_to_tokens(batch[0].squeeze(0).detach().numpy()[:length])
+        logging.info("Example {}".format(tokens))
+        logging.info("Answer {}".format(tokens[start_pred:end_pred+1]))
+        logging.info("Start Pred {}  start truth {}".format(start_pred,squad_inputs["start_positions"]))
+        logging.info("End Pred {}  end truth {}".format(end_pred,squad_inputs["end_positions"]))
+
+    def get_qas(self, bert_output, batch):
+
+        #batch = tuple(t.unsqueeze_(0) for t in batch)
+        squad_inputs = {
+            "input_ids": batch[0],
+            "attention_mask": batch[1],
+            "token_type_ids": batch[2],
+            "start_positions": batch[3],
+            "end_positions": batch[4],
+        }
+        squad_inputs["bert_outputs"] = bert_output
+        qas_outputs = self.qas_head(**squad_inputs)
+        #print(qas_outputs[0].item())
+        #qas_outputs[0].backward()
+        #self.bert_optimizer.step()
+        #self.qas_head.optimizer.step()
+        return qas_outputs
+
+    def get_ner(self,bert_output,bert2toks,ner_inds):
+        bert_hiddens = self._get_bert_batch_hidden(bert_output,bert2toks)
+        loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
+        logging.info("NER loss {} ".format(loss.item()))
+        return (loss,out_logits)
+
+
+
+    ## training a flat model (multi-task learning hard-sharing)
+    def train_qas_ner(self):
+        device = self.args['device']
+        args =hugging_parse_args()
+        qas_train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
+        print("Size of the dataset {}".format(len(qas_train_dataset)))
+        args.train_batch_size = self.args['batch_size']
+        qas_train_sampler = RandomSampler(qas_train_dataset)
+        qas_train_dataloader = DataLoader(qas_train_dataset, sampler=qas_train_sampler, batch_size=args.train_batch_size)
+        t_totals = len(qas_train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
+        #self.train_ner()
+        epochs_trained = 0
+
+        train_iterator = trange(
+            epochs_trained, int(args.num_train_epochs), desc="Epoch")
+        # Added here for reproductibility
+        self.bert_model.to(device)
+        self.qas_head.to(device)
+        self.ner_head.to(device)
+
+        for _ in train_iterator:
+            epoch_iterator = tqdm(qas_train_dataloader, desc="Iteration")
+            for step, batch in enumerate(epoch_iterator):
+                self.bert_optimizer.zero_grad()
+                self.qas_head.optimizer.zero_grad()
+                self.ner_head.optimizer.zero_grad()
+                batch = qas_train_dataset[0]
+                batch = tuple(t.unsqueeze(0) for t in batch)
+                tokens, bert_batch_after_padding, data = self.ner_reader[0]
+                #logging.info(batch[-1])
+                self.bert_model.train()
+                # logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
+                batch = tuple(t.to(device) for t in batch)
+                bert_inputs = {
+                    "input_ids": batch[0],
+                    "attention_mask": batch[1],
+                    "token_type_ids": batch[2],
+                }
+                #logging.info("Input ids shape : {}".format(batch[0].shape))
+                sent_lens, masks, tok_inds, ner_inds, \
+                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+                outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
+                # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
+                # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
+                ner_loss, ner_out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
+                outputs = self.bert_model(**bert_inputs)
+                bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], batch[-1])
+                ner_outs = self.ner_head(bert_outs_for_ner)
+                ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs, batch[-1])
+                logging.info("BERT OUTS FOR NER {}".format(ner_outs_for_qas.shape))
+                bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+                logging.info("Bert out shape {}".format(bert_out.shape))
+                qas_outputs = self.get_qas(bert_out, batch)
+                # qas_outputs = self.qas_head(**squad_inputs)
+                # print(qas_outputs[0].item())
+                total_loss = ner_loss + qas_outputs[0]
+                total_loss.backward()
+                logging.info("TOtal loss {} {}  {}".format(total_loss.item(),
+                                                           ner_loss.item(),qas_outputs[0].item()))
+                self.ner_head.optimizer.step()
+                self.bert_optimizer.step()
+                self.qas_head.optimizer.step()
 
     def train_qas(self):
         device = self.args['device']
         args =hugging_parse_args()
         train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
+        print("Size of the dataset {}".format(len(train_dataset)))
         args.train_batch_size = self.args['batch_size']
         #train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
         train_sampler = RandomSampler(train_dataset)
@@ -316,44 +500,53 @@ class BioMLT():
         t_totals = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
         no_decay = ["bias", "LayerNorm.weight"]
         optimizer_grouped_parameters = [{"params": self.qas_head.parameters(), "weight_decay": 0.0}]
-        self.bert_squad_optimizer =AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
-        scheduler = get_linear_schedule_with_warmup(
-        self.bert_squad_optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_totals)
+        #self.bert_squad_optimizer =AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+
+        ## Scheduler for sub-components
+        #scheduler = get_linear_schedule_with_warmup(
+        #self.bert_squad_optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_totals)
         tr_loss, logging_loss = 0.0, 0.0
         steps_trained_in_current_epoch = 0
         epochs_trained = 0
-        self.bert_optimizer.zero_grad()
-        self.bert_squad_optimizer.zero_grad()
+
         train_iterator = trange(
             epochs_trained, int(args.num_train_epochs), desc="Epoch")
         # Added here for reproductibility
         self.bert_model.to(device)
         self.qas_head.to(device)
         for _ in train_iterator:
-            epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            epoch_iterator = tqdm(qas_train_dataloader, desc="Iteration")
             for step, batch in enumerate(epoch_iterator):
+                self.bert_optimizer.zero_grad()
+                self.qas_head.optimizer.zero_grad()
+                batch = train_dataset[0]
+                batch = tuple(t.unsqueeze(0) for t in batch)
+                logging.info(batch[-1])
                 self.bert_model.train()
                 #logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
                 batch = tuple(t.to(device) for t in batch)
-
-                squad_inputs = {
-                    "input_ids": batch[0],
-                    "attention_mask": batch[1],
-                    "token_type_ids": batch[2],
-                    "start_positions": batch[3],
-                    "end_positions": batch[4],
-                }
                 bert_inputs = {
                     "input_ids": batch[0],
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
+                logging.info("Input ids shape : {}".format(batch[0].shape))
                 outputs = self.bert_model(**bert_inputs)
+                bert_outs_for_ner , lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1],batch[-1])
+                ner_outs = self.ner_head(bert_outs_for_ner)
+                ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs,batch[-1])
+                logging.info("BERT OUTS FOR NER {}".format(ner_outs_for_qas.shape))
+                bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+                logging.info("Bert out shape {}".format(bert_out.shape))
+                qas_outputs = self.get_qas(bert_out,batch)
+                #qas_outputs = self.qas_head(**squad_inputs)
+                #print(qas_outputs[0].item())
+                qas_outputs[0].backward()
+                logging.info("Loss {}".format(qas_outputs[0].item()))
+                self.bert_optimizer.step()
+                self.qas_head.optimizer.step()
+            self.qas_predict(batch)
 
-                # model outputs are always tuple in transformers (see doc)
-                print("Bert output shape {} ".format(outputs[-1][-2].shape))
-                print("Start positions {} ".format(batch[3].shape))
-                print("End positions {} ".format(batch[4].shape))
     def pretrain_mlm(self):
         device = self.args['device']
         epochs_trained = 0
@@ -492,36 +685,48 @@ class BioMLT():
 
 
     def train_ner(self):
-        self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer)
+        self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 30)
         self.args['ner_label_vocab'] = self.ner_reader.label_voc
         self.ner_head = NerModel(self.args)
         print("Starting training")
-        for i in range(10):
-            self.ner_head.optimizer.zero_grad()
-            tokens, bert_batch_after_padding, data = self.ner_reader[0]
-            sent_lens, masks, tok_inds, ner_inds,\
-                 bert_batch_ids,  bert_seq_ids, bert2toks, cap_inds = data
-            outputs = self.bert_model(bert_batch_ids,token_type_ids= bert_seq_ids)
-            bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
-            loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-            print(loss.item())
-            loss.backward()
-            self.ner_head.optimizer.step()
-        self.eval_ner()
+        for j in range(10):
+            for i in range(10):
+                self.ner_head.optimizer.zero_grad()
+                tokens, bert_batch_after_padding, data = self.ner_reader[0]
+                sent_lens, masks, tok_inds, ner_inds,\
+                     bert_batch_ids,  bert_seq_ids, bert2toks, cap_inds = data
+                outputs = self.bert_model(bert_batch_ids,token_type_ids= bert_seq_ids)
+                #bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
+                #loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
+                loss, out_logits = self.get_ner(outputs[-1],bert2toks,ner_inds)
+                #print(loss.item())
+                loss.backward()
+                self.ner_head.optimizer.step()
+            self.eval_ner()
     def eval_ner(self):
         tokens, bert_batch_after_padding, data = self.ner_reader[0]
         sent_lens, masks, tok_inds, ner_inds,\
              bert_batch_ids,  bert_seq_ids, bert2toks, cap_inds = data
 
         outputs = self.bert_model(bert_batch_ids,token_type_ids= bert_seq_ids)
-        bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
-        loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-        print("Predictions {}".format(out_logits.shape))
-        print(torch.argmax(out_logits,dim=2))
-        print("Labels")
-        print(ner_inds)
-if __name__=="__main__":
-
+        #bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
+        #loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
+        loss, out_logits = self.get_ner(outputs[-1],bert2toks,ner_inds)
+        logging.info("Tokens")
+        logging.info(tokens)
+        voc_size = len(self.ner_reader.label_voc)
+        preds = torch.argmax(out_logits,dim=2).detach().numpy()[0,:len(tokens)]//voc_size
+        ner_inds = ner_inds.detach().numpy()[0, :len(tokens)]//voc_size
+        logging.info("NER INDS {}".format(ner_inds))
+        preds = self.ner_reader.label_voc.unmap(preds)
+        ner_inds = self.ner_reader.label_voc.unmap(ner_inds)
+        logging.info("Predictions {} \n Truth {} ".format(preds,ner_inds))
+def main():
     biomlt = BioMLT()
-    biomlt.train_qas()
-    #biomlt.pretrain_mlm()
+    # biomlt.train_ner()
+    biomlt.train_qas_ner()
+    # biomlt.pretrain_mlm()
+
+if __name__=="__main__":
+    main()
+

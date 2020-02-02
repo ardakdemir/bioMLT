@@ -3,6 +3,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
 import torchvision
+import torch
 from torch.utils.data import Dataset, DataLoader
 #from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
@@ -21,10 +22,10 @@ class QasModel(nn.Module):
         #self.label_voc = args['ner_label_vocab']
         self.output_dim = self.args['qas_out_dim']
         ## now I am calculating one-dimensional labels so taking the square of the label vocab
-        self.classifier = nn.Linear(self.input_dims,self.output_dim)
+        self.qa_outputs = nn.Linear(self.input_dims,self.output_dim)
         self.loss = CrossEntropyLoss()
         self.lr = self.args['qas_lr']
-        self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}],\
+        self.optimizer = optim.AdamW([{"params": self.qa_outputs.parameters()}],\
         lr=self.lr, eps=self.args['qas_adam_epsilon'])
     ## add the attention masks to exclude CLS and PAD etc.
     def forward(
@@ -66,3 +67,24 @@ class QasModel(nn.Module):
             outputs = (total_loss,) + outputs
 
         return outputs
+
+    def predict(self,bert_outputs,
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        start_positions=None,
+        end_positions=None,train=False):
+        if not train:
+            with torch.no_grad():
+                logits = self.qa_outputs(bert_outputs)
+        else:
+            logits = self.qa_outputs(bert_outputs)
+        start_logits, end_logits = logits.split(1, dim=-1)
+        start_logits = start_logits.squeeze(-1)
+        end_logits = end_logits.squeeze(-1)
+        start_preds = torch.argmax(start_logits,dim=-1)
+        end_preds = torch.argmax(end_logits,dim=-1)
+        return (start_preds, end_preds,)

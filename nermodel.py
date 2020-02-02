@@ -29,8 +29,8 @@ class NerModel(nn.Module):
     ## add the attention masks to exclude CLS and PAD etc.
     def forward(self,batch,labels = None):
         out_logits = self.classifier(batch)
-        print(out_logits.shape)
-        print(labels.shape)
+        #print(out_logits.shape)
+        #print(labels.shape)
         if labels is not None:
             ## view tehlikeli bir hareket!!!!
             loss = self.loss(out_logits.view(-1,self.output_dim),labels.view(-1))
