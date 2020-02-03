@@ -369,7 +369,7 @@ def my_squad_convert_examples_to_features(
 
 def squad_bert2tokens(berttoks,tokenizer):
     berttoks = tokenizer.convert_ids_to_tokens(berttoks)
-    print(berttoks)
+    logging.info(berttoks)
     ids = []
     i = 0
     for tok in berttoks:
