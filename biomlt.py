@@ -1,4 +1,6 @@
 from transformers import *
+from transformers import get_linear_schedule_with_warmup
+
 import torch
 import torchvision
 import random
@@ -241,10 +243,11 @@ def parse_args():
 
     parser.add_argument('--qas_out_dim', type=int, default=2, help='Output dimension for question answering head')
 
-
+    parser.add_argument("--warmup_steps", default=5, type=int, help="Linear warmup over warmup_steps.")
+    parser.add_argument("--t_total", default=5, type=int, help="Linear warmup over warmup_steps.")
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
     parser.add_argument('--block_size', type=int, default=32, help='Block size')
-    parser.add_argument('--epoch_num', type=int, default=1, help='Number of epochs')
+    parser.add_argument('--epoch_num', type=int, default=20, help='Number of epochs')
 
 
     parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
@@ -283,6 +286,9 @@ class BioMLT():
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                          lr=2e-5)
+
+
+
 
     ## We are now averaging over the bert layer outputs for the NER task
     ## We may want to do this for QAS as well?
@@ -366,6 +372,8 @@ class BioMLT():
         self.bert_tokenizer.save_pretrained(out_dir)
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
+        torch.save(self.bert_optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
+        torch.save(self.bert_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
 
 
     def predict_qas(self,batch):
@@ -492,8 +500,12 @@ class BioMLT():
                 self.qas_head.optimizer.step()
             self.predict_qas(batch)
             self.predict_ner()
+
+
     def predict_ner(self):
         self.eval_ner()
+
+
     def train_qas(self):
         device = self.args['device']
         args =hugging_parse_args()
@@ -572,8 +584,13 @@ class BioMLT():
         train_dataloader = DataLoader(
             train_dataset, sampler=train_sampler, batch_size=batch_size, collate_fn=collate
         )
+        t_totals = len(train_dataloader) // self.args.epoch_num
         #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+        self.bert_scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=self.args.warmup_steps, num_training_steps=t_totals
+    )
+
         self.bert_model.to(device)
         self.bert_model.train()
         print("Model is being trained on {} ".format(next(self.bert_model.parameters()).device))
@@ -596,7 +613,7 @@ class BioMLT():
                 self.bert_optimizer.step()
                 if step ==2:
                     break
-        #self.save_model()
+        self.save_model()
         logging.info("Training is finished moving to evaluation")
         self.mlm_evaluate()
 
@@ -737,4 +754,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
