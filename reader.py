@@ -535,7 +535,8 @@ class MyTextDataset(Dataset):
                     with open(cached_features_file, "wb") as handle:
                         pickle.dump(self.examples, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 except:
-                    logging.info("Skipping {} because of encoding")
+                    
+                    logging.info("Skipping {} because of encoding".format(file_path))
                     skipped += 1
         print("{} files are skipped in total ".format(skipped))
     def __len__(self):

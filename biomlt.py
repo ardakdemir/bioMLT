@@ -123,6 +123,12 @@ def hugging_parse_args():
         type=str,
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
+    parser.add_argument(
+        "--load_model",
+        default=False,
+        action="store_true",
+        help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
+    )
 
     parser.add_argument(
         "--mlm", action="store_true", help="Train with masked-language modeling loss instead of language modeling."
@@ -234,8 +240,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
-    parser.add_argument('--output_dir', type=str, default='save_dir', help='training file for ner')
-
+    parser.add_argument('--output_dir', type=str, default='save_dir', help='Directory to store models and outputs')
+    parser.add_argument("--load_model", default=False, action="store_true", help="Whether to load a model or not")
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
     parser.add_argument("--qas_lr", default=5e-5, type=float, help="The initial learning rate for Qas.")
     parser.add_argument("--qas_adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
@@ -244,13 +250,14 @@ def parse_args():
     parser.add_argument('--qas_out_dim', type=int, default=2, help='Output dimension for question answering head')
 
     parser.add_argument("--warmup_steps", default=5, type=int, help="Linear warmup over warmup_steps.")
-    parser.add_argument("--t_total", default=5, type=int, help="Linear warmup over warmup_steps.")
+    parser.add_argument("--t_total", default=5000, type=int, help="Total number of training steps")
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
-    parser.add_argument('--block_size', type=int, default=32, help='Block size')
+    parser.add_argument('--block_size', type=int, default=128, help='Block size')
     parser.add_argument('--epoch_num', type=int, default=20, help='Number of epochs')
 
 
     parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
+
     args = vars(parser.parse_args())
     args['device'] = device
     return args
@@ -261,6 +268,7 @@ class BioMLT():
             self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name,output_hidden_states=True)
         else:
             self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
+
         #print(self.bert_model)
         self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
@@ -286,6 +294,9 @@ class BioMLT():
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                          lr=2e-5)
+        self.bert_scheduler = get_linear_schedule_with_warmup(
+        self.bert_optimizer, num_warmup_steps=self.args['warmup_steps'], num_training_steps=self.args['t_total']
+    )
 
 
 
@@ -359,12 +370,29 @@ class BioMLT():
         #for sent_hidden in batch_my_hiddens:
             #logging.info("Squad squeezed sent shape {}".format(sent_hidden.shape))
         return torch.stack(batch_my_hiddens),torch.tensor(batch_lens)
+
+    def load_model(self):
+        if self.args['mlm']:
+            logging.info("Attempting to load  model from {}".format(self.args['output_dir']))
+            self.bert_model = BertForMaskedLM.from_pretrained(self.args['output_dir'])
+        else:
+            self.bert_model = BertForPreTraining.from_pretrained(self.args['output_dir'])
+        self.bert_tokenizer = BertTokenizer.from_pretrained(self.args['output_dir'])
+        sch_path = os.path.join(self.args['output_dir'],"scheduler.pt")
+        opt_path =os.path.join(self.args['output_dir'],"optimizer.pt")
+        if os.path.isfile(sch_path) and os.path.isfile(opt_path):
+            self.bert_optimizer.load_state_dict(torch.load(opt_path))
+            self.bert_scheduler.load_state_dict(torch.load(sch_path))
+        logging.info("Could not load model from {}".format(self.args['output_dir']))
+        logging.info("Initializing Masked LM from {} ".format(pretrained_bert_name))
+        #self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name)
+        #self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name)
     def save_model(self):
         out_dir =self.args['output_dir']
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
-        print("Saving model checkpoint to %s", out_dir)
-        logger.info("Saving model checkpoint to %s", out_dir)
+        print("Saving model checkpoint to {}".format(out_dir))
+        logger.info("Saving model checkpoint to {}".format(out_dir))
         # Save a trained model, configuration and tokenizer using `save_pretrained()`.
         # They can then be reloaded using `from_pretrained()`
         model_to_save = self.bert_model
@@ -372,8 +400,8 @@ class BioMLT():
         self.bert_tokenizer.save_pretrained(out_dir)
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
-        torch.save(self.bert_optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-        torch.save(self.bert_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
+        torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
+        torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
 
 
     def predict_qas(self,batch):
@@ -573,9 +601,11 @@ class BioMLT():
         block_size = self.args['block_size']
         huggins_args =hugging_parse_args()
         self.huggins_args = huggins_args
-        file_list = pubmed_files()
+        #file_list = pubmed_files()
+        file_list = ["PMC6958785.txt","PMC6961255.txt"]
         train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = block_size)
         print("Dataset size {} ".format(len(train_dataset)))
+        print(train_dataset[0])
         train_sampler = RandomSampler(train_dataset)
         def collate(examples):
             return pad_sequence(examples, batch_first=True, padding_value=self.bert_tokenizer.pad_token_id)
@@ -584,13 +614,17 @@ class BioMLT():
         train_dataloader = DataLoader(
             train_dataset, sampler=train_sampler, batch_size=batch_size, collate_fn=collate
         )
-        t_totals = len(train_dataloader) // self.args.epoch_num
+        t_totals = len(train_dataloader) // self.args['epoch_num']
         #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
         self.bert_scheduler = get_linear_schedule_with_warmup(
-            optimizer, num_warmup_steps=self.args.warmup_steps, num_training_steps=t_totals
+            self.bert_optimizer, num_warmup_steps=self.args['warmup_steps'], num_training_steps=t_totals
     )
-
+        if self.args['load_model']:
+            print("Model loaded")
+            self.load_model()
+        print("BERT after loading weights")
+        print(self.bert_model.bert.encoder.layer[11].output.dense.weight)
         self.bert_model.to(device)
         self.bert_model.train()
         print("Model is being trained on {} ".format(next(self.bert_model.parameters()).device))
@@ -604,6 +638,10 @@ class BioMLT():
                 #print("First input {} ".format(batch[0]))
                 self.bert_optimizer.zero_grad()            ## update mask_tokens to apply curriculum learnning!!!!
                 inputs, labels = mask_tokens(batch, self.bert_tokenizer, huggins_args)
+                tokens = self.bert_tokenizer.convert_ids_to_tokens(inputs.cpu().detach().numpy()[0,:])
+                label_tokens = self.bert_tokenizer.convert_ids_to_tokens(labels.cpu().detach().numpy()[0,:])
+                logging.info("Tokens {}".format(tokens))
+                logging.info("Labels ".format(label_tokens))
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 outputs = self.bert_model(inputs,masked_lm_labels=labels)
@@ -613,9 +651,9 @@ class BioMLT():
                 self.bert_optimizer.step()
                 if step ==2:
                     break
-        self.save_model()
-        logging.info("Training is finished moving to evaluation")
-        self.mlm_evaluate()
+            self.save_model()
+            logging.info("Training is finished moving to evaluation")
+            self.mlm_evaluate()
 
     def mlm_evaluate(self,prefix=""):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
@@ -749,8 +787,8 @@ class BioMLT():
 def main():
     biomlt = BioMLT()
     # biomlt.train_ner()
-    biomlt.train_qas_ner()
-    # biomlt.pretrain_mlm()
+    #biomlt.train_qas_ner()
+    biomlt.pretrain_mlm()
 
 if __name__=="__main__":
     main()
