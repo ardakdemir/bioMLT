@@ -18,15 +18,15 @@ class QasModel(nn.Module):
     def __init__(self,args):
         super(QasModel,self).__init__()
         self.args = args
-        self.input_dims = self.args['bert_output_dim']
+        self.input_dims = self.args.bert_output_dim
         #self.label_voc = args['ner_label_vocab']
-        self.output_dim = self.args['qas_out_dim']
+        self.output_dim = self.args.qas_out_dim
         ## now I am calculating one-dimensional labels so taking the square of the label vocab
         self.qa_outputs = nn.Linear(self.input_dims,self.output_dim)
         self.loss = CrossEntropyLoss()
-        self.lr = self.args['qas_lr']
+        self.lr = self.args.qas_lr
         self.optimizer = optim.AdamW([{"params": self.qa_outputs.parameters()}],\
-        lr=self.lr, eps=self.args['qas_adam_epsilon'])
+        lr=self.lr, eps=self.args.qas_adam_epsilon)
     ## add the attention masks to exclude CLS and PAD etc.
     def forward(
         self,bert_outputs,

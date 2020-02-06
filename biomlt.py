@@ -1,6 +1,9 @@
 from transformers import *
+
 from transformers import get_linear_schedule_with_warmup
 
+import json
+import copy
 import torch
 import torchvision
 import random
@@ -17,8 +20,9 @@ from nermodel import NerModel
 from qasmodel import QasModel
 import argparse
 from torch.nn import CrossEntropyLoss, MSELoss
-
+import datetime
 pretrained_bert_name  = 'bert-base-cased'
+
 
 random_seed = 12345
 rng = random.Random(random_seed)
@@ -28,6 +32,10 @@ logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path,
 
 
 def hugging_parse_args():
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Working  on {}".format(device))
+    
     parser = argparse.ArgumentParser()
 
     # Required parameters
@@ -35,7 +43,15 @@ def hugging_parse_args():
         "--train_data_file", default=None, type=str, required=False, help="The input training data file (a text file)."
     )
     parser.add_argument(
+        "--config_file",
+        default='biomlt_config',
+        type=str,
+        required=False,
+        help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument(
         "--output_dir",
+        default='save_dir',
         type=str,
         required=False,
         help="The output directory where the model predictions and checkpoints will be written.",
@@ -78,6 +94,18 @@ def hugging_parse_args():
         type=int,
         help="The maximum total input sequence length after WordPiece tokenization. Sequences "
         "longer than this will be truncated, and sequences shorter than this will be padded.",
+    )
+    parser.add_argument(
+        "--biobert_tf_config",
+        default="../biobert_data/biobert_v1.1_pubmed/bert_config.json",
+        type=str,
+        help="Index file for biobert pretrained model"
+    )
+    parser.add_argument(
+        "--biobert_tf_model",
+        default="../biobert_data/biobert_v1.1_pubmed/model.ckpt-1000000.index",
+        type=str,
+        help="Index file for biobert pretrained model"
     )
     parser.add_argument(
         "--squad_train_file",
@@ -205,11 +233,9 @@ def hugging_parse_args():
     parser.add_argument(
         "--eval_all_checkpoints",
         action="store_true",
-        help="Evaluate all checkpoints starting with the same prefix as model_name_or_path ending and ending with step number",
-    )
+        help="Evaluate all checkpoints starting with the same prefix as model_name_or_path ending and ending with step number")    
     parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
-    parser.add_argument(
-        "--overwrite_output_dir", action="store_true", help="Overwrite the content of the output directory"
+    parser.add_argument("--overwrite_output_dir", action="store_true", help="Overwrite the content of the output directory"
     )
     parser.add_argument(
         "--overwrite_cache", action="store_true", help="Overwrite the cached training and evaluation sets"
@@ -231,40 +257,40 @@ def hugging_parse_args():
     parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
-    args = parser.parse_args()
-    return args
-
-def parse_args():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Working  on {}".format(device))
-    parser = argparse.ArgumentParser()
+    
+    
 
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
-    parser.add_argument('--output_dir', type=str, default='save_dir', help='Directory to store models and outputs')
-    parser.add_argument("--load_model", default=False, action="store_true", help="Whether to load a model or not")
+    #parser.add_argument('--output_dir', type=str, default='save_dir', help='Directory to store models and outputs')
+    #parser.add_argument("--load_model", default=False, action="store_true", help="Whether to load a model or not")
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
     parser.add_argument("--qas_lr", default=5e-5, type=float, help="The initial learning rate for Qas.")
     parser.add_argument("--qas_adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
-
-
+    
+    
     parser.add_argument('--qas_out_dim', type=int, default=2, help='Output dimension for question answering head')
 
-    parser.add_argument("--warmup_steps", default=5, type=int, help="Linear warmup over warmup_steps.")
+    #parser.add_argument("--warmup_steps", default=5, type=int, help="Linear warmup over warmup_steps.")
     parser.add_argument("--t_total", default=5000, type=int, help="Total number of training steps")
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
-    parser.add_argument('--block_size', type=int, default=128, help='Block size')
-    parser.add_argument('--epoch_num', type=int, default=20, help='Number of epochs')
+    #parser.add_argument('--block_size', type=int, default=128, help='Block size')
+    #parser.add_argument('--epoch_num', type=int, default=20, help='Number of epochs')
 
 
-    parser.add_argument('--mlm', type=bool, default=True, help='To train a mlm only pretraining model')
 
+    args = parser.parse_args()
+    args.device = device
+    return args
+
+def parse_args():
     args = vars(parser.parse_args())
     args['device'] = device
     return args
-class BioMLT():
+class BioMLT(nn.Module):
     def __init__(self):
-        self.args = parse_args()
-        if self.args['mlm'] :
+        super(BioMLT,self).__init__()
+        self.args = hugging_parse_args()
+        if self.args.mlm :
             self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name,output_hidden_states=True)
         else:
             self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
@@ -272,12 +298,12 @@ class BioMLT():
         #print(self.bert_model)
         self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
-        self.args['bert_output_dim'] = self.bert_out_dim
+        self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
-        self.ner_path = self.args['ner_train_file']
+        self.ner_path = self.args.ner_train_file
         self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 30)
-        self.args['ner_label_vocab'] = self.ner_reader.label_voc
+        self.args.ner_label_vocab = self.ner_reader.label_voc
         self.ner_head = NerModel(self.args)
 
         param_optimizer = list(self.bert_model.named_parameters())
@@ -295,11 +321,23 @@ class BioMLT():
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                          lr=2e-5)
         self.bert_scheduler = get_linear_schedule_with_warmup(
-        self.bert_optimizer, num_warmup_steps=self.args['warmup_steps'], num_training_steps=self.args['t_total']
+        self.bert_optimizer, num_warmup_steps=self.args.warmup_steps, num_training_steps=self.args.t_total
     )
 
 
 
+    def save_all_model(self,save_name,weights = True): 
+        save_name = os.path.join(self.args.output_dir,save_name)
+        if weights:
+            logging.info("Saving biomlt model to {}".format(save_name))
+            torch.save(self.state_dict(), save_name)
+        config_path = os.path.join(self.args.output_dir,self.args.config_file)
+        arg = copy.deepcopy(self.args)
+        del arg.device
+        del arg.ner_label_vocab
+        arg = vars(arg)
+        with open(config_path,'w') as outfile:
+            json.dump(arg,outfile)
 
     ## We are now averaging over the bert layer outputs for the NER task
     ## We may want to do this for QAS as well?
@@ -346,7 +384,6 @@ class BioMLT():
         pad_size = hiddens[-1].shape[1]
         hidden_dim = hiddens[-1].shape[2]
         pad_vector = torch.tensor([0.0 for i in range(hidden_dim)]).to(device)
-        print(pad_vector.device)
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]),0)
         batch_my_hiddens = []
         batch_lens = []
@@ -372,23 +409,27 @@ class BioMLT():
         return torch.stack(batch_my_hiddens),torch.tensor(batch_lens)
 
     def load_model(self):
-        if self.args['mlm']:
-            logging.info("Attempting to load  model from {}".format(self.args['output_dir']))
-            self.bert_model = BertForMaskedLM.from_pretrained(self.args['output_dir'])
+        if self.args.mlm:
+            logging.info("Attempting to load  model from {}".format(self.args.output_dir))
+            self.bert_model = BertForMaskedLM.from_pretrained(self.args.output_dir)
         else:
-            self.bert_model = BertForPreTraining.from_pretrained(self.args['output_dir'])
-        self.bert_tokenizer = BertTokenizer.from_pretrained(self.args['output_dir'])
-        sch_path = os.path.join(self.args['output_dir'],"scheduler.pt")
-        opt_path =os.path.join(self.args['output_dir'],"optimizer.pt")
+            self.bert_model = BertForPreTraining.from_pretrained(self.args.output_dir)
+        self.bert_tokenizer = BertTokenizer.from_pretrained(self.args.output_dir)
+        sch_path = os.path.join(self.args.output_dir,"scheduler.pt")
+        opt_path =os.path.join(self.args.outpt_dir,"optimizer.pt")
         if os.path.isfile(sch_path) and os.path.isfile(opt_path):
             self.bert_optimizer.load_state_dict(torch.load(opt_path))
             self.bert_scheduler.load_state_dict(torch.load(sch_path))
-        logging.info("Could not load model from {}".format(self.args['output_dir']))
+        logging.info("Could not load model from {}".format(self.args.output_dir))
         logging.info("Initializing Masked LM from {} ".format(pretrained_bert_name))
         #self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name)
         #self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name)
+    
+    def forward(self):
+        return 0 
+    
     def save_model(self):
-        out_dir =self.args['output_dir']
+        out_dir =self.args.output_dir
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
         print("Saving model checkpoint to {}".format(out_dir))
@@ -402,6 +443,53 @@ class BioMLT():
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
         torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
         torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
+
+    def evaluate_qas(self):
+        device = self.args.device
+        self.device = device
+        args =self.args
+        prefix = ""
+        qas_eval_dataset,examples,features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True)
+        eval_sampler = SequentialSampler(qas_eval_dataset)
+        eval_dataloader = DataLoader(qas_eval_dataset, sample=eval_sampler,batch_size = args.eval_batch_size)
+        logger.info("***** Running evaluation {} *****".format(prefix))
+        logger.info("  Num examples = %d", len(dataset))
+        logger.info("  Batch size = %d", args.eval_batch_size)
+        all_results = []
+        for batch in tqdm(eval_dataloader, desc = "Evaluating"):
+            self.bert_model.eval()
+            self.qas_head.eval()
+            batch = tuple(t.to(self.device for t in batch))
+            if len(batch[0].shape)==1:
+                batch = tuple(t.unsqueeze_(0) for t in batch)
+            logging.info(batch[0])
+            squad_inputs = {
+                "input_ids": batch[0],
+                "attention_mask": batch[1],
+                "token_type_ids": batch[2],
+                "start_positions": batch[3],
+                "end_positions": batch[4],
+            }
+            bert_inputs = {
+                "input_ids": batch[0],
+                "attention_mask": batch[1],
+                "token_type_ids": batch[2],
+            }
+            with torch.no_grad():
+                outputs = self.bert_model(**bert_inputs)
+                squad_inputs["bert_outputs"] = outputs[-1][-2]
+                start_pred,end_pred = self.qas_head.predict(**squad_inputs)
+                length = torch.sum(batch[1])
+                #tokens = self.bert_tokenizer.convert_ids_to_tokens(batch[0].squeeze(0).detach().cpu().numpy()[:length])
+                example_indices = batch[3]
+            for  i, example_index in enumerate(example_indices):
+                eval_feature = features[example_index.item()]
+                start_logits = start_pred[i]
+                end_logits = end_pred[i]
+                unique_id = int(eval_feature.unique_id)
+                print(start_pred[i],"  ", end_pred[i])
+                result = SquadResult(unique_id , start_logits,end_logits)
+                all_results.append(result) 
 
 
     def predict_qas(self,batch):
@@ -434,7 +522,7 @@ class BioMLT():
         logging.info("Answer {}".format(tokens[start_pred:end_pred+1]))
         logging.info("Start Pred {}  start truth {}".format(start_pred,squad_inputs["start_positions"]))
         logging.info("End Pred {}  end truth {}".format(end_pred,squad_inputs["end_positions"]))
-
+     
     def get_qas(self, bert_output, batch):
 
         #batch = tuple(t.unsqueeze_(0) for t in batch)
@@ -453,22 +541,23 @@ class BioMLT():
         #self.qas_head.optimizer.step()
         return qas_outputs
 
-    def get_ner(self,bert_output,bert2toks,ner_inds):
+    def get_ner(self,bert_output,bert2toks,ner_inds=None):
         bert_hiddens = self._get_bert_batch_hidden(bert_output,bert2toks)
-        loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-        #logging.info("NER loss {} ".format(loss.item()))
-        return (loss,out_logits)
+        ner_outs =  self.ner_head(bert_hiddens,ner_inds)
+        #logging.info("NER output {} ".format(ner_outs.))
+        return ner_outs
 
 
 
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
-        device = self.args['device']
+        device = self.args.device
         self.device = device
         args =hugging_parse_args()
+        self.huggins_args = args
         qas_train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
         print("Size of the dataset {}".format(len(qas_train_dataset)))
-        args.train_batch_size = self.args['batch_size']
+        args.train_batch_size = self.args.batch_size
         qas_train_sampler = RandomSampler(qas_train_dataset)
         qas_train_dataloader = DataLoader(qas_train_dataset, sampler=qas_train_sampler, batch_size=args.train_batch_size)
         t_totals = len(qas_train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
@@ -493,6 +582,7 @@ class BioMLT():
                 tokens, bert_batch_after_padding, data = self.ner_reader[0]
                 #logging.info(batch[-1])
                 self.bert_model.train()
+                self.qas_head.train()
                 # logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
                 batch = tuple(t.to(device) for t in batch)
                 data = [d.to(device) for d in data]
@@ -501,7 +591,7 @@ class BioMLT():
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
-                self.predict_ner()
+                #self.predict_ner()
                 #logging.info("Input ids shape : {}".format(batch[0].shape))
                 sent_lens, masks, tok_inds, ner_inds, \
                 bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
@@ -525,9 +615,10 @@ class BioMLT():
                                                            ner_loss.item(),qas_outputs[0].item()))
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
+                self.bert_scheduler.step()
                 self.qas_head.optimizer.step()
-            self.predict_qas(batch)
-            self.predict_ner()
+            self.evaluate_qas()
+            #self.predict_ner()
 
 
     def predict_ner(self):
@@ -535,11 +626,11 @@ class BioMLT():
 
 
     def train_qas(self):
-        device = self.args['device']
+        device = self.args.device
         args =hugging_parse_args()
         train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
         print("Size of the dataset {}".format(len(train_dataset)))
-        args.train_batch_size = self.args['batch_size']
+        args.train_batch_size = self.args.batch_size
         #train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
@@ -560,14 +651,15 @@ class BioMLT():
         # Added here for reproductibility
         self.bert_model.to(device)
         self.qas_head.to(device)
+        self.ner_head.to(device)
         for _ in train_iterator:
-            epoch_iterator = tqdm(qas_train_dataloader, desc="Iteration")
+            epoch_iterator = tqdm(train_dataloader, desc="Iteration")
             for step, batch in enumerate(epoch_iterator):
                 self.bert_optimizer.zero_grad()
                 self.qas_head.optimizer.zero_grad()
                 batch = train_dataset[0]
                 batch = tuple(t.unsqueeze(0) for t in batch)
-                logging.info(batch[-1])
+                #logging.info(batch[-1])
                 self.bert_model.train()
                 #logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
                 batch = tuple(t.to(device) for t in batch)
@@ -576,14 +668,17 @@ class BioMLT():
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
-                logging.info("Input ids shape : {}".format(batch[0].shape))
+                #logging.info("Input ids shape : {}".format(batch[0].shape))
+                bert2toks = batch[-1]
                 outputs = self.bert_model(**bert_inputs)
                 bert_outs_for_ner , lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1],batch[-1],device=device)
+                #print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
                 ner_outs = self.ner_head(bert_outs_for_ner)
+                ner_outs_2= self.get_ner(outputs[-1], bert2toks) 
                 ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs,batch[-1])
-                logging.info("BERT OUTS FOR NER {}".format(ner_outs_for_qas.shape))
+                #logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
-                logging.info("Bert out shape {}".format(bert_out.shape))
+                #logging.info("Bert out shape {}".format(bert_out.shape))
                 qas_outputs = self.get_qas(bert_out,batch)
                 #qas_outputs = self.qas_head(**squad_inputs)
                 #print(qas_outputs[0].item())
@@ -591,16 +686,19 @@ class BioMLT():
                 logging.info("Loss {}".format(qas_outputs[0].item()))
                 self.bert_optimizer.step()
                 self.qas_head.optimizer.step()
-            self.predict_qas(batch)
+            self.save_all_model(save_name="qas_model")
+            self.evaluate_qas()
+            
+
 
     def pretrain_mlm(self):
-        device = self.args['device']
+        device = self.args.device
         epochs_trained = 0
-        epoch_num = self.args['epoch_num']
-        batch_size = self.args['batch_size']
-        block_size = self.args['block_size']
+        epoch_num = self.args.epoch_num
+        batch_size = self.args.batch_size
+        block_size = self.args.block_size
         huggins_args =hugging_parse_args()
-        self.huggins_args = huggins_args
+        
         #file_list = pubmed_files()
         file_list = ["PMC6958785.txt","PMC6961255.txt"]
         train_dataset = MyTextDataset(self.bert_tokenizer,huggins_args,file_list,block_size = block_size)
@@ -614,13 +712,13 @@ class BioMLT():
         train_dataloader = DataLoader(
             train_dataset, sampler=train_sampler, batch_size=batch_size, collate_fn=collate
         )
-        t_totals = len(train_dataloader) // self.args['epoch_num']
+        t_totals = len(train_dataloader) // self.args.epoch_num
         #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
         self.bert_scheduler = get_linear_schedule_with_warmup(
-            self.bert_optimizer, num_warmup_steps=self.args['warmup_steps'], num_training_steps=t_totals
+            self.bert_optimizer, num_warmup_steps=self.args.warmup_steps, num_training_steps=t_totals
     )
-        if self.args['load_model']:
+        if self.args.load_model:
             print("Model loaded")
             self.load_model()
         print("BERT after loading weights")
@@ -657,7 +755,7 @@ class BioMLT():
 
     def mlm_evaluate(self,prefix=""):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
-        eval_output_dir = out_dir =self.args['output_dir']
+        eval_output_dir = out_dir =self.args.output_dir
 
         #eval_dataset = load_and_cache_examples(args, tokenizer, evaluate=True)
 
@@ -690,8 +788,8 @@ class BioMLT():
 
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
             inputs, labels = mask_tokens(batch, self.bert_tokenizer, self.huggins_args)
-            inputs = inputs.to(self.args['device'])
-            labels = labels.to(self.args['device'])
+            inputs = inputs.to(self.args.device)
+            labels = labels.to(self.args.device)
 
             with torch.no_grad():
                 outputs = model(inputs, masked_lm_labels=labels)
@@ -747,7 +845,7 @@ class BioMLT():
 
     def train_ner(self):
         self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 30)
-        self.args['ner_label_vocab'] = self.ner_reader.label_voc
+        self.args.ner_label_vocab = self.ner_reader.label_voc
         self.ner_head = NerModel(self.args)
         print("Starting training")
         for j in range(10):
@@ -786,9 +884,12 @@ class BioMLT():
         logging.info("Predictions {} \n Truth {} ".format(preds,ner_inds))
 def main():
     biomlt = BioMLT()
-    # biomlt.train_ner()
+    biomlt.train_qas()
     #biomlt.train_qas_ner()
-    biomlt.pretrain_mlm()
-
+    #biomlt.pretrain_mlm()
+    #mymodel = BertForMaskedLM.from_pretrained("save_dir",output_hidden_states=True)
+    #config = BertConfig.from_json_file(args.biobert_tf_config)
+    #biobert = BertModel.from_pretrained(args.biobert_tf_model,config=config,from_tf=True)
+    #print(biobert)
 if __name__=="__main__":
     main()

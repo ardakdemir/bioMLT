@@ -17,13 +17,13 @@ class NerModel(nn.Module):
     def __init__(self,args):
         super(NerModel,self).__init__()
         self.args = args
-        self.input_dims = args['bert_output_dim']
-        self.label_voc = args['ner_label_vocab']
+        self.input_dims = args.bert_output_dim
+        self.label_voc = args.ner_label_vocab
         self.output_dim = len(self.label_voc)*len(self.label_voc)
         ## now I am calculating one-dimensional labels so taking the square of the label vocab
         self.classifier = nn.Linear(self.input_dims,self.output_dim )
         self.loss = CrossEntropyLoss()
-        self.lr = args['ner_lr']
+        self.lr = args.ner_lr
         self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}],\
         lr=self.lr, eps=1e-6)
     ## add the attention masks to exclude CLS and PAD etc.

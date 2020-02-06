@@ -391,7 +391,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     cached_features_file = os.path.join(cache_folder,
         input_dir,
         "cached_{}_{}_{}".format(
-            "dev" if evaluate else "train",
+          "dev" if evaluate else "train",
             list(filter(None, args.model_name_or_path.split("/"))).pop(),
             str(args.max_seq_length)+"_"+str(example_size)+".txt",
         ),
@@ -506,8 +506,9 @@ class MyTextDataset(Dataset):
         for file_path in file_list:
             assert os.path.isfile(file_path)
             directory, filename = os.path.split(file_path)
+            folder = os.path.split(directory)[-1]
             cached_features_file = os.path.join(
-                cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_" + filename
+                cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_"+folder+"_" + filename
             )
 
             if os.path.exists(cached_features_file) and not args.overwrite_cache:
