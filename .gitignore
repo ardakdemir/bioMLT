@@ -1,5 +1,6 @@
 *_data
 squad_data
+pytorch_cuda_tensorflow
 *_cached_*
 *_cache_*
 squad_cache

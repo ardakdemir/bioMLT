@@ -389,7 +389,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     input_dir = args.squad_dir
     example_size = args.example_num
     cached_features_file = os.path.join(cache_folder,
-        input_dir,
+       input_dir,
         "cached_{}_{}_{}".format(
           "dev" if evaluate else "train",
             list(filter(None, args.model_name_or_path.split("/"))).pop(),
@@ -430,7 +430,8 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
         print("Generated {} examples ".format(len(examples)))
 
         ## Burada datayi kucultmusuz
-        examples = examples[:example_size]
+        if example_size > 0:
+            examples = examples[:example_size]
         features, dataset = my_squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
