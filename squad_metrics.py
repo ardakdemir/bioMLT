@@ -112,8 +112,8 @@ def make_eval_dict(exact_scores, f1_scores, qid_list=None):
                 ("exact", 100.0 * sum(exact_scores.values()) / total),
                 ("f1", 100.0 * sum(f1_scores.values()) / total),
                 ("total", total),
-            ]
-        )
+            ])
+        
     else:
         total = len(qid_list)
         return collections.OrderedDict(
@@ -289,7 +289,9 @@ def get_final_text(pred_text, orig_text, do_lower_case, verbose_logging=False):
     start_position = tok_text.find(pred_text)
     if start_position == -1:
         if verbose_logging:
-            logger.info("Unable to find text: '%s' in '%s'" % (pred_text, orig_text))
+            #logger.info("Unable to find text: '%s' in '%s'" % (pred_text, orig_text))
+            a = 5
+
         return orig_text
     end_position = start_position + len(pred_text) - 1
 
@@ -298,7 +300,8 @@ def get_final_text(pred_text, orig_text, do_lower_case, verbose_logging=False):
 
     if len(orig_ns_text) != len(tok_ns_text):
         if verbose_logging:
-            logger.info("Length not equal after stripping spaces: '%s' vs '%s'", orig_ns_text, tok_ns_text)
+            #logger.info("Length not equal after stripping spaces: '%s' vs '%s'", orig_ns_text, tok_ns_text)
+            a = 5
         return orig_text
 
     # We then project the characters in `pred_text` back to `orig_text` using
@@ -392,9 +395,10 @@ def compute_predictions_logits(
         example_index_to_features[feature.example_index].append(feature)
 
     unique_id_to_result = {}
+    print("How many results are here {} ".format(len(all_results)))
     for result in all_results:
         unique_id_to_result[result.unique_id] = result
-
+    print("Unique ids in results dict {} ".format(len(unique_id_to_result)))
     _PrelimPrediction = collections.namedtuple(  # pylint: disable=invalid-name
         "PrelimPrediction", ["feature_index", "start_index", "end_index", "start_logit", "end_logit"]
     )

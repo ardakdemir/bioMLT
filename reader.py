@@ -270,15 +270,19 @@ def my_squad_convert_examples_to_features(
     new_features = []
     unique_id = 1000000000
     example_index = 0
+
+    print("Number of features {} generated from {} examples ".format(len(features),len(examples)))
     for example_features in tqdm(features, total=len(features), desc="add example index and unique id"):
         if not example_features:
             continue
+        #print(example_features)
         for example_feature in example_features:
             example_feature.example_index = example_index
             example_feature.unique_id = unique_id
             new_features.append(example_feature)
             unique_id += 1
         example_index += 1
+    print("Number of features {} generated from {} examples after for loop".format(len(new_features),len(examples)))
     features = new_features
     del new_features
     if return_dataset == "pt":
@@ -297,8 +301,7 @@ def my_squad_convert_examples_to_features(
         if not is_training:
             all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
             dataset = TensorDataset(
-                all_input_ids, all_attention_masks, all_token_type_ids, all_example_index, all_cls_index, all_p_mask,
-                all_squad_bert2tokens
+                all_input_ids, all_attention_masks, all_token_type_ids, all_example_index, all_cls_index, all_p_mask,all_squad_bert2tokens
             )
         else:
             all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
@@ -314,7 +317,7 @@ def my_squad_convert_examples_to_features(
                 all_is_impossible,
                 all_squad_bert2tokens,
             )
-
+        print("Just before returning squad f  {} d {}".format(len(features),len(dataset)))
         return features, dataset
     elif return_dataset == "tf":
         if not is_tf_available():
@@ -369,7 +372,7 @@ def my_squad_convert_examples_to_features(
 
 def squad_bert2tokens(berttoks,tokenizer):
     berttoks = tokenizer.convert_ids_to_tokens(berttoks)
-    logging.info(berttoks)
+    #logging.info(berttoks)
     ids = []
     i = 0
     for tok in berttoks:
@@ -387,10 +390,16 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     cache_folder = "squad_cache"
     #input_dir = args.squad_dir if args.data_dir else "."
     input_dir = args.squad_dir
+    if not evaluate:
+        input_file_name = os.path.split(args.squad_train_file)[-1].split(".")[0]
+    else:
+        input_file_name = os.path.split(args.squad_predict_file)[-1].split(".")[0]
+    print("READING {} ".format(input_file_name))
     example_size = args.example_num
     cached_features_file = os.path.join(cache_folder,
        input_dir,
-        "cached_{}_{}_{}".format(
+        "cached_{}_{}_{}_{}".format(
+          input_file_name,
           "dev" if evaluate else "train",
             list(filter(None, args.model_name_or_path.split("/"))).pop(),
             str(args.max_seq_length)+"_"+str(example_size)+".txt",
@@ -409,7 +418,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     else:
         logger.info("Creating features from dataset file at %s", input_dir)
 
-        if not input_dir and ((evaluate and not args.predict_file) or (not evaluate and not args.train_file)):
+        if not input_dir and ((evaluate and not args.squad_predict_file) or (not evaluate and not args.squad_train_file)):
             try:
                 import tensorflow_datasets as tfds
             except ImportError:
@@ -422,10 +431,13 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             examples = SquadV1Processor().get_examples_from_dataset(tfds_examples, evaluate=evaluate)
         else:
             #processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
-            processor = SquadV2Processor()
+            processor = SquadV1Processor()
             if evaluate:
+                processor.dev_file = args.squad_predict_file
+                print("Reading from {} {} ".format(input_dir, args.squad_predict_file))
                 examples = processor.get_dev_examples(input_dir, filename=args.squad_predict_file)
             else:
+                processor.train_file = args.squad_train_file
                 examples = processor.get_train_examples(input_dir, filename=args.squad_train_file)
         print("Generated {} examples ".format(len(examples)))
 
@@ -442,7 +454,8 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             return_dataset="pt",
             threads=args.threads,
         )
-
+        print("We have e {} f {} d {} for eval  : {} ".format(len(examples),len(features),len(dataset),
+                evaluate))
         if args.local_rank in [-1, 0]:
             if not os.path.exists(cached_features_file):
                 folder = os.path.split(cached_features_file)[0]
