@@ -3,3 +3,18 @@ Otherwise the changes are not properly applied
 
  Initialize model from biobert!!!
 
+
+Now we have biobert self-fine-tuned on Squad v1.1 
+Also fine tune biobert on squad v2.0
+
+Next we need to train the NER head on  some task?? hmm
+is it possible to add a new head? Yes, I think so
+I think ner head is already included, right?
+
+
+My models in save_dir
+
+
+mybiobert_finetunedsquad
+
+mypretrained_finetuned6b_model

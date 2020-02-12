@@ -27,10 +27,12 @@ class NerModel(nn.Module):
         self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}],\
         lr=self.lr, eps=1e-6)
     ## add the attention masks to exclude CLS and PAD etc.
-    def forward(self,batch,labels = None):
+    def forward(self,batch,labels = None,pred=False):
         out_logits = self.classifier(batch)
         #print(out_logits.shape)
-        #print(labels.shape)
+        #print(labels.shape)A
+        if pred:
+            return out_logits
         if labels is not None:
             ## view tehlikeli bir hareket!!!!
             loss = self.loss(out_logits.view(-1,self.output_dim),labels.view(-1))
