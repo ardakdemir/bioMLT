@@ -195,3 +195,197 @@ WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
 How many results are here 984 
 Unique ids in results dict 984 
 RESULTS : f1 - exact - total :  61.810119327113966 50.50813008130081 984
+Time  2_9_13_28 
+Working  on cuda
+Could not load biobert model loading from bert-base-cased  
+BERT output dim 768
+Working  on cuda
+READING qas_train_split 
+Cache path squad_cache/./cached_qas_train_split_train_bert-base-cased_384_0.txt 
+Size of the train dataset 3932
+weights before training !!
+tensor([[-0.0135,  0.0111,  0.0250,  ..., -0.0093, -0.0287, -0.0239],
+        [-0.0021, -0.0124,  0.0175,  ...,  0.0021, -0.0162, -0.0034]],
+       device='cuda:0', grad_fn=<SliceBackward>)
+Epoch 0 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  48.70441919997507 36.6869918699187 984
+Best f1 of 48.70441919997507
+Epoch 1 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  55.65244878717022 40.34552845528455 984
+Best f1 of 55.65244878717022
+Epoch 2 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  53.757158348376294 39.63414634146341 984
+Epoch 3 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  51.68316168907997 38.3130081300813 984
+Epoch 4 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  49.71276559530565 35.97560975609756 984
+Epoch 5 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  52.384460243701916 36.99186991869919 984
+Epoch 6 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  49.76879422487938 34.552845528455286 984
+Epoch 7 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  52.45830131679738 39.329268292682926 984
+Epoch 8 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  53.00520072812036 39.53252032520325 984
+Epoch 9 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  53.35412022270105 40.24390243902439 984
+Epoch 10 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  54.19727514878728 38.21138211382114 984
+Epoch 11 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  53.35888112765453 38.82113821138211 984
+Epoch 12 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  52.82484456045022 39.22764227642276 984
+Epoch 13 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  49.77188069344783 35.264227642276424 984
+Epoch 14 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  51.4776920705714 37.39837398373984 984
+Epoch 15 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  50.71773487129252 37.703252032520325 984
+Epoch 16 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  55.45195735916303 40.65040650406504 984
+Epoch 17 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  50.50065119282826 36.28048780487805 984
+Epoch 18 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  54.182488022667364 39.53252032520325 984
+Epoch 19 is finished, moving to evaluation 
+READING qas_dev_split 
+Cache path squad_cache/./cached_qas_dev_split_dev_bert-base-cased_384_0.txt 
+Size of the train dataset 984
+Length of predictions 984 feats  984 examples 984 
+WARNING !!!! USING LOCAL SCRIPT TO CALCULATE SQUAD SCORES!!!!
+How many results are here 984 
+Unique ids in results dict 984 
+RESULTS : f1 - exact - total :  54.03060740750472 38.00813008130081 984

@@ -83,6 +83,13 @@ def hugging_parse_args():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
+        "--nbest_path",
+        default=None,
+        type=str,
+        required=False,
+        help="The output path for storing nbest predictions. Used for evaluating with the bioasq scripts",
+    )
+    parser.add_argument(
         "--output_dir",
         default='save_dir',
         type=str,
@@ -194,12 +201,27 @@ def hugging_parse_args():
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
     parser.add_argument(
+        "--biobert_model_path",
+        default="../biobert_data/biobert_v1.1_pubmed",
+        type=str,
+        help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
+    )
+    parser.add_argument(
+        "--init_bert",
+        default=False,
+        action="store_true",
+        help="If invoked, initializes the model from bert instead of biobert",
+    )
+    parser.add_argument(
         "--load_model",
         default=False,
         action="store_true",
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
 
+    parser.add_argument(
+        "--model_save_name", default= None, type=str, help="Model name to save"
+    )
     parser.add_argument(
         "--mode", default= "qas", choices = ['qas','joint_flat','ner','qas_ner'], help="Determine which mode to use the Multi-tasking framework"
     )
@@ -237,6 +259,7 @@ def hugging_parse_args():
         "Default to the model max input length for single sentence inputs (take into account special tokens).",
     )
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
+    parser.add_argument("--predict", default = False, action="store_true", help="Whether to run prediction only")
     parser.add_argument("--do_eval", action="store_true", help="Whether to run eval on the dev set.")
     parser.add_argument(
         "--evaluate_during_training", action="store_true", help="Run evaluation during training at each logging step."
@@ -252,7 +275,7 @@ def hugging_parse_args():
         default=1,
         help="Number of updates steps to accumulate before performing a backward/update pass.",
     )
-    parser.add_argument("--learning_rate", default=5e-5, type=float, help="The initial learning rate for Adam.")
+    parser.add_argument("--learning_rate", default=5e-6, type=float, help="The initial learning rate for Adam.")
     parser.add_argument("--weight_decay", default=0.0, type=float, help="Weight decay if we apply some.")
     parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
@@ -314,7 +337,7 @@ def hugging_parse_args():
     #parser.add_argument('--output_dir', type=str, default='save_dir', help='Directory to store models and outputs')
     #parser.add_argument("--load_model", default=False, action="store_true", help="Whether to load a model or not")
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
-    parser.add_argument("--qas_lr", default=5e-5, type=float, help="The initial learning rate for Qas.")
+    parser.add_argument("--qas_lr", default=5e-6, type=float, help="The initial learning rate for Qas.")
     parser.add_argument("--qas_adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     
     
@@ -322,11 +345,10 @@ def hugging_parse_args():
 
     #parser.add_argument("--warmup_steps", default=5, type=int, help="Linear warmup over warmup_steps.")
     parser.add_argument("--t_total", default=5000, type=int, help="Total number of training steps")
-    parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
-    parser.add_argument('--eval_batch_size', type=int, default=1, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
+    parser.add_argument('--eval_batch_size', type=int, default=12, help='Batch size')
     #parser.add_argument('--block_size', type=int, default=128, help='Block size')
     #parser.add_argument('--epoch_num', type=int, default=20, help='Number of epochs')
-
 
 
     args = parser.parse_args()
@@ -341,23 +363,31 @@ class BioMLT(nn.Module):
     def __init__(self):
         super(BioMLT,self).__init__()
         self.args = hugging_parse_args()
-        try:
-            self.bert_model = BertForMaskedLM.from_pretrained("../biobert_data/biobert_v1.1_pubmed",from_tf=True,output_hidden_states=True)
-        except:
-            logging.info("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
-            print("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
+        #try:
+        if self.args.biobert_model_path is not None and not self.args.init_bert:
+            print("Trying to load from {} ".format(self.args.biobert_model_path))
+            self.bert_model = BertForPreTraining.from_pretrained(self.args.biobert_model_path,
+            from_tf=True,output_hidden_states=True)
+        #except:
+            #logging.info("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
+            #print("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
+        else:
+            pretrained_bert_name = self.args.model_name_or_path
+            if pretrained_bert_name is None:
+                print("BERT model name should not be empty when init_model is given")
             if self.args.mlm :
                 self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name,output_hidden_states=True)
             else:
                 self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
 
         #print(self.bert_model)
-        self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
+        self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
         self.ner_path = self.args.ner_train_file
+
         #self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 30)
         #self.args.ner_label_vocab = self.ner_reader.label_voc
         #self.ner_head = NerModel(self.args)
@@ -388,11 +418,16 @@ class BioMLT(nn.Module):
         load_path = self.args.load_model_path
         #save_path = os.path.join(self.args['save_dir'],self.args['save_name'])
         logging.info("Model loaded %s"%load_path)
-
         self.load_state_dict(torch.load(load_path))
 
-    def save_all_model(self,weights = True): 
-        save_name = os.path.join(self.args.output_dir,"{}_{}".format(self.args.mode,exp_prefix))
+
+    def save_all_model(self,save_path=None,weights=True): 
+        if self.args.model_save_name is None and save_path is None:
+            save_name = os.path.join(self.args.output_dir,"{}_{}".format(self.args.mode,exp_prefix))
+        else:
+            if save_path is None:
+                save_path = self.args.model_save_name
+            save_name = os.path.join(self.args.output_dir,save_path)
         if weights:
             logging.info("Saving biomlt model to {}".format(save_name))
             torch.save(self.state_dict(), save_name)
@@ -494,6 +529,7 @@ class BioMLT(nn.Module):
     def forward(self):
         return 0 
     
+
     def save_model(self):
         out_dir =self.args.output_dir
         if not os.path.isdir(out_dir):
@@ -510,17 +546,20 @@ class BioMLT(nn.Module):
         torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
         torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
 
-    def evaluate_qas(self,ind):
+    def evaluate_qas(self,ind,only_preds = False):
         device = self.args.device
         self.device = device
         args =self.args
-        prefix = gettime()+"_"+str(ind)
+        if self.args.model_save_name is None:
+            prefix = gettime()+"_"+str(ind)
+        else : 
+            prefix = self.args.model_save_name
         qas_eval_dataset,examples,features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True)
-        print("Size of the train dataset {}".format(len(qas_eval_dataset)))
+        print("Size of the test dataset {}".format(len(qas_eval_dataset)))
         eval_sampler = SequentialSampler(qas_eval_dataset)
         eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.eval_batch_size)
-        logger.info("EValuationng started")
-        logger.info("***** Running evaluation {} *****".format(prefix))
+        logger.info("Evaluation {} started".format(ind))
+        logger.info("***** Running evaluation {} with only_preds = {}*****".format(prefix,only_preds))
         logger.info("  Num examples = %d", len(qas_eval_dataset))
         logger.info("  Batch size = %d", args.eval_batch_size)
         all_results = []
@@ -573,7 +612,10 @@ class BioMLT(nn.Module):
                 #print(result.start_logits)
                 all_results.append(result) 
         output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
-        output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix)) 
+        if args.nbest_path is not None:
+            output_nbest_file = args.nbest_path
+        else:
+            output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix)) 
         output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
         print("Length of predictions {} feats  {} examples {} ".format(len(all_results),len(examples),len(features)))
         predictions = compute_predictions_logits(
@@ -590,13 +632,16 @@ class BioMLT(nn.Module):
             args.version_2_with_negative,
             args.null_score_diff_threshold,
             self.bert_tokenizer,
-        )        
+        )   
+
+        if only_preds : 
+            return output_nbest_file, output_prediction_file 
         results = squad_evaluate(examples, predictions)
         f1 = results['f1']
         exact = results['exact']
         total = results['total']
-        print("RESULTS : f1 - exact - total : " , f1, exact, total)
-        logging.info("RESULTS : f1 - exact - total : " , f1, exact, total)
+        print("RESULTS : f1 {}  exact {} total {} ".format(f1, exact, total))
+        logging.info("RESULTS : f1 {} exact {} total {} ".format(f1, exact, total))
         return f1,exact,total
     def predict_qas(self,batch):
         ## batch_size = 1
@@ -675,6 +720,16 @@ class BioMLT(nn.Module):
                 return preds
         #logging.info("NER output {} ".format(ner_outs.))
         return ner_outs
+
+    def run_test(self):
+        assert self.args.load_model_path is not None, "Model path to be loaded must be defined to run in predict mode!!!"
+        self.load_all_model(self.args.load_model_path)
+
+        device = self.args.device
+        self.bert_model.to(device)
+        self.qas_head.to(device)
+        nbest_file, pred_file = self.evaluate_qas(0,only_preds=True)
+        print("Predictions are saved to {} \n N-best predictions are saved to {} ".format(pred_file,nbest_file))       
 
 
 
@@ -827,7 +882,10 @@ class BioMLT(nn.Module):
                 total_loss += loss.item()
                 
                 if step%500==499:
-                    checkpoint_name = self.args.mode+"_"+str(step)
+                    if self.args.model_save_name is None:
+                        checkpoint_name = self.args.mode+"_"+exp_prefix+"_check_{}_{}".format(epoch,step)
+                    else :
+                        checkpoint_name = self.args.model_save_name+"_check_"+str(step)
                     logging.info("Saving checkpoint to {}".format(checkpoint_name))
                     self.save_all_model(checkpoint_name)
                     logging.info("Average loss after {} steps : {}".format(step+1,total_loss/(step+1)))
@@ -836,9 +894,12 @@ class BioMLT(nn.Module):
             if f1 > best_result :
                 best_result = f1
                 print("Best f1 of {}".format(f1))
-                logging.info("Saving beeest model with {}  to {}_{}".format(best_result,
-                    self.args.mode,exp_prefix))
-                self.save_all_model()
+                save_name = "{}_{}".format(self.args.mode,exp_prefix) if self.args.model_save_name is None else self.args.model_save_name
+                print("Saving best model with {}  to {}".format(best_result,
+                    save_name))
+                logging.info("Saving best model with {}  to {}".format(best_result,
+                    save_name))
+                self.save_all_model(save_name)
 
 
     def pretrain_mlm(self):
@@ -1035,9 +1096,13 @@ class BioMLT(nn.Module):
 def main():
     biomlt = BioMLT()
     mode = biomlt.args.mode
-
-    if mode == "qas":
-        biomlt.train_qas()
+    predict = biomlt.args.predict
+    if mode == "qas" :
+        if predict:
+            biomlt.run_test()
+        else:
+            print("Running train_qas")
+            biomlt.train_qas()
     elif mode == "joint_flat":
         biomlt.train_qas
     #biomlt.train_qas_ner()

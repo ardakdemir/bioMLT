@@ -1,1 +1,12 @@
 python run_lm_finetuning.py --train_data_file tests_samples/PMC6961255.txt --output_dir save_dir --model_type bert --mlm --tokenizer_name bert-base-cased --model_name_or_path bert-base-cased
+
+
+
+BIOMLT Predict script
+python biomlt.py --predict --squad_predict_file ~/biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json --load_model_path save_dir/qas_2_9_9_50 
+
+
+qsub biomlt_predict_submit.sh save_dir/qas_3_9_11_49 ~/biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json nbest_out
+
+qsub biomlt_train_predict.sh train_predict_save1 ../biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json 
+

@@ -16,7 +16,7 @@ from tqdm import tqdm
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 
-from transformers.data.processors.squad import *
+from squad import *
 random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'read_logger'
@@ -435,7 +435,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             if evaluate:
                 processor.dev_file = args.squad_predict_file
                 print("Reading from {} {} ".format(input_dir, args.squad_predict_file))
-                examples = processor.get_dev_examples(input_dir, filename=args.squad_predict_file)
+                examples = processor.get_dev_examples(input_dir, filename=args.squad_predict_file,only_data = True if args.predict else False)
             else:
                 processor.train_file = args.squad_train_file
                 examples = processor.get_train_examples(input_dir, filename=args.squad_train_file)

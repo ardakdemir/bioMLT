@@ -1,4 +1,9 @@
 *_data
+input_for*
+result*txt
+*.e*
+*.o*
+core*
 squad_data
 pytorch_cuda_tensorflow
 *_cached_*
