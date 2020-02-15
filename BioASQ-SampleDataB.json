@@ -1,0 +1,1152 @@
+{
+   "questions": [
+      {
+         "body": "Which 2 medications are included in the Qsymia pill?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/23590816", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23531960", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24222976", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23565717", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25826792", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25661549", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23039320", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26313898", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24991373", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23625271", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24986038"
+         ], 
+         "triples": [
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#altLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0013227", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A18591068"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A18591068", 
+               "o": "pharmaceutical preparations"
+            }, 
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0025118", 
+               "o": "medicine"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#altLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0013227", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A18628198"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A18628198", 
+               "o": "pharmaceutical preparation"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#altLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0013227", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A18683808"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A18683808", 
+               "o": "medications"
+            }, 
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0013227", 
+               "o": "drug"
+            }
+         ], 
+         "ideal_answer": [
+            "Qsymia pill includes phentermine and topiramate. It is used for treatment of obesity."
+         ], 
+         "exact_answer": [
+            [
+               "phentermine"
+            ], 
+            [
+               "topiramate"
+            ]
+         ], 
+         "type": "list", 
+         "id": "589a246c78275d0c4a000032", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 235, 
+               "offsetInEndSection": 397, 
+               "text": "OBJECTIVE: To quantify the incremental cost-effectiveness of Qsymia (phentermine and topiramate extended-release) for health-related quality of life improvements.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24986038", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 807, 
+               "offsetInEndSection": 1002, 
+               "text": "The intervention was diet and lifestyle advice plus the recommended dose of Qsymia (phentermine 7.5\u00a0mg plus topiramate 46.0\u00a0mg) vs. control, which included diet and lifestyle advice plus placebo.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24986038", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 449, 
+               "offsetInEndSection": 698, 
+               "text": "These include combinations (at low dose) of existing drugs, e.g., bupropion + naltrexone (Contrave), phentermine + topiramate (Qsymia), higher doses of existing drugs licensed for other indications (liraglutide, 3 mg), and new entities (lorcaserin).", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25661549", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 593, 
+               "offsetInEndSection": 960, 
+               "text": "RECENT FINDINGS: Two new antiobesity drugs - naltrexone/bupropion (Contrave) and liraglutide (Saxenda) - were approved by the US Food and Drug Administration in 2014 and join four other approved obesity medications, including phentermine/topiramate XR (Qsymia) and lorcaserin (Belviq), to form the largest number of medications available for the treatment of obesity.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26313898", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 769, 
+               "offsetInEndSection": 982, 
+               "text": "Adding to the current available pharmacotherapies for obesity, the Food and Drug Administration has recently approved 2 new combination medications known as lorcaserin (Belviq) and phentermine-topiramate (Qsymia).", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/23531960", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 326, 
+               "text": "After a long period of failure in development, two new medications (phentermine/topiramate ER - Qsymia\u2122 and lorcaserin - Belviq\u00ae) have been approved by the US Food and Drug Administration for long-term weight management in persons with obesity (BMI \u2265 30 kg/m(2)) or in overweight persons (BMI \u2265 27 kg/m(2)) with comorbidities.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/23625271", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 758, 
+               "offsetInEndSection": 952, 
+               "text": "The intervention was diet and lifestyle advice plus the recommended dose of Qsymia (phentermine 7.5\u00a0mg plus topiramate 46.0\u00a0mg) vs. control, which included diet and lifestyle advice plus placebo", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24986038", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 494, 
+               "offsetInEndSection": 924, 
+               "text": "Current antiobesity medications and pharmacological strategies will be reviewed.Two new antiobesity drugs - naltrexone/bupropion (Contrave) and liraglutide (Saxenda) - were approved by the US Food and Drug Administration in 2014 and join four other approved obesity medications, including phentermine/topiramate XR (Qsymia) and lorcaserin (Belviq), to form the largest number of medications available for the treatment of obesity.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26313898", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 631, 
+               "offsetInEndSection": 917, 
+               "text": "Almost a decade after the Food and Drug Administration approved the first weight loss medication, it recently approved two novel anti-obesity drugs Belviq (lorcaserin) and Qsymia (topiramate and phentermine), thus signalling the beginning of a new era in the pharmacotherapy of obesity.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25826792", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 392, 
+               "offsetInEndSection": 865, 
+               "text": "Obesity is a public health crisis affecting approximately more than 33% of Americans and costing the healthcare system more than $190 billion annually.To review the 2 new drugs that were recently approved by the US Food and Drug Administration (FDA) for the treatment of obesity, lorcaserin HCl (Belviq) and phentermine/topiramate (Qsymia) and their potential impact on the treatment of obese patients.Lifestyle modification is the first and mainstay treatment for obesity.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24991373", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 774, 
+               "offsetInEndSection": 987, 
+               "text": "Adding to the current available pharmacotherapies for obesity, the Food and Drug Administration has recently approved 2 new combination medications known as lorcaserin (Belviq) and phentermine-topiramate (Qsymia).", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/23531960", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 575, 
+               "offsetInEndSection": 925, 
+               "text": "Two new antiobesity drugs - naltrexone/bupropion (Contrave) and liraglutide (Saxenda) - were approved by the US Food and Drug Administration in 2014 and join four other approved obesity medications, including phentermine/topiramate XR (Qsymia) and lorcaserin (Belviq), to form the largest number of medications available for the treatment of obesity.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26313898", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 544, 
+               "offsetInEndSection": 795, 
+               "text": "To review the 2 new drugs that were recently approved by the US Food and Drug Administration (FDA) for the treatment of obesity, lorcaserin HCl (Belviq) and phentermine/topiramate (Qsymia) and their potential impact on the treatment of obese patients.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24991373", 
+               "endSection": "abstract"
+            }
+         ]
+      }, 
+      {
+         "body": "Is sonidegib effective for basal cell carcinoma?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/26867946", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27189494", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27636236", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26566923", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26780190", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26546616", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27695345", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25981810", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27538055", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26833519", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26323341", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24523439", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27511905", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24773312", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25646180", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27067394", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27096888", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26614022", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27376162"
+         ], 
+         "triples": [
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#altLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0007117", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A18627521"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A18627521", 
+               "o": "basal cell carcinomas"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#altLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0007117", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A0474410"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A0474410", 
+               "o": "basal cell carcinoma"
+            }, 
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0007117", 
+               "o": "BCC"
+            }
+         ], 
+         "ideal_answer": [
+            "Yes. Sonidegib, an oral smoothened antagonist, is indicated for the treatment of adults with locally advanced basal cell carcinoma (laBCC) who are not candidates for surgery or radiation therapy, or adults with recurrent laBCC following surgery or radiation therapy."
+         ], 
+         "exact_answer": "yes", 
+         "concepts": [
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D002280", 
+            "http://www.disease-ontology.org/api/metadata/DOID:2513"
+         ], 
+         "type": "yesno", 
+         "id": "589a246f78275d0c4a000034", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 253, 
+               "offsetInEndSection": 556, 
+               "text": "This review of the literature aims to describe previous and current treatment options for oral therapy in locally advanced and metastatic NMSC otherwise unamenable to standard treatment. Oral Smoothened (Smo) inhibitors Vismodegib, Sonidegib, and Taladegib have shown to be effective in several trials. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26566923", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 589, 
+               "offsetInEndSection": 745, 
+               "text": "Sonidegib is a new smoothened inhibitor currently under investigation for treatment of laBCC, which demonstrates a comparable safety profile to vismodegib. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26780190", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 881, 
+               "offsetInEndSection": 1067, 
+               "text": "The recent development of novel hedgehog pathway inhibitors for high-risk BCC (including oral vismodegib and sonidegib) may represent a paradigm shift towards medical management of NMSC.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26833519", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 278, 
+               "text": "Sonidegib (Odomzo\u00ae), an oral smoothened (SMO) antagonist, is indicated for the treatment of adults with locally advanced basal cell carcinoma (laBCC) who are not candidates for surgery or radiation therapy, or adults with recurrent laBCC following surgery or radiation therapy. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26867946", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1290, 
+               "offsetInEndSection": 1620, 
+               "text": "The acceptable benefit-risk profile of sonidegib, along with a paucity of treatment options and the seriousness of the condition, makes sonidegib an emerging option for the treatment of adults with laBCC that has recurred following surgery or radiation therapy, or in those who are not candidates for surgery or radiation therapy.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26867946", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 59, 
+               "text": "Sonidegib phosphate: new approval for basal cell carcinoma.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27376162", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 91, 
+               "text": "Sonidegib, a novel smoothened inhibitor for the treatment of advanced basal cell carcinoma.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27695345", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 2322, 
+               "offsetInEndSection": 2734, 
+               "text": "Serious adverse events occurred in 11 (14%) of 79 patients in the 200 mg group and 45 (30%) of 150 patients in the 800 mg group.The benefit-to-risk profile of 200 mg sonidegib might offer a new treatment option for patients with advanced basal cell carcinoma, a population that is difficult to treat.Novartis Pharmaceuticals Corporation.<CopyrightInformation>Copyright \u00a9 2015 Elsevier Ltd. All rights reserved.</", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25981810", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 591, 
+               "offsetInEndSection": 956, 
+               "text": "However, to date, Hh inhibitors, specifically those targeting Smoothened [such as vismodegib, BMS-833923, saridegib (IPI-926), sonidegib/erismodegib (LDE225), PF-04449913, LY2940680, LEQ 506, and TAK-441], have demonstrated good efficacy as monotherapy in patients with basal cell carcinoma and medulloblastoma, but have shown limited activity in other tumor types.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25646180", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 626, 
+               "text": "The hedgehog pathway inhibitor sonidegib demonstrated meaningful tumor shrinkage in more than 90% of patients with locally advanced basal cell carcinoma (BCC) or metastatic BCC in the BCC Outcomes with LDE225 Treatment study.This report provides long-term follow-up data collected up to 12\u00a0months after the last patient was randomized.In this multicenter, randomized, double-blind phase II study, patients were randomized 1:2 to sonidegib 200 or 800\u00a0mg. The primary end point was objective response rate assessed by central review.Objective response rates in the 200- and 800-mg arms were 57.6% and 43.8% in locally advanced B", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27067394", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 2322, 
+               "offsetInEndSection": 2735, 
+               "text": "Serious adverse events occurred in 11 (14%) of 79 patients in the 200 mg group and 45 (30%) of 150 patients in the 800 mg group.The benefit-to-risk profile of 200 mg sonidegib might offer a new treatment option for patients with advanced basal cell carcinoma, a population that is difficult to treat.Novartis Pharmaceuticals Corporation.<CopyrightInformation>Copyright \u00a9 2015 Elsevier Ltd. All rights reserved.</C", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25981810", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 384, 
+               "offsetInEndSection": 709, 
+               "text": "Oral sonidegib is approved in Switzerland for the treatment of adult patients with advanced basal cell carcinoma (BCC) and in the US and EU for the treatment of adult patients with locally advanced BCC that has recurred following surgery or radiation therapy, or those who are not candidates for surgery or radiation therapy.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26323341", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 60, 
+               "text": "Sonidegib phosphate: new approval for basal cell carcinoma.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27376162", 
+               "endSection": "title"
+            }
+         ]
+      }, 
+      {
+         "body": "Which R package could be used for the identification of pediatric brain tumors?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/27370569"
+         ], 
+         "triples": [
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0220603", 
+               "o": "childhood brain tumor"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#prefLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0220603", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A4343117"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A4343117", 
+               "o": "childhood brain tumor"
+            }, 
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0684010", 
+               "o": "R."
+            }
+         ], 
+         "ideal_answer": [
+            "MethPed", 
+            "The MethPed R package efficiently classifies pediatric brain tumors using the developed MethPed classifier. MethPed is available via Bioconductor: http://bioconductor.org/packages/MethPed/", 
+            "The MethPed classifier, which is a multiclass random forest algorithm, based on DNA methylation profiles from many subgroups of pediatric brain tumors"
+         ], 
+         "exact_answer": [
+            "MethPed"
+         ], 
+         "concepts": [
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D010372"
+         ], 
+         "type": "factoid", 
+         "id": "587e2300fc7e8dd84f000004", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 78, 
+               "text": "MethPed: an R package for the identification of pediatric brain tumor subtypes", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 193, 
+               "offsetInEndSection": 371, 
+               "text": "We have therefore developed the MethPed classifier, which is a multiclass random forest algorithm, based on DNA methylation profiles from many subgroups of pediatric brain tumors", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 647, 
+               "offsetInEndSection": 835, 
+               "text": "The MethPed R package efficiently classifies pediatric brain tumors using the developed MethPed classifier. MethPed is available via Bioconductor: http://bioconductor.org/packages/MethPed/", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 12, 
+               "offsetInEndSection": 371, 
+               "text": "DNA methylation profiling of pediatric brain tumors offers a new way of diagnosing and subgrouping these tumors which improves current clinical diagnostics based on histopathology. We have therefore developed the MethPed classifier, which is a multiclass random forest algorithm, based on DNA methylation profiles from many subgroups of pediatric brain tumors", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 382, 
+               "offsetInEndSection": 633, 
+               "text": "e developed an R package that implements the MethPed classifier, making it easily available and accessible. The package can be used for estimating the probability that an unknown sample belongs to each of nine pediatric brain tumor diagnoses/subgroups", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 647, 
+               "offsetInEndSection": 753, 
+               "text": "The MethPed R package efficiently classifies pediatric brain tumors using the developed MethPed classifier", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 79, 
+               "text": "MethPed: an R package for the identification of pediatric brain tumor subtypes.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 80, 
+               "text": "MethPed: an R package for the identification of pediatric brain tumor subtypes.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 615, 
+               "offsetInEndSection": 722, 
+               "text": "The MethPed R package efficiently classifies pediatric brain tumors using the developed MethPed classifier.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 361, 
+               "offsetInEndSection": 469, 
+               "text": "We developed an R package that implements the MethPed classifier, making it easily available and accessible.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27370569", 
+               "endSection": "abstract"
+            }
+         ]
+      }, 
+      {
+         "body": "Describe the usefulness of CAMUR in The Cancer Genome Atlas (TCGA)", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/26519501"
+         ], 
+         "ideal_answer": [
+            "CAMUR is a new method that extracts multiple and equivalent classification models. CAMUR iteratively computes a rule-based classification model, calculates the power set of the genes present in the rules, iteratively eliminates those combinations from the data set, and performs again the classification procedure until a stopping criterion is verified. CAMUR includes an ad-hoc knowledge repository (database) and a querying tool. Three different types of RNA-seq data sets (Breast, Head and Neck, and Stomach Cancer) were analyzed from The Cancer Genome Atlas (TCGA) and CAMUR and its models were validated also on non-TCGA data. Experimental results show the efficacy of CAMUR by obtaining several reliable equivalent classification models, from which the most frequent genes, their relationships, and the relation with a particular cancer are deduced."
+         ], 
+         "type": "summary", 
+         "id": "5880b036c872c95565000002", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 92, 
+               "text": "CAMUR: Knowledge extraction from RNA-seq cancer data through equivalent classification rules", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26519501", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 630, 
+               "offsetInEndSection": 1477, 
+               "text": "CAMUR, a new method that extracts multiple and equivalent classification models. CAMUR iteratively computes a rule-based classification model, calculates the power set of the genes present in the rules, iteratively eliminates those combinations from the data set, and performs again the classification procedure until a stopping criterion is verified. CAMUR includes an ad-hoc knowledge repository (database) and a querying tool.We analyze three different types of RNA-seq data sets (Breast, Head and Neck, and Stomach Cancer) from The Cancer Genome Atlas (TCGA) and we validate CAMUR and its models also on non-TCGA data. Our experimental results show the efficacy of CAMUR: we obtain several reliable equivalent classification models, from which the most frequent genes, their relationships, and the relation with a particular cancer are deduced", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26519501", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 962, 
+               "offsetInEndSection": 1232, 
+               "text": "CAMUR includes an ad-hoc knowledge repository (database) and a querying tool.We analyze three different types of RNA-seq data sets (Breast, Head and Neck, and Stomach Cancer) from The Cancer Genome Atlas (TCGA) and we validate CAMUR and its models also on non-TCGA data.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26519501", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 94, 
+               "text": "CAMUR: Knowledge extraction from RNA-seq cancer data through equivalent classification rules.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26519501", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 599, 
+               "offsetInEndSection": 690, 
+               "text": "We propose CAMUR, a new method that extracts multiple and equivalent classification models.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26519501", 
+               "endSection": "abstract"
+            }
+         ]
+      }, 
+      {
+         "body": "Which markers are screened with the triple test for the detection of syndromes in fetus?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/21699408", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/10585342", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/8624312", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/7544745", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/18839465", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/15512289", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/14669430", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/10521756", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/16378329", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/7485343", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/9166168", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25330176", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/8650125", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/18306921", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/11084551", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/8630836"
+         ], 
+         "triples": [
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0015965", 
+               "o": "Fetus"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#altLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0015965", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A1392741"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A1392741", 
+               "o": "fetus"
+            }, 
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0554819", 
+               "o": "triple test"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#prefLabel", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0554819", 
+               "o": "http://linkedlifedata.com/resource/umls/label/A18640308"
+            }, 
+            {
+               "p": "http://www.w3.org/2008/05/skos-xl#literalForm", 
+               "s": "http://linkedlifedata.com/resource/umls/label/A18640308", 
+               "o": "triple test"
+            }
+         ], 
+         "ideal_answer": [
+            "The markers that are screened with the triple test for the detection of syndromes in fetus are:\n1) alpha-fetoprotein (AFP), \n2) beta-chorionic gonadotrophin (beta-CG) and \n3) unconjugated oestriol (uE3)."
+         ], 
+         "exact_answer": [
+            [
+               "alpha-fetoprotein", 
+               "AFP", 
+               "\u03b1-fetoprotein"
+            ], 
+            [
+               "beta-chorionic gonadotrophin", 
+               "beta-CG"
+            ], 
+            [
+               "unconjugated oestriol", 
+               "uE3"
+            ]
+         ], 
+         "concepts": [
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D013577", 
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D005333", 
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D062145", 
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D011258", 
+            "http://amigo.geneontology.org/amigo/term/GO:0007565"
+         ], 
+         "type": "list", 
+         "id": "58da2a348acda34529000014", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 324, 
+               "offsetInEndSection": 515, 
+               "text": "Our study aimed at calculation and validation of the triple marker medians used in screening Egyptian females as well as to recommend programme conventions to unify screening in this country.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25330176", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 619, 
+               "offsetInEndSection": 743, 
+               "text": "Chorionic gonadotropin (CG), \u03b1-fetoprotein (AFP) and unconjugated oestriol (uE3) were measured on Siemens Immulite analyzer.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25330176", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 68, 
+               "text": "Triple test screening for Down syndrome: an Egyptian-tailored study.", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25330176", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 5, 
+               "offsetInEndSection": 272, 
+               "text": "The purpose of this article was to evaluate the reliability of maternal serum triple marker screening of alpha-fetoprotein, human chorionic gonadotropin, and unconjugated estriol for the prenatal diagnosis of fetal chromosomal abnormalities in Turkish pregnant women.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/21699408", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1174, 
+               "offsetInEndSection": 1285, 
+               "text": "Second trimester triple test is an effective screening tool for detecting fetal Down syndrome in Turkish women.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/21699408", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 252, 
+               "text": "The aim of this prospective study was to compare triple test screening (alpha-fetoprotein, beta-chorionic gonadotrophin and unconjugated oestriol) with amniocentesis in the detection of fetuses with Down's syndrome in women of 35 years of age or more. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/15512289", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 251, 
+               "text": "The aim of this prospective study was to compare triple test screening (alpha-fetoprotein, beta-chorionic gonadotrophin and unconjugated oestriol) with amniocentesis in the detection of fetuses with Down's syndrome in women of 35 years of age or more.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/15512289", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1559, 
+               "offsetInEndSection": 1953, 
+               "text": "None of the other five markers added more than 2% detection for the same false-positive rate.The performance of screening using maternal age and serum-free beta-hCG and PAPP-A at 10 weeks of pregnancy was better than the double test (alpha-fetoprotein and hCG with maternal age) and similar to the triple test (alpha-fetoprotein, unconjugated oestriol and hCG with maternal age) at 15-22 weeks.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/8624312", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 612, 
+               "text": "To make recommendations to physicians providing prenatal care on (1) whether prenatal screening for and diagnosis of Down syndrome (DS) is advisable and (2) alternative screening and diagnosis manoeuvres.\"Triple-marker\" screening of maternal serum levels of alpha-fetoprotein, human chorionic gonadotropin and unconjugated estriol; fetal ultrasonographic examination; amniocentesis; and chorionic villus sampling (CVS).Accuracy of detection of DS in fetuses, and risks to the mother, including psychologic distress, and to the fetus from the screening and diagnostic interventions.A MEDLINE search for relevant a", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/8630836", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 258, 
+               "offsetInEndSection": 507, 
+               "text": "A decision analytic model was designed for women at increased risk for a DS fetus due to either advanced maternal age (AMA) or a positive expanded maternal serum alpha fetoprotein (MSAFP) screening test, also known as a triple screen (+triple) test.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/16378329", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 302, 
+               "offsetInEndSection": 569, 
+               "text": "These tests have a limited detection rate for Down syndrome: approximately 40% for hCG or free beta-subunit alone, approximately 60% for the triple screen test, and approximately 70% for the quadruple marker test, all at 5%, or a relatively high, false-positive rate.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/10585342", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 301, 
+               "text": "Serum human chorionic gonadotropin (hCG) and hCG free beta-subunit tests are used in combination with unconjugated estriol and alpha-fetoprotein in the triple screen test, and with the addition of inhibin-A in the quadruple marker test for detecting Down syndrome in the second trimester of pregnancy.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/10585342", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 242, 
+               "offsetInEndSection": 452, 
+               "text": "Initial and revised screen-positive rates and detection rates were reviewed for women undergoing triple-marker testing (maternal serum alpha-fetoprotein, human chorionic gonadotropin, and unconjugated estriol).", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/9166168", 
+               "endSection": "abstract"
+            }
+         ]
+      }, 
+      {
+         "body": "What is the role of TAD protein domain?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/26537679", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/17404593", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/17332356", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27196604", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/9826771", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27713878", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/15003254", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/16101299", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/10490619", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/18243147", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/14645574", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/11223263", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/17804822", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/22949507", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26147604", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24019758", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/17233836", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27502417", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26029824", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/8086335", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24675874", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/15663936", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/16226227", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25961797", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26476216", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/19220000", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/19319663", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/15641800", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/8561893", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/16596634", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/20969867", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/8806843", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23110116"
+         ], 
+         "triples": [
+            {
+               "p": "http://www.w3.org/2000/01/rdf-schema#label", 
+               "s": "http://linkedlifedata.com/resource/umls/id/C0280090", 
+               "o": "TAD"
+            }
+         ], 
+         "ideal_answer": [
+            "TAD domain is a transcription activation domain found in transcription factors."
+         ], 
+         "exact_answer": [
+            "transcription activation domain", 
+            "transactivation domain", 
+            "trans-activating domain"
+         ], 
+         "concepts": [
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D012380"
+         ], 
+         "type": "factoid", 
+         "id": "58dcb47c8acda34529000020", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 367, 
+               "offsetInEndSection": 567, 
+               "text": " Thus, nuclear ERK5 activates transcription factors by either direct phosphorylation or acting as co-activator thanks to a unique transcriptional activation TAD domain located at its C-terminal tail. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27713878", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1425, 
+               "offsetInEndSection": 1560, 
+               "text": "Although lacking kinase activity, these forms activate transcription by interacting with transcription factors through the TAD domain. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27713878", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 294, 
+               "offsetInEndSection": 579, 
+               "text": "Myc has an N-terminal transcription activation domain (TAD) that interacts with various coactivators and a C-terminal basic-helix-loop-helix-leucine zipper (bHLHZip) domain required for E box-specific DNA-binding and heterodimerization with its obligatory bHLHZip protein partner Max. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/15003254", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 542, 
+               "offsetInEndSection": 718, 
+               "text": "p300 worked synergistically with MRTF-A to activate the transcription of MYH9, MYL9 and CYR61. As identified by co-IP, p300 interacted with the C-terminal TAD domain of MRTF-A.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26476216", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 343, 
+               "offsetInEndSection": 709, 
+               "text": "To investigate further the role of cytoplasmic sequestration of p53 in its inhibition by the E1B 55-kDa protein we systematically examined domains in both the Ad12 55-kDa protein and p53 that underpin their colocalization in the cytoplasmic body and show that the N-terminal transactivation domain (TAD) of p53 is essential for retaining p53 in the cytoplasmic body.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/14645574", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 262, 
+               "text": "Physical interaction between the transactivation domain (TAD) of the mixed-lineage leukemia protein (MLL) and the KIX domain of the cyclic-AMP response element binding protein (CREB) binding protein (CBP) is necessary for MLL-mediated transcriptional activation.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/20969867", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 173, 
+               "offsetInEndSection": 388, 
+               "text": "The IE62 possesses several domains essential for trans-activation, including an acidic trans-activation domain (TAD), a serine-rich tract (SRT), and binding domains for USF, TFIIB, and TATA box binding protein (TBP)", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26537679", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 346, 
+               "offsetInEndSection": 712, 
+               "text": "To investigate further the role of cytoplasmic sequestration of p53 in its inhibition by the E1B 55-kDa protein we systematically examined domains in both the Ad12 55-kDa protein and p53 that underpin their colocalization in the cytoplasmic body and show that the N-terminal transactivation domain (TAD) of p53 is essential for retaining p53 in the cytoplasmic body.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/14645574", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 278, 
+               "offsetInEndSection": 473, 
+               "text": "We have characterized two transcription activation domains (TADs) in Da, called activation domain 1 (AD1) and loop-helix (LH), and have evaluated their roles in promoting peripheral neurogenesis.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/22949507", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 296, 
+               "offsetInEndSection": 452, 
+               "text": "Particularly, the intrinsic histone acetyltransferase (HAT) activity and transactivation domains (TAD) play essential roles for their coactivating function.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/17332356", 
+               "endSection": "abstract"
+            }
+         ]
+      }, 
+      {
+         "body": "What is the function of lncRNA?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/27582466", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26117798", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24757148", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25994219", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26362525", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25855606", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26004688", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26308238", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24063787", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27802187", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24149621", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26302456", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25588719", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24473392", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24196393", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26297315"
+         ], 
+         "ideal_answer": [
+            "Long noncoding RNAs (lncRNAs) are involved in a variety of biological processes, including the epigenetic control of gene expression, post-transcriptional regulation of mRNA, and cellular proliferation and differentiation"
+         ], 
+         "concepts": [
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D062085", 
+            "http://amigo.geneontology.org/amigo/term/GO:0065009"
+         ], 
+         "type": "summary", 
+         "id": "58f4c09f70f9fc6f0f000017", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 17, 
+               "offsetInEndSection": 335, 
+               "text": "long noncoding RNAs (lncRNAs) have mainly been studied using cultured cell lines, and this approach has revealed the involvement of lncRNAs in a variety of biological processes, including the epigenetic control of gene expression, post-transcriptional regulation of mRNA, and cellular proliferation and differentiation", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26117798", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 118, 
+               "offsetInEndSection": 260, 
+               "text": " Many thousands of noncoding RNAs are transcribed and recognized as functional RNAs with diverse sizes, structures, and biological functions. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26308238", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 317, 
+               "text": "Protection against infection and maintenance of homeostasis are the hallmarks of the innate immune system. The complex signaling cascades that occur following microbial infection have been studied intensely for a number of years and long noncoding RNA (lncRNA) represent novel regulatory components of these pathways.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26362525", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 163, 
+               "text": "Over the last decade, long noncoding RNAs (lncRNAs) have emerged as a fundamental molecular class whose members play pivotal roles in the regulation of the genome.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26297315", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 675, 
+               "offsetInEndSection": 845, 
+               "text": "Through their numerous functions, lncRNAs play critical roles in the growth, development, senescence, death, and other important physiological and pathological processes.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24473392", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 105, 
+               "offsetInEndSection": 320, 
+               "text": "lncRNAs usually function through interactions with proteins, which implies the importance of identifying the binding proteins of lncRNAs in understanding the molecular mechanisms underlying the functions of lncRNAs.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24063787", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 173, 
+               "offsetInEndSection": 362, 
+               "text": "Long non-coding RNAs (LncRNAs) are involved in multiple processes critical to normal cellular function and dysfunction of lncRNA MIAT may contribute to the pathophysiology of schizophrenia.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26004688", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 505, 
+               "offsetInEndSection": 630, 
+               "text": "lncRNAs function as adaptors that link specific chromatin loci with chromatin-remodeling complexes and transcription factors.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24149621", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1669, 
+               "offsetInEndSection": 1862, 
+               "text": "The results indicate that lncRNA-CIR contributes to ECM degradation and plays a key role in the pathogenesis of OA. We propose that lncRNA-CIR could be used as a potential target in OA therapy.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24757148", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 196, 
+               "offsetInEndSection": 267, 
+               "text": "Here, we report that lncRNA#32 is associated with type I IFN signaling.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27582466", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 815, 
+               "offsetInEndSection": 882, 
+               "text": "ur results reveal a role for lncRNA#32 in host antiviral responses.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27582466", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 73, 
+               "offsetInEndSection": 170, 
+               "text": "Long noncoding RNAs (lncRNAs) have emerged as critical epigenetic regulators of gene expression. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25855606", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 73, 
+               "offsetInEndSection": 169, 
+               "text": "RNAs and potent gene regulators, which play an important and varied role in cellular functions. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25588719", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 509, 
+               "offsetInEndSection": 669, 
+               "text": "lncRNAs have been reported to participate in a broad scope of biological processes, and lncRNA dysregulation leads to diverse human diseases, including cancer. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27802187", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 277, 
+               "offsetInEndSection": 646, 
+               "text": "however, as the discovery of lncRNA XIST and HOTAIR uncovers the emerging roles of lncRNAs in development and tumorigenesis. In the past decades, accumulating evidence have indicated that lncRNAs involve in a wide range of biological functions, such as X-chromosome inactivation, reprogramming stem cell pluripotency, regulation of the immune response and carcinogenesi", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26302456", 
+               "endSection": "abstract"
+            }
+         ]
+      }, 
+      {
+         "body": "What is the function of the exosome?", 
+         "documents": [
+            "http://www.ncbi.nlm.nih.gov/pubmed/27583248", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26794715", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23719940", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/16939780", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/14727085", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/23143101", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/21059916", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/18490724", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26704468", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27061439", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25619138", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27443883", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/25968605", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/18423480", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26814471", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/16877764", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/26850698", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/24338844", 
+            "http://www.ncbi.nlm.nih.gov/pubmed/27693459"
+         ], 
+         "ideal_answer": [
+            "Exosomes are 40-100-nm vesicles released by most cell types after fusion of multivesicular endosomes with the plasma membrane. Exosomes contain proteins and RNA species and can mediate communication and immune responses."
+         ], 
+         "concepts": [
+            "http://amigo.geneontology.org/amigo/term/GO:0070062", 
+            "http://amigo.geneontology.org/amigo/term/GO:0000178", 
+            "http://amigo.geneontology.org/amigo/term/GO:0071971", 
+            "https://www.nlm.nih.gov/cgi/mesh/2017/MB_cgi?field=uid&exact=Find+Exact+Term&term=D063326", 
+            "http://amigo.geneontology.org/amigo/term/GO:1990563"
+         ], 
+         "type": "summary", 
+         "id": "58f4b3ee70f9fc6f0f000013", 
+         "snippets": [
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 71, 
+               "text": "Exosomes-secreted microRNAs play an important role in metastatic spread", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27693459", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 30, 
+               "text": "Exosome-mediated communication", 
+               "beginSection": "title", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26814471", 
+               "endSection": "title"
+            }, 
+            {
+               "offsetInBeginSection": 0, 
+               "offsetInEndSection": 359, 
+               "text": "Cells are able to produce and release different types of vesicles, such as microvesicles and exosomes, in the extracellular microenvironment. According to the scientific community, both microvesicles and exosomes are able to take on and transfer different macromolecules from and to other cells, and in this way, they can influence the recipient cell function", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26814471", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 11, 
+               "offsetInEndSection": 259, 
+               "text": " Exosomes are 40-100-nm vesicles released by most cell types after fusion of multivesicular endosomes with the plasma membrane. Exosomes, ubiquitary in body fluids including urines, contain proteins and RNA species specific of the tissue of origin.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26850698", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 299, 
+               "offsetInEndSection": 458, 
+               "text": " Exosomes, small membrane vesicles secreted into the extracellular environment, are emerging as another important intercellular messenger in immune responses. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27061439", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 78, 
+               "offsetInEndSection": 223, 
+               "text": "the exosome is a complex of 3' -->5' exoribonucleases that plays a key role in the processing and degradation of a wide variety of RNA substrates", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/16939780", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 4, 
+               "offsetInEndSection": 93, 
+               "text": "RNA exosome is responsible for a wide variety of RNA processing and degradation reactions", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/23143101", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 291, 
+               "offsetInEndSection": 543, 
+               "text": "ability of exosomes to carry and selectively deliver bioactive molecules (e.g., lipids, proteins, and nucleic acids) confers on them the capacity to modulate the activity of receptor cells, even if these cells are located in distant tissues or organs. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/27583248", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1655, 
+               "offsetInEndSection": 1759, 
+               "text": "Our data show that NKG2D is a likely physiological target for exosome-mediated immune evasion in cancer.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/18490724", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 17, 
+               "offsetInEndSection": 126, 
+               "text": "Exosomes, a key component of cell paracrine secretion, can exert protective effects in various disease models", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26794715", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 360, 
+               "offsetInEndSection": 568, 
+               "text": "Exosome secretion participates in the eradication of obsolete proteins but several findings, essentially in the immune system, indicate that exosomes constitute a potential mode of intercellular communication", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/16877764", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 140, 
+               "offsetInEndSection": 413, 
+               "text": "Exosomes, nano-sized extracellular vesicles, are believed to play important roles in intercellular communications. This study demonstrates that exosomes released from human macrophages negatively regulate endothelial cell migration through control of integrin trafficking. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/24338844", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1342, 
+               "offsetInEndSection": 1551, 
+               "text": "We found that the majority of extracellular vesicles in the AH were in the exosome size range, suggesting that miRNAs housed within exosomes may function in communication between AH inflow and outflow tissues.", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/25619138", 
+               "endSection": "abstract"
+            }, 
+            {
+               "offsetInBeginSection": 1, 
+               "offsetInEndSection": 70, 
+               "text": "umor cell-derived exosomes (TEX) suppress functions of immune cells. ", 
+               "beginSection": "abstract", 
+               "document": "http://www.ncbi.nlm.nih.gov/pubmed/26842680", 
+               "endSection": "abstract"
+            }
+         ]
+      }
+   ]
+}

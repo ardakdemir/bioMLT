@@ -148,7 +148,8 @@ def pad_trunc(sent,max_len, pad_len, pad_ind):
 
 class DataReader():
 
-    def __init__(self,file_path, task_name, tokenizer,batch_size = 300):
+    def __init__(self,file_path, task_name, tokenizer,batch_size = 300,for_eval=False):
+        self.for_eval = for_eval
         self.file_path = file_path
         self.task_name = task_name
         self.batch_size = batch_size
@@ -157,8 +158,8 @@ class DataReader():
         self.data_len = len(self.dataset)
         self.l2ind, self.word2ind, self.vocab_size = self.get_vocabs()
         #self.pos_voc = Vocab(self.pos2ind)
-        self.label_voc = Vocab(self.l2ind)
-        self.word_voc = Vocab(self.word2ind)
+        self.label_vocab = Vocab(self.l2ind)
+        self.word_vocab = Vocab(self.word2ind)
         self.batched_dataset, self.sentence_lens = group_into_batch(self.dataset,batch_size = self.batch_size)
         self.for_eval = False
         self.num_cats = len(self.l2ind)
@@ -321,7 +322,7 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
         return len(self.batched_dataset)
 
     
-    def __getitem__(self,idx):
+    def __getitem__(self,idx,random=True):
         """
             Indexing for the DepDataset
             converts all the input into tensor before passing
@@ -332,7 +333,8 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
         if torch.is_tensor(idx):
             idx = idx.tolist()
         if not self.for_eval:
-            #idx = np.random.randint(len(self.batched_dataset))
+            if random:
+                idx = np.random.randint(len(self.batched_dataset))
             idx = idx%len(self.batched_dataset)
         batch = self.batched_dataset[idx]
         lens = self.sentence_lens[idx]
@@ -343,8 +345,8 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
             toks, labels = zip(*x) ##unzip the batch
             tokens.append(toks)
             #pos_inds.append(self.pos_vocab.map(poss))
-            tok_inds.append(self.word_voc.map(toks))
-            ner_inds.append(self.get_1d_targets(self.label_voc.map(labels)))
+            tok_inds.append(self.word_vocab.map(toks))
+            ner_inds.append(self.get_1d_targets(self.label_vocab.map(labels)))
         assert len(tok_inds)== len(ner_inds) == len(tokens) == len(batch)
         for toks in tokens:
             if toks[0]!="[CLS]":

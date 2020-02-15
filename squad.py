@@ -83,20 +83,24 @@ def _is_whitespace(c):
     return False
 
 
-def squad_convert_example_to_features(example, max_seq_length, doc_stride, max_query_length, is_training):
+def squad_convert_example_to_features(example,
+                                      max_seq_length,
+                                      doc_stride,
+                                      max_query_length,
+                                      is_training,
+                                      is_yes_no=False):
     features = []
     if is_training and not example.is_impossible:
         # Get start and end position
         start_position = example.start_position
         end_position = example.end_position
-
-        # If the answer cannot be found in the text, then skip this example.
-        actual_text = " ".join(example.doc_tokens[start_position : (end_position + 1)])
-        cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text))
-        if actual_text.find(cleaned_answer_text) == -1:
-            logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
-            return []
-
+        if not is_yes_no:
+            # If the answer cannot be found in the text, then skip this example.
+            actual_text = " ".join(example.doc_tokens[start_position : (end_position + 1)])
+            cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text))
+            if actual_text.find(cleaned_answer_text) == -1:
+                logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
+                return []
     tok_to_orig_index = []
     orig_to_tok_index = []
     all_doc_tokens = []
@@ -107,7 +111,7 @@ def squad_convert_example_to_features(example, max_seq_length, doc_stride, max_q
             tok_to_orig_index.append(i)
             all_doc_tokens.append(sub_token)
 
-    if is_training and not example.is_impossible:
+    if is_training and not example.is_impossible and not is_yes_no:
         tok_start_position = orig_to_tok_index[example.start_position]
         if example.end_position < len(example.doc_tokens) - 1:
             tok_end_position = orig_to_tok_index[example.end_position + 1] - 1
@@ -201,9 +205,10 @@ def squad_convert_example_to_features(example, max_seq_length, doc_stride, max_q
         # Set the CLS index to '0'
         p_mask[cls_index] = 0
 
-        span_is_impossible = example.is_impossible
-        start_position = 0
-        end_position = 0
+        span_is_impossible = example.is_impossible or is_yes_no
+        if not is_yes_no:
+            start_position = 0
+            end_position = 0
         if is_training and not span_is_impossible:
             # For training, if our document chunk does not contain an annotation
             # we throw it out, since there is nothing to predict.
@@ -502,7 +507,6 @@ class SquadProcessor(DataProcessor):
             filename: None by default, specify this if the evaluation file has a different name than the original one
                 which is `train-v1.1.json` and `train-v2.0.json` for squad versions 1.1 and 2.0 respectively.
         """
-        print("ARDADSADADSADDADS")
         if data_dir is None:
             data_dir = ""
 
@@ -533,12 +537,19 @@ class SquadProcessor(DataProcessor):
                         is_impossible = qa["is_impossible"]
                     else:
                         is_impossible = False
-
+                    is_yes_no = False
                     if not is_impossible:
                         if is_training:
-                            answer = qa["answers"][0]
-                            answer_text = answer["text"]
-                            start_position_character = answer["answer_start"]
+                            if qa["answers"] in ['yes','no']:
+                                answers = qa['answers']
+                                answer_text = qa['answers']
+                                start_position_character = 0
+                                is_yes_no = True
+                            else:
+                                answer = qa["answers"][0]
+                                answer_text = answer["text"]
+                                start_position_character = answer["answer_start"]
+
                         else:
                             if not only_data:
                                 answers = qa["answers"]
@@ -552,6 +563,7 @@ class SquadProcessor(DataProcessor):
                         title=title,
                         is_impossible=is_impossible,
                         answers=answers,
+                        is_yes_no = is_yes_no
                     )
 
                     examples.append(example)
@@ -593,6 +605,7 @@ class SquadExample(object):
         title,
         answers=[],
         is_impossible=False,
+        is_yes_no= False
     ):
         self.qas_id = qas_id
         self.question_text = question_text
@@ -600,14 +613,17 @@ class SquadExample(object):
         self.answer_text = answer_text
         self.title = title
         self.is_impossible = is_impossible
+        self.is_yes_no = is_yes_no
         self.answers = answers
 
         self.start_position, self.end_position = 0, 0
-
+        if self.answers in ["yes","no"]:
+            self.start_position = 1 if self.answers == "yes" else 0
+            self.end_position = -1
         doc_tokens = []
         char_to_word_offset = []
         prev_is_whitespace = True
-
+        print("")
         # Split on whitespace so that different tokens may be attributed to their original position.
         for c in self.context_text:
             if _is_whitespace(c):
@@ -623,8 +639,8 @@ class SquadExample(object):
         self.doc_tokens = doc_tokens
         self.char_to_word_offset = char_to_word_offset
 
-        # Start end end positions only has a value during evaluation.
-        if start_position_character is not None and not is_impossible:
+        # Start and end positions only has a value during evaluation.
+        if start_position_character is not None and not is_impossible and not self.is_yes_no:
             self.start_position = char_to_word_offset[start_position_character]
             self.end_position = char_to_word_offset[
                 min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)

@@ -20,17 +20,21 @@ class NerModel(nn.Module):
         self.input_dims = args.bert_output_dim
         self.label_voc = args.ner_label_vocab
         self.output_dim = len(self.label_voc)*len(self.label_voc)
-        ## now I am calculating one-dimensional labels so taking the square of the label vocab
+
+        # Now I am calculating one-dimensional labels so taking the square of the label vocab
+        # Treats transitions between tags as a different tag
+        # e.g LOC -> ORG   !=  O -> ORG
         self.classifier = nn.Linear(self.input_dims,self.output_dim )
         self.loss = CrossEntropyLoss()
         self.lr = args.ner_lr
         self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}],\
         lr=self.lr, eps=1e-6)
-    ## add the attention masks to exclude CLS and PAD etc.
+
+    # add the attention masks to exclude cls and pad etc.
     def forward(self,batch,labels = None,pred=False):
         out_logits = self.classifier(batch)
         #print(out_logits.shape)
-        #print(labels.shape)A
+        #print(labels.shape)a
         if pred:
             return out_logits
         if labels is not None:

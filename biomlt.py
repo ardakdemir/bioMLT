@@ -55,9 +55,6 @@ def hugging_parse_args():
         "--load_model_path", default=None, type=str, required=False, help="The path to load the model to continue training."
     )
     parser.add_argument(
-        "--train_data_file", default=None, type=str, required=False, help="The input training data file (a text file)."
-    )
-    parser.add_argument(
         "--version_2_with_negative",
         action="store_true",
         default=True,
@@ -139,7 +136,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--example_num",
-        default=0,
+        default=10,
         type = int,
         help = "Number of examples to train the data"
     )
@@ -164,6 +161,11 @@ def hugging_parse_args():
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
         + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+    parser.add_argument(
+        "--squad_yes_no",
+        default=False,
+        action = "store_true"
     )
 
     parser.add_argument(
@@ -298,20 +300,20 @@ def hugging_parse_args():
         "--save_total_limit",
         type=int,
         default=None,
-        help="Limit the total amount of checkpoints, delete the older checkpoints in the output_dir, does not delete by default",
+        help="Limit the total amount of checkpoints, delete \
+        the older checkpoints in the output_dir, does not delete by default",
     )
     parser.add_argument(
         "--eval_all_checkpoints",
         action="store_true",
-        help="Evaluate all checkpoints starting with the same prefix as model_name_or_path ending and ending with step number")    
+        help="Evaluate all checkpoints starting with the same prefix\
+         as model_name_or_path ending and ending with step number")
     parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
-    parser.add_argument("--overwrite_output_dir", action="store_true", help="Overwrite the content of the output directory"
-    )
+    parser.add_argument("--overwrite_output_dir", action="store_true",
+                        help="Overwrite the content of the output directory")
     parser.add_argument(
-			"--n_best_size",
-			default=20,
-			type=int,
-			help="The total number of n-best predictions to generate in the nbest_predictions.json output file.")
+        "--n_best_size", default=20, type=int,
+        help="The total number of n-best predictions to generate in the nbest_predictions.json output file.")
     parser.add_argument(
         "--overwrite_cache", action="store_true", help="Overwrite the cached training and evaluation sets"
     )
@@ -336,6 +338,9 @@ def hugging_parse_args():
     
 
     parser.add_argument('--ner_train_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
+    parser.add_argument('--ner_dev_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
+    parser.add_argument('--ner_test_file', type=str, default='bc2gm_train.tsv', help='training file for ner')
+
     #parser.add_argument('--output_dir', type=str, default='save_dir', help='Directory to store models and outputs')
     #parser.add_argument("--load_model", default=False, action="store_true", help="Whether to load a model or not")
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
@@ -348,6 +353,8 @@ def hugging_parse_args():
     #parser.add_argument("--warmup_steps", default=5, type=int, help="Linear warmup over warmup_steps.")
     parser.add_argument("--t_total", default=5000, type=int, help="Total number of training steps")
     parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
+    parser.add_argument('--ner_batch_size',
+                        type=int, default=12, help='NER Batch size token based (not sentence)')
     parser.add_argument('--eval_batch_size', type=int, default=12, help='Batch size')
     #parser.add_argument('--block_size', type=int, default=128, help='Block size')
     #parser.add_argument('--epoch_num', type=int, default=20, help='Number of epochs')
@@ -367,8 +374,7 @@ def generate_pred_content(tokens, preds, truths=None, lens=None, label_voc=None)
     ## this is where the start token and  end token get eliminated!!
     sents = []
     if truths:
-        for sent_len, sent,pred,truth in zip(lens, tokens, preds, truths):
-            print(sent)
+        for sent_len, sent, pred, truth in zip(lens, tokens, preds, truths):
             s_ind = 1
             e_ind = 1
             l = list(zip(sent[s_ind:sent_len-e_ind], truth[s_ind:sent_len-e_ind], pred[s_ind:sent_len-e_ind]))
@@ -377,9 +383,17 @@ def generate_pred_content(tokens, preds, truths=None, lens=None, label_voc=None)
         for sent,pred in zip(tokens,preds):
             end_ind = -1
             s_ind = 1
-            sents.append(list(zip(sent[s_ind:end_ind],label_voc.unmap(pred[s_ind:end_ind]))))
+            sents.append(list(zip(sent[s_ind:end_ind],pred[s_ind:end_ind])))
     
     return sents
+
+# Wrapper class to combine NER with bioasq
+class BioMTL(nn.Module):
+    def __init__(self):
+        super(BioMLT,self).__init__()
+        self.BioMLT = BioMLT()
+        self.args = self.BioMLT.args
+        self.ner_head = NerModel(self.args)
 
 class BioMLT(nn.Module):
     def __init__(self):
@@ -634,11 +648,15 @@ class BioMLT(nn.Module):
                 result = SquadResult(unique_id , start_logit,end_logit)
                 #print(result.start_logits)
                 all_results.append(result) 
+
+        if not os.path.isdir(args.output_dir):
+            os.makedirs(args.output_dir)
         output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
         if args.nbest_path is not None:
             output_nbest_file = args.nbest_path
         else:
             output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix)) 
+
         output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
         print("Length of predictions {} feats  {} examples {} ".format(len(all_results),len(examples),len(features)))
         predictions = compute_predictions_logits(
@@ -665,7 +683,9 @@ class BioMLT(nn.Module):
         total = results['total']
         print("RESULTS : f1 {}  exact {} total {} ".format(f1, exact, total))
         logging.info("RESULTS : f1 {} exact {} total {} ".format(f1, exact, total))
-        return f1,exact,total
+        return f1, exact, total
+
+
     def predict_qas(self,batch):
         ## batch_size = 1
         if len(batch[0].shape)==1:
@@ -720,6 +740,9 @@ class BioMLT(nn.Module):
                 "end_positions": batch[4],
                 "bert_outputs" : bert_output
             }
+            print("FOR YES NO QUESTION !!")
+            print(batch[3])
+            print(batch[4])
         qas_outputs = self.qas_head(**squad_inputs)
         #print(qas_outputs[0].item())
         #qas_outputs[0].backward()
@@ -729,19 +752,29 @@ class BioMLT(nn.Module):
 
     def get_ner(self,bert_output,bert2toks,ner_inds=None,predict=False):
         bert_hiddens = self._get_bert_batch_hidden(bert_output,bert2toks)
+
         if predict:
+            all_preds = []
             out_logits = self.ner_head(bert_hiddens,ner_inds,pred=predict)
-            voc_size = len(self.ner_reader.label_voc)
+            voc_size = len(self.ner_reader.label_vocab)
             #print(bert2toks[-1])
             preds = torch.argmax(out_logits,dim=2).detach().cpu().numpy()//voc_size
-            preds = self.ner_reader.label_voc.unmap(preds)
+            #print("Preds ", preds)
+            for pred in preds:
+                ## MAP [CLS] and [SEP] predictions to O
+                p = list(map(lambda x : "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
+                              self.ner_reader.label_vocab.unmap(pred)))
+                all_preds.append(p)
+            all_ner_inds = []
             if ner_inds is not None :
                 ner_inds = ner_inds.detach().cpu().numpy()//voc_size
-                #logging.info("NER INDS {}".format(ner_inds))
-                ner_inds = self.ner_reader.label_voc.unmap(ner_inds)
-                return preds ,ner_inds
+                for n in ner_inds:
+                    n_n = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
+                                 self.ner_reader.label_vocab.unmap(n)))
+                    all_ner_inds.append(n_n)
+                return all_preds, all_ner_inds
             else:
-                return preds
+                return all_preds
         #logging.info("NER output {} ".format(ner_outs.))
         else:
             ner_outs = self.ner_head(bert_hiddens,ner_inds)
@@ -761,15 +794,28 @@ class BioMLT(nn.Module):
 
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
+
+        # now initializing Ner head here !!
+        print("Reading NER data from {}".format(self.ner_path))
+        self.ner_reader = DataReader(
+            self.ner_path, "NER", tokenizer=self.bert_tokenizer,
+            batch_size=self.args.ner_batch_size)
+        self.args.ner_label_vocab = self.ner_reader.label_vocab
+        print(self.args.ner_label_vocab.w2ind)
+        self.ner_head = NerModel(self.args)
         device = self.args.device
         self.device = device
         args =hugging_parse_args()
         self.huggins_args = args
-        qas_train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
+        qas_train_dataset = squad_load_and_cache_examples(args,
+                                                          self.bert_tokenizer,
+                                                          yes_no=self.args.squad_yes_no)
         print("Size of the dataset {}".format(len(qas_train_dataset)))
         args.train_batch_size = self.args.batch_size
         qas_train_sampler = RandomSampler(qas_train_dataset)
-        qas_train_dataloader = DataLoader(qas_train_dataset, sampler=qas_train_sampler, batch_size=args.train_batch_size)
+        qas_train_dataloader = DataLoader(qas_train_dataset,
+                                          sampler=qas_train_sampler,
+                                          batch_size=args.train_batch_size)
         t_totals = len(qas_train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
         #self.train_ner()
         epochs_trained = 0
@@ -778,54 +824,81 @@ class BioMLT(nn.Module):
             epochs_trained, int(args.num_train_epochs), desc="Epoch")
         # Added here for reproductibility
         self.bert_model.to(device)
-        
+        self.qas_head.to(device)
         self.ner_head.to(device)
+        self.bert_model.train()
+        self.qas_head.train()
+        self.ner_head.train()
         for index, _ in enumerate(train_iterator):
             epoch_iterator = tqdm(qas_train_dataloader, desc="Iteration")
+            self.bert_model.train()
+            self.qas_head.train()
+            self.ner_head.train()
             for step, batch in enumerate(epoch_iterator):
+
+                # empty gradients
                 self.bert_optimizer.zero_grad()
+                self.qas_head.optimizer.zero_grad()
                 self.ner_head.optimizer.zero_grad()
-                #batch = qas_train_dataset[0]
-                #batch = tuple(t.unsqueeze(0) for t in batch)
-                #tokens, bert_batch_after_padding, data = self.ner_reader[0]
-                #logging.info(batch[-1])
-                self.bert_model.train()
-                self.qas_head.train()
-                # logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
-                batch = tuple(t.to(device) for t in batch)
+
+                # get batches for each task to GPU/CPU
+                tokens, bert_batch_after_padding, data = self.ner_reader[step]
+
                 data = [d.to(device) for d in data]
+                sent_lens, masks, tok_inds, ner_inds, \
+                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+                batch = tuple(t.to(device) for t in batch)
+                # logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
                 bert_inputs = {
                     "input_ids": batch[0],
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
-                #self.predict_ner()
-                #logging.info("Input ids shape : {}".format(batch[0].shape))
-                sent_lens, masks, tok_inds, ner_inds, \
-                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+                #logging.info("Number of sentences in the ner batch : {}".format(len(tokens)))
+                #logging.info("Number of sentences in the dep batch : {}".format(batch[0].shape[0]))
+
+                # ner output
                 outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
                 # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
                 # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
                 ner_loss, ner_out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
+                logging.info("NER out shape : {}".format(ner_out_logits.shape))
+
+
+                # for hierarchical setting
+                # bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], batch[-1],device=device)
+                # ner_outs = self.ner_head(bert_outs_for_ner)
+                # ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs, batch[-1])
+
+                # qas output
                 outputs = self.bert_model(**bert_inputs)
-                bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], batch[-1],device=device)
-                ner_outs = self.ner_head(bert_outs_for_ner)
-                ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs, batch[-1])
-                logging.info("BERT OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 #logging.info("Bert out shape {}".format(bert_out.shape))
                 qas_outputs = self.get_qas(bert_out, batch)
-                # qas_outputs = self.qas_head(**squad_inputs)
+                #logging.info("QAS out shape : {}".format(qas_outputs[1].shape))
+                #qas_outputs = self.qas_head(**squad_inputs)
                 # print(qas_outputs[0].item())
+
+                # sum losses for backprop
                 total_loss = ner_loss + qas_outputs[0]
+                total_loss = ner_loss
                 total_loss.backward()
-                logging.info("TOtal loss {} {}  {}".format(total_loss.item(),
-                                                           ner_loss.item(),qas_outputs[0].item()))
+                #logging.info("Total loss {}".format(total_loss.item()))
+                logging.info("Total loss {} ner: {}  dep : {}".format(total_loss.item(),
+                                                                       ner_loss.item(),qas_outputs[0].item()))
+
+                # backpropagation
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
-                self.bert_scheduler.step()
+                # not sure if optimizer and scheduler works simultaneously
+                #self.bert_scheduler.step()
                 self.qas_head.optimizer.step()
-            self.evaluate_qas(index)
+            self.bert_model.eval()
+            self.qas_head.eval()
+            self.ner_head.eval()
+            with torch.no_grad():
+                self.evaluate_qas(index)
+                self.eval_ner()
             #self.predict_ner()
 
 
@@ -1081,11 +1154,15 @@ class BioMLT(nn.Module):
 
 
     def train_ner(self):
-        self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 500)
-        self.args.ner_label_vocab = self.ner_reader.label_voc
+        self.ner_reader = DataReader(
+            self.ner_path, "NER",tokenizer=self.bert_tokenizer,
+            batch_size = self.args.ner_batch_size)
+
+        self.args.ner_label_vocab = self.ner_reader.label_vocab
         self.ner_head = NerModel(self.args)
         device = self.device
         print("Starting training for NER ")
+        print("Tokens  : ",self.ner_reader[0][0])
         self.bert_model.to(device)
         self.ner_head.to(device)
         self.bert_model.train()
@@ -1094,12 +1171,12 @@ class BioMLT(nn.Module):
             for i in range(10):
                 self.bert_optimizer.zero_grad()
                 self.ner_head.optimizer.zero_grad()
-                tokens, bert_batch_after_padding, data = self.ner_reader[0]
-                print("Number of sentences : {}".format(len(tokens)))
+                tokens, bert_batch_after_padding, data = self.ner_reader[i]
+                print("Number of sentences in the batch : {}".format(len(tokens)))
                 data = [d.to(device) for d in data]
                 sent_lens, masks, tok_inds, ner_inds,\
                      bert_batch_ids,  bert_seq_ids, bert2toks, cap_inds = data
-                outputs = self.bert_model(bert_batch_ids,token_type_ids= bert_seq_ids)
+                outputs = self.bert_model(bert_batch_ids, token_type_ids = bert_seq_ids)
                 #bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
                 #loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
                 loss, out_logits = self.get_ner(outputs[-1],bert2toks,ner_inds)
@@ -1108,15 +1185,16 @@ class BioMLT(nn.Module):
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
             self.eval_ner()
+
     def eval_ner(self):
+        print("Starting evaluation for ner")
+        self.ner_reader.for_eval = True
         dataset  = self.ner_reader
         all_sents = []
         all_lens = []
         all_preds = []
         all_truths = []
         for i, batch in enumerate(dataset):
-            if i > 10:
-                break
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d  in data]
             sent_lens, masks, tok_inds, ner_inds,\
@@ -1125,27 +1203,31 @@ class BioMLT(nn.Module):
             #bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
             #loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
             preds, ner_inds = self.get_ner(outputs[-1],bert2toks,ner_inds,predict = True)
-            tokens = tokens[-1]
-            l = len(tokens)
-            logging.info("Tokens")
-            logging.info(tokens)
+            tokens_= tokens[-1]
+            l = len(tokens_)
             #logging.info("NER INDS SHAPE {} ".format(ner_inds.shape))
-            logging.info("Predictions {} \n Truth {} ".format(preds[:l],ner_inds[:l]))
+            #logging.info("Predictions {} \n Truth {} ".format(preds[:l],ner_inds[:l]))
             all_sents.extend(tokens)
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-            print(all_sents)
-            print(all_truths)
-            print(all_preds)
-            print(all_lens)
+        #print(all_sents)
+        #print(all_truths)
+        #print(all_preds)
+        #print(all_lens)
         sents = generate_pred_content(all_sents,all_preds,all_truths, all_lens,self.args.ner_label_vocab)
-        for s in sents : 
-            print(s)
+        orig_idx = dataset.orig_idx
+        logging.info("Original indexes")
+        logging.info(orig_idx)
+        logging.info("Unsorting the ner data")
+        logging.info(sents)
+        sents = unsort_dataset(sents, orig_idx)
+        logging.info("after sorting")
+        logging.info(sents)
         conll_file = 'ner_out'
-        conll_writer(conll_file, sents, ["token", 'truth',"ner_tag"],"ner") 
+        conll_writer(conll_file, sents, ["token", 'truth',"ner_pred"],"ner")
         prec, rec, f1 = evaluate_conll_file(open(conll_file,encoding='utf-8').readlines())
-            
+        print("Precision : {}  Recall : {}  F-1 : {}".format(prec,rec,f1))
 def main():
     biomlt = BioMLT()
     mode = biomlt.args.mode

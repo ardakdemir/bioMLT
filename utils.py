@@ -1,5 +1,5 @@
 import os
-dicts = {"ner":  {"token" : 0 , "truth" : 1 , "ner_pred " : 2}} 
+dicts = {"ner":  {"token" : 0 , "truth" : 1 , "ner_pred" : 2}}
 def sort_dataset(dataset,desc=True, sort = True):
 
     idx = [i for i in range(len(dataset))]

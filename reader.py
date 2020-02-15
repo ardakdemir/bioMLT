@@ -49,7 +49,7 @@ def pubmed_files(root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"):
 
 def my_squad_convert_example_to_features(example, max_seq_length, doc_stride, max_query_length, is_training):
     features = []
-    if is_training and not example.is_impossible:
+    if is_training and not example.is_impossible and not example.is_yes_no:
         # Get start and end position
         start_position = example.start_position
         end_position = example.end_position
@@ -211,7 +211,9 @@ def my_squad_convert_example_to_features(example, max_seq_length, doc_stride, ma
         )
     return features
 def my_squad_convert_examples_to_features(
-    examples, tokenizer, max_seq_length, doc_stride, max_query_length, is_training, return_dataset=False, threads=1
+    examples, tokenizer, max_seq_length, doc_stride,
+        max_query_length, is_training, return_dataset=False, threads=1,
+        is_yes_no=False
 ):
     """
     Converts a list of examples into a list of features that can be directly given as input to a model.
@@ -259,6 +261,7 @@ def my_squad_convert_examples_to_features(
             doc_stride=doc_stride,
             max_query_length=max_query_length,
             is_training=is_training,
+            is_yes_no=is_yes_no
         )
         features = list(
             tqdm(
@@ -304,19 +307,35 @@ def my_squad_convert_examples_to_features(
                 all_input_ids, all_attention_masks, all_token_type_ids, all_example_index, all_cls_index, all_p_mask,all_squad_bert2tokens
             )
         else:
-            all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
-            all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
-            dataset = TensorDataset(
-                all_input_ids,
-                all_attention_masks,
-                all_token_type_ids,
-                all_start_positions,
-                all_end_positions,
-                all_cls_index,
-                all_p_mask,
-                all_is_impossible,
-                all_squad_bert2tokens,
-            )
+            if not is_yes_no:
+                all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
+                all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
+                dataset = TensorDataset(
+                    all_input_ids,
+                    all_attention_masks,
+                    all_token_type_ids,
+                    all_start_positions,
+                    all_end_positions,
+                    all_cls_index,
+                    all_p_mask,
+                    all_is_impossible,
+                    all_squad_bert2tokens,
+                )
+            else:
+                all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
+                ## dummy end position
+                all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
+                dataset = TensorDataset(
+                    all_input_ids,
+                    all_attention_masks,
+                    all_token_type_ids,
+                    all_start_positions,
+                    all_end_positions,
+                    all_cls_index,
+                    all_p_mask,
+                    all_is_impossible,
+                    all_squad_bert2tokens,
+                )
         print("Just before returning squad f  {} d {}".format(len(features),len(dataset)))
         return features, dataset
     elif return_dataset == "tf":
@@ -381,7 +400,7 @@ def squad_bert2tokens(berttoks,tokenizer):
         if not tok.startswith("##"):
             i +=1
     return ids
-def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
+def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False,yes_no = False):
     if args.local_rank not in [-1, 0] and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
@@ -435,10 +454,15 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             if evaluate:
                 processor.dev_file = args.squad_predict_file
                 print("Reading from {} {} ".format(input_dir, args.squad_predict_file))
-                examples = processor.get_dev_examples(input_dir, filename=args.squad_predict_file,only_data = True if args.predict else False)
+                examples = processor.get_dev_examples(input_dir,
+                                                      filename=args.squad_predict_file,
+                                                      only_data = True if args.predict else False,
+                                                      )
             else:
                 processor.train_file = args.squad_train_file
-                examples = processor.get_train_examples(input_dir, filename=args.squad_train_file)
+                examples = processor.get_train_examples(input_dir,
+                                                        filename=args.squad_train_file,
+                                                        )
         print("Generated {} examples ".format(len(examples)))
 
         ## Burada datayi kucultmusuz
@@ -453,6 +477,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             is_training=not evaluate,
             return_dataset="pt",
             threads=args.threads,
+            is_yes_no=yes_no
         )
         print("We have e {} f {} d {} for eval  : {} ".format(len(examples),len(features),len(dataset),
                 evaluate))

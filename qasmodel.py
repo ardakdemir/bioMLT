@@ -27,6 +27,7 @@ class QasModel(nn.Module):
         self.lr = self.args.qas_lr
         self.optimizer = optim.AdamW([{"params": self.qa_outputs.parameters()}],\
         lr=self.lr, eps=self.args.qas_adam_epsilon)
+
     ## add the attention masks to exclude CLS and PAD etc.
     def forward(
         self,bert_outputs,
