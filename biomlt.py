@@ -438,6 +438,14 @@ class BioMLT(nn.Module):
          'weight_decay_rate': 0.0}
          ]
 
+        self.yesno_head = nn.Linear(self.bert_out_dim, 2)
+        # self.qa_outputs =
+        self.yesno_soft = nn.Softmax(dim=1)
+        self.yesno_loss = CrossEntropyLoss()
+        self.yesno_lr = self.args.qas_lr
+        self.yesno_optimizer = optim.AdamW([{"params": self.yesno_head.parameters()}],
+                                      lr=self.yesno_lr, eps=self.args.qas_adam_epsilon)
+
 
         self.qas_head  = QasModel(self.args)
 
@@ -449,16 +457,29 @@ class BioMLT(nn.Module):
         if self.args.load_model:
             print("Model parameters is loaded from {} ".format(self.args.load_model_path))
             self.load_all_model(self.args.load_model_path)
-            
+
+
+    # Loads model with missing parameters or extra parameters!!!
+    # Solves the previous issue we had for pyJNERDEP
     def load_all_model(self,load_path): 
         #self.jointmodel=JointModel(self.args)
         load_path = self.args.load_model_path
         #save_path = os.path.join(self.args['save_dir'],self.args['save_name'])
-        logging.info("Model loaded %s"%load_path)
-        self.load_state_dict(torch.load(load_path))
+        logging.info("Model loaded  from: %s"%load_path)
+        loaded_params = torch.load(load_path)
+        print("My params before loading")
+        my_dict = self.state_dict()
+        print("Yes-no head weights before loading")
+        before = self.yesno_head.weight[:10]
+        print(before)
+        pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict()}
+        my_dict.update(pretrained_dict)
+        self.load_state_dict(my_dict)
+        print("My params after  loading")
+        print("Yes-no head weights after loading")
+        print(self.yesno_head.weight[:3])
 
-
-    def save_all_model(self,save_path=None,weights=True): 
+    def save_all_model(self,save_path=None,weights=True):
         if self.args.model_save_name is None and save_path is None:
             save_name = os.path.join(self.args.output_dir,"{}_{}".format(self.args.mode,exp_prefix))
         else:
@@ -626,7 +647,10 @@ class BioMLT(nn.Module):
                 
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 #logging.info("Bert out shape {}".format(bert_out.shape))
-                qas_out = self.get_qas(bert_out,batch,eval=True)
+                qas_out = self.get_qas(bert_out,
+                                       batch,
+                                       eval=True,
+                                       is_yes_no=self.args.squad_yes_no)
                 #qas_out = self.qas_head(**squad_inputs)
                 #print(qas_out)
                 #loss,  start_logits, end_logits = qas_out
@@ -636,16 +660,21 @@ class BioMLT(nn.Module):
                 #tokens = self.bert_tokenizer.convert_ids_to_tokens(batch[0].squeeze(0).detach().cpu().numpy()[:length])
                 example_indices = batch[3]
                 #print("Example indices inside evaluate_qas {}".format(example_indices))
-            for  i, example_index in enumerate(example_indices):
+            for i, example_index in enumerate(example_indices):
                 eval_feature = features[example_index.item()]
                 unique_id = int(eval_feature.unique_id)
-                #print("Unique id {} ".format(unique_id))
-                output = [to_list(output[i]) for output in qas_out]
-                
-                start_logit,end_logit = output
-                #end_logit = end_logits[i]
-                #print(start_pred[i],"  ", end_pred[i])
-                result = SquadResult(unique_id , start_logit,end_logit)
+                if self.args.squad_yes_no:
+                    output = qas_out[i,:].detach().cpu().numpy()
+                    yesno_logit = output
+                    print("What is start_logit {}".format(yesno_logit))
+                    probs = self.yesno_soft(torch.tensor(yesno_logit).unsqueeze(0))
+                    print("Yes-no probs : {}".format(probs))
+                    result = SquadResult(unique_id,
+                                         float(yesno_logit[0]),float(yesno_logit[1]))
+                else:
+                    output = [to_list(output[i]) for output in qas_out]
+                    start_logit,end_logit = output
+                    result = SquadResult(unique_id , start_logit, end_logit)
                 #print(result.start_logits)
                 all_results.append(result) 
 
@@ -673,10 +702,13 @@ class BioMLT(nn.Module):
             args.version_2_with_negative,
             args.null_score_diff_threshold,
             self.bert_tokenizer,
+            is_yes_no=self.args.squad_yes_no
         )   
 
         if only_preds : 
-            return output_nbest_file, output_prediction_file 
+            return output_nbest_file, output_prediction_file
+        print("example answer:: ")
+        print(examples[0].answers)
         results = squad_evaluate(examples, predictions)
         f1 = results['f1']
         exact = results['exact']
@@ -717,7 +749,7 @@ class BioMLT(nn.Module):
         logging.info("Start Pred {}  start truth {}".format(start_pred,squad_inputs["start_positions"]))
         logging.info("End Pred {}  end truth {}".format(end_pred,squad_inputs["end_positions"]))
      
-    def get_qas(self, bert_output, batch,eval=False):
+    def get_qas(self, bert_output, batch, eval=False,is_yes_no = False):
 
         #batch = tuple(t.unsqueeze_(0) for t in batch)
         if eval:
@@ -740,10 +772,16 @@ class BioMLT(nn.Module):
                 "end_positions": batch[4],
                 "bert_outputs" : bert_output
             }
-            print("FOR YES NO QUESTION !!")
-            print(batch[3])
-            print(batch[4])
-        qas_outputs = self.qas_head(**squad_inputs)
+
+        if not is_yes_no:
+            qas_outputs = self.qas_head(**squad_inputs)
+        else:
+            ##!!!  CLS TOKEN  !!! ##
+            yes_no_logits = self.yesno_head(bert_output[:,0])
+            if not eval:
+                loss = self.yesno_loss(yes_no_logits, batch[3])
+                return (loss, yes_no_logits)
+            return yes_no_logits
         #print(qas_outputs[0].item())
         #qas_outputs[0].backward()
         #self.bert_optimizer.step()
@@ -909,7 +947,13 @@ class BioMLT(nn.Module):
     def train_qas(self):
         device = self.args.device
         args =hugging_parse_args()
-        train_dataset = squad_load_and_cache_examples(args,self.bert_tokenizer)
+        print("Is yes no ? {}".format(self.args.squad_yes_no))
+        train_dataset = squad_load_and_cache_examples(args,
+                                                      self.bert_tokenizer,
+                                                      yes_no =self.args.squad_yes_no)
+
+        print("Training a model for {} type questions".
+              format("YES-NO " if self.args.squad_yes_no else "FACTOID"))
         print("Size of the train dataset {}".format(len(train_dataset)))
         args.train_batch_size = self.args.batch_size
         #train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
@@ -932,7 +976,7 @@ class BioMLT(nn.Module):
         # Added here for reproductibility
         self.bert_model.to(device)
         self.qas_head.to(device)
-        
+        self.yesno_head.to(device)
         #self.ner_head.to(device)
         print("weights before training !!")
         print(self.qas_head.qa_outputs.weight[-10:])
@@ -946,6 +990,7 @@ class BioMLT(nn.Module):
                 #    break
                 self.bert_optimizer.zero_grad()
                 self.qas_head.optimizer.zero_grad()
+                self.yesno_optimizer.zero_grad()
                 #batch = train_dataset[0]
                 #batch = tuple(t.unsqueeze(0) for t in batch)
                 #logging.info(batch[-1])
@@ -969,15 +1014,15 @@ class BioMLT(nn.Module):
                 #logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 #logging.info("Bert out shape {}".format(bert_out.shape))
-                qas_outputs = self.get_qas(bert_out,batch)
+                qas_outputs = self.get_qas(bert_out,batch,eval=False,is_yes_no=self.args.squad_yes_no)
                 
                 #qas_outputs = self.qas_head(**squad_inputs)
                 #print(qas_outputs[0].item())
-
                 loss = qas_outputs[0]
                 loss.backward()
                 self.bert_optimizer.step()
                 self.qas_head.optimizer.step()
+                self.yesno_optimizer.step()
                 total_loss += loss.item()
                 
                 if step%500==499:
@@ -990,7 +1035,7 @@ class BioMLT(nn.Module):
                     logging.info("Average loss after {} steps : {}".format(step+1,total_loss/(step+1)))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
             f1, exact, total  = self.evaluate_qas(epoch)
-            if f1 > best_result :
+            if f1 >= best_result :
                 best_result = f1
                 print("Best f1 of {}".format(f1))
                 save_name = "{}_{}".format(self.args.mode,exp_prefix) if self.args.model_save_name is None else self.args.model_save_name

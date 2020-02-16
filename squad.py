@@ -541,7 +541,7 @@ class SquadProcessor(DataProcessor):
                     if not is_impossible:
                         if is_training:
                             if qa["answers"] in ['yes','no']:
-                                answers = qa['answers']
+                                answers = [{"text":qa['answers']}]
                                 answer_text = qa['answers']
                                 start_position_character = 0
                                 is_yes_no = True
@@ -552,7 +552,10 @@ class SquadProcessor(DataProcessor):
 
                         else:
                             if not only_data:
-                                answers = qa["answers"]
+                                if qa["answers"] in ['yes', 'no']:
+                                    answers = [{"text":qa['answers']}]
+                                else:
+                                    answers = qa["answers"]
 
                     example = SquadExample(
                         qas_id=qas_id,
@@ -615,10 +618,9 @@ class SquadExample(object):
         self.is_impossible = is_impossible
         self.is_yes_no = is_yes_no
         self.answers = answers
-
         self.start_position, self.end_position = 0, 0
-        if self.answers in ["yes","no"]:
-            self.start_position = 1 if self.answers == "yes" else 0
+        if self.is_yes_no:
+            self.start_position = 1 if self.answers[0]["text"] == "yes" else 0
             self.end_position = -1
         doc_tokens = []
         char_to_word_offset = []

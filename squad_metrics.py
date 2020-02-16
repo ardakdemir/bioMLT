@@ -14,6 +14,7 @@ import logging
 import math
 import re
 import string
+import numpy as np
 
 from transformers.tokenization_bert import BasicTokenizer
 
@@ -385,6 +386,7 @@ def compute_predictions_logits(
     version_2_with_negative,
     null_score_diff_threshold,
     tokenizer,
+    is_yes_no = False
 ):
     """Write final predictions to the json file and log-odds of null if needed."""
     logger.info("Writing predictions to: %s" % (output_prediction_file))
@@ -418,46 +420,72 @@ def compute_predictions_logits(
         null_end_logit = 0  # the end logit at the slice with min null score
         for (feature_index, feature) in enumerate(features):
             result = unique_id_to_result[feature.unique_id]
-            start_indexes = _get_best_indexes(result.start_logits, n_best_size)
-            end_indexes = _get_best_indexes(result.end_logits, n_best_size)
-            # if we could have irrelevant answers, get the min score of irrelevant
-            if version_2_with_negative:
-                feature_null_score = result.start_logits[0] + result.end_logits[0]
-                if feature_null_score < score_null:
-                    score_null = feature_null_score
-                    min_null_feature_index = feature_index
-                    null_start_logit = result.start_logits[0]
-                    null_end_logit = result.end_logits[0]
-            for start_index in start_indexes:
-                for end_index in end_indexes:
-                    # We could hypothetically create invalid predictions, e.g., predict
-                    # that the start of the span is in the question. We throw out all
-                    # invalid predictions.
-                    if start_index >= len(feature.tokens):
-                        continue
-                    if end_index >= len(feature.tokens):
-                        continue
-                    if start_index not in feature.token_to_orig_map:
-                        continue
-                    if end_index not in feature.token_to_orig_map:
-                        continue
-                    if not feature.token_is_max_context.get(start_index, False):
-                        continue
-                    if end_index < start_index:
-                        continue
-                    length = end_index - start_index + 1
-                    if length > max_answer_length:
-                        continue
-                    prelim_predictions.append(
-                        _PrelimPrediction(
-                            feature_index=feature_index,
-                            start_index=start_index,
-                            end_index=end_index,
-                            start_logit=result.start_logits[start_index],
-                            end_logit=result.end_logits[end_index],
+            if not is_yes_no:
+                start_indexes = _get_best_indexes(result.start_logits, n_best_size)
+                end_indexes = _get_best_indexes(result.end_logits, n_best_size)
+                # if we could have irrelevant answers, get the min score of irrelevant
+                if version_2_with_negative:
+                    feature_null_score = result.start_logits[0] + result.end_logits[0]
+                    if feature_null_score < score_null:
+                        score_null = feature_null_score
+                        min_null_feature_index = feature_index
+                        null_start_logit = result.start_logits[0]
+                        null_end_logit = result.end_logits[0]
+                for start_index in start_indexes:
+                    for end_index in end_indexes:
+                        # We could hypothetically create invalid predictions, e.g., predict
+                        # that the start of the span is in the question. We throw out all
+                        # invalid predictions.
+                        if start_index >= len(feature.tokens):
+                            continue
+                        if end_index >= len(feature.tokens):
+                            continue
+                        if start_index not in feature.token_to_orig_map:
+                            continue
+                        if end_index not in feature.token_to_orig_map:
+                            continue
+                        if not feature.token_is_max_context.get(start_index, False):
+                            continue
+                        if end_index < start_index:
+                            continue
+                        length = end_index - start_index + 1
+                        if length > max_answer_length:
+                            continue
+                        prelim_predictions.append(
+                            _PrelimPrediction(
+                                feature_index=feature_index,
+                                start_index=start_index,
+                                end_index=end_index,
+                                start_logit=result.start_logits[start_index],
+                                end_logit=result.end_logits[end_index],
+                            )
                         )
+            else:
+                print("My  no yes entrypoint: ")
+                print(result.start_logits)
+                print(result.end_logits)
+                ## NO is the 0 index
+                no_logit= result.start_logits
+                yes_logit = result.end_logits
+                prelim_predictions.append(
+                    _PrelimPrediction(
+                        feature_index=feature_index,
+                        start_index=0,
+                        end_index=0,
+                        start_logit=no_logit,
+                        end_logit=0,
                     )
-        if version_2_with_negative:
+                )
+                prelim_predictions.append(
+                    _PrelimPrediction(
+                        feature_index=feature_index,
+                        start_index=1,
+                        end_index=0,
+                        start_logit=0,
+                        end_logit=yes_logit,
+                    )
+                )
+        if version_2_with_negative and not is_yes_no:
             prelim_predictions.append(
                 _PrelimPrediction(
                     feature_index=min_null_feature_index,
@@ -467,49 +495,61 @@ def compute_predictions_logits(
                     end_logit=null_end_logit,
                 )
             )
-        prelim_predictions = sorted(prelim_predictions, key=lambda x: (x.start_logit + x.end_logit), reverse=True)
-
+        if not is_yes_no:
+            prelim_predictions = sorted(prelim_predictions, key=lambda x: (x.start_logit + x.end_logit), reverse=True)
+        else:
+            prelim_predictions = sorted(prelim_predictions, key=lambda x : max(x.start_logit,x.end_logit),reverse=True)
         _NbestPrediction = collections.namedtuple(  # pylint: disable=invalid-name
             "NbestPrediction", ["text", "start_logit", "end_logit"]
         )
 
         seen_predictions = {}
         nbest = []
-        for pred in prelim_predictions:
-            if len(nbest) >= n_best_size:
-                break
-            feature = features[pred.feature_index]
-            if pred.start_index > 0:  # this is a non-null prediction
-                tok_tokens = feature.tokens[pred.start_index : (pred.end_index + 1)]
-                orig_doc_start = feature.token_to_orig_map[pred.start_index]
-                orig_doc_end = feature.token_to_orig_map[pred.end_index]
-                orig_tokens = example.doc_tokens[orig_doc_start : (orig_doc_end + 1)]
+        if not is_yes_no:
+            for pred in prelim_predictions:
+                if len(nbest) >= n_best_size:
+                    break
+                feature = features[pred.feature_index]
+                if pred.start_index > 0:  # this is a non-null prediction
+                    tok_tokens = feature.tokens[pred.start_index : (pred.end_index + 1)]
+                    orig_doc_start = feature.token_to_orig_map[pred.start_index]
+                    orig_doc_end = feature.token_to_orig_map[pred.end_index]
+                    orig_tokens = example.doc_tokens[orig_doc_start : (orig_doc_end + 1)]
 
-                tok_text = tokenizer.convert_tokens_to_string(tok_tokens)
+                    tok_text = tokenizer.convert_tokens_to_string(tok_tokens)
 
-                # tok_text = " ".join(tok_tokens)
-                #
-                # # De-tokenize WordPieces that have been split off.
-                # tok_text = tok_text.replace(" ##", "")
-                # tok_text = tok_text.replace("##", "")
+                    # tok_text = " ".join(tok_tokens)
+                    #
+                    # # De-tokenize WordPieces that have been split off.
+                    # tok_text = tok_text.replace(" ##", "")
+                    # tok_text = tok_text.replace("##", "")
 
-                # Clean whitespace
-                tok_text = tok_text.strip()
-                tok_text = " ".join(tok_text.split())
-                orig_text = " ".join(orig_tokens)
+                    # Clean whitespace
+                    tok_text = tok_text.strip()
+                    tok_text = " ".join(tok_text.split())
+                    orig_text = " ".join(orig_tokens)
 
-                final_text = get_final_text(tok_text, orig_text, do_lower_case, verbose_logging)
-                if final_text in seen_predictions:
-                    continue
+                    final_text = get_final_text(tok_text, orig_text, do_lower_case, verbose_logging)
+                    if final_text in seen_predictions:
+                        continue
 
-                seen_predictions[final_text] = True
-            else:
-                final_text = ""
-                seen_predictions[final_text] = True
+                    seen_predictions[final_text] = True
+                else:
+                    final_text = ""
+                    seen_predictions[final_text] = True
 
-            nbest.append(_NbestPrediction(text=final_text, start_logit=pred.start_logit, end_logit=pred.end_logit))
+                nbest.append(_NbestPrediction(text=final_text, start_logit=pred.start_logit, end_logit=pred.end_logit))
+        else:
+            for pred in prelim_predictions:
+                print("No logit {}  yes logit {}".format(pred.start_logit, pred.end_logit))
+                if pred.end_logit==0:
+                    nbest.append(_NbestPrediction(text="no", start_logit=pred.start_logit, end_logit=0.0))
+                else:
+                    nbest.append(_NbestPrediction(text="yes", start_logit=0, end_logit=pred.end_logit))
+            #nbest.append(_NbestPrediction(text="NO", start_logit=pred.start_logit, end_logit=0.0))
+            #nbest.append(_NbestPrediction(text="YES", start_logit=0.0, end_logit=pred.end_logit))
         # if we didn't include the empty option in the n-best, include it
-        if version_2_with_negative:
+        if version_2_with_negative and not is_yes_no:
             if "" not in seen_predictions:
                 nbest.append(_NbestPrediction(text="", start_logit=null_start_logit, end_logit=null_end_logit))
 
@@ -534,7 +574,6 @@ def compute_predictions_logits(
                     best_non_null_entry = entry
 
         probs = _compute_softmax(total_scores)
-
         nbest_json = []
         for (i, entry) in enumerate(nbest):
             output = collections.OrderedDict()
@@ -546,7 +585,7 @@ def compute_predictions_logits(
 
         assert len(nbest_json) >= 1
 
-        if not version_2_with_negative:
+        if not version_2_with_negative or is_yes_no:
             all_predictions[example.qas_id] = nbest_json[0]["text"]
         else:
             # predict "" iff the null score - the score of best non-null > threshold

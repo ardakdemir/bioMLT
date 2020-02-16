@@ -3,17 +3,28 @@ python run_lm_finetuning.py --train_data_file tests_samples/PMC6961255.txt --out
 
 
 BIOMLT Predict script
-python biomlt.py --predict --squad_predict_file ~/biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json --load_model_path save_dir/qas_2_9_9_50 
+python biomlt.py --predict --squad_predict_file ~/biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json --load_model_path save_dir/qas_2_9_9_50
 
 
 qsub biomlt_predict_submit.sh save_dir/qas_3_9_11_49 ~/biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json nbest_out
 
-qsub biomlt_train_predict.sh train_predict_save1 ../biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json 
+qsub biomlt_train_predict.sh train_predict_save1 ../biobert_data/datasets/QA/BioASQ/BioASQ-test-factoid-6b-1.json
 
 
 ToY example scripts!!
 
 
-toy yes-no ( use overwrite_cache and squad_yes_no flags!!)
+!!toy yes-no ( use overwrite_cache and squad_yes_no flags!!)
 
 python biomlt.py --mode joint_flat --squad_train_file toy_yesno.json --init_bert --ner_train_file ent_toy_ner_train.tsv --squad_dir . --batch_size 1 --max_seq_length 20 --squad_predict_file toy_qas.json  --squad_yes_no --overwrite_cache
+
+
+
+!!toy train_qas (I would like to try loading model parameters to a larger model)
+
+python biomlt.py --mode qas --squad_train_file toy_qas.json --init_bert--squad_dir . --batch_size 1 --max_seq_length 20 --squad_predict_file toy_qas.json
+
+
+!! toy train load previous model  ! ! load_all_model works!!
+
+python biomlt.py --mode qas --squad_train_file toy_qas.json --init_bert --squad_dir . --batch_size 1 --max_seq_length 20 --squad_predict_file toy_qas.json  --load_model_path save_dir/qas_2_16_3_42 --load_model --init_bert

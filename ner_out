@@ -3,9 +3,9 @@ staining	O	O
 was	O	O
 positive	O	O
 for	O	O
-S	B-ENT	B-ENT
--	I-ENT	I-ENT
-100	I-ENT	I-ENT
+S	B-ENT	O
+-	I-ENT	O
+100	I-ENT	O
 in	O	O
 all	O	O
 9	O	O
@@ -15,8 +15,8 @@ stained	O	O
 positive	O	O
 for	O	O
 HMB	B-ENT	B-ENT
--	I-ENT	I-ENT
-45	I-ENT	I-ENT
+-	I-ENT	O
+45	I-ENT	O
 in	O	O
 9	O	O
 (	O	O
@@ -29,7 +29,7 @@ of	O	O
 and	O	O
 negative	O	O
 for	O	O
-cytokeratin	B-ENT	B-ENT
+cytokeratin	B-ENT	O
 in	O	O
 all	O	O
 9	O	O
@@ -47,8 +47,8 @@ previous	O	O
 sections	O	O
 .	O	O
 
-Chloramphenicol	B-ENT	B-ENT
-acetyltransferase	I-ENT	I-ENT
+Chloramphenicol	B-ENT	O
+acetyltransferase	I-ENT	O
 assays	O	O
 examining	O	O
 the	O	O
@@ -68,7 +68,7 @@ or	O	O
 activate	O	O
 the	O	O
 HCMV	B-ENT	B-ENT
-early	I-ENT	I-ENT
+early	I-ENT	O
 promoter	I-ENT	I-ENT
 for	O	O
 the	O	O
@@ -281,7 +281,7 @@ or	O	O
 seg	O	O
 ?	O	O
 
-PKA	B-ENT	B-ENT
+PKA	B-ENT	O
 phosphorylated	O	O
 WT1	B-ENT	B-ENT
 at	O	O
@@ -317,7 +317,7 @@ in	O	O
 vitro	O	O
 .	O	O
 
-ROCK	B-ENT	O
+ROCK	B-ENT	B-ENT
 -	I-ENT	O
 I	I-ENT	O
 ,	O	O
@@ -370,7 +370,7 @@ to	O	O
 the	O	O
 boxA	B-ENT	B-ENT
 and	O	O
-rut	B-ENT	B-ENT
+rut	B-ENT	O
 sites	I-ENT	O
 ,	O	O
 thereby	O	O
@@ -393,7 +393,7 @@ repression	O	O
 at	O	O
 the	O	O
 HMR	B-ENT	B-ENT
-locus	I-ENT	O
+locus	I-ENT	I-ENT
 ,	O	O
 cell	O	O
 growth	O	O
@@ -403,7 +403,7 @@ structure	O	O
 .	O	O
 
 The	O	O
-pJR	O	O
+pJR	O	B-ENT
 vectors	O	O
 differ	O	O
 among	O	O
@@ -420,14 +420,14 @@ marker	O	O
 Saccharomyces	O	O
 cerevisiae	O	O
 LEU	B-ENT	B-ENT
-2	I-ENT	I-ENT
-gene	I-ENT	I-ENT
+2	I-ENT	O
+gene	I-ENT	O
 ,	O	O
 which	O	O
 complements	O	O
-S	B-ENT	B-ENT
-.	I-ENT	I-ENT
-pombe	I-ENT	I-ENT
+S	B-ENT	O
+.	I-ENT	O
+pombe	I-ENT	O
 leu1	I-ENT	I-ENT
 -	I-ENT	I-ENT
 gene	I-ENT	I-ENT
@@ -436,11 +436,11 @@ S	O	O
 .	O	O
 pombe	O	O
 ura4	B-ENT	B-ENT
-+	I-ENT	I-ENT
++	I-ENT	O
 and	O	O
-his3	B-ENT	B-ENT
-+	I-ENT	I-ENT
-genes	I-ENT	I-ENT
+his3	B-ENT	O
++	I-ENT	O
+genes	I-ENT	O
 )	O	O
 ;	O	O
 (	O	O
@@ -498,13 +498,13 @@ transcription	O	O
 of	O	O
 most	O	O
 RP	B-ENT	B-ENT
-genes	I-ENT	I-ENT
+genes	I-ENT	O
 is	O	O
 activated	O	O
 by	O	O
 two	O	O
-Rap1p	B-ENT	B-ENT
-binding	I-ENT	I-ENT
+Rap1p	B-ENT	O
+binding	I-ENT	O
 sites	I-ENT	O
 ,	O	O
 250	O	O
@@ -525,7 +525,7 @@ troponin	B-ENT	O
 T	I-ENT	B-ENT
 ,	O	O
 CK	B-ENT	B-ENT
--	O	I-ENT
+-	O	O
 MB	B-ENT	O
 mass	O	O
 and	O	O
@@ -564,7 +564,7 @@ specific	O	O
 pattern	O	O
 of	O	O
 EphA8	B-ENT	B-ENT
-gene	I-ENT	I-ENT
+gene	I-ENT	O
 expression	O	O
 restricted	O	O
 to	O	O
@@ -629,8 +629,8 @@ binding	O	O
 of	O	O
 the	O	O
 GA	B-ENT	B-ENT
--	I-ENT	I-ENT
-binding	I-ENT	I-ENT
+-	I-ENT	O
+binding	I-ENT	O
 protein	I-ENT	I-ENT
 (	O	O
 GABP	B-ENT	B-ENT
@@ -638,7 +638,7 @@ GABP	B-ENT	B-ENT
 to	O	O
 ets	B-ENT	B-ENT
 sequence	I-ENT	I-ENT
-motifs	I-ENT	I-ENT
+motifs	I-ENT	O
 within	O	O
 each	O	O
 repeated	O	O
@@ -675,7 +675,7 @@ of	O	O
 the	O	O
 MAP	B-ENT	B-ENT
 kinase	I-ENT	I-ENT
-family	I-ENT	I-ENT
+family	I-ENT	O
 .	O	O
 
 HPLC	O	O
@@ -758,7 +758,7 @@ melanogaster	O	O
 
 Overexpression	O	O
 of	O	O
-RORgamma	B-ENT	B-ENT
+RORgamma	B-ENT	O
 has	O	O
 been	O	O
 shown	O	O
@@ -766,7 +766,7 @@ to	O	O
 inhibit	O	O
 T	B-ENT	O
 cell	I-ENT	O
-receptor	I-ENT	O
+receptor	I-ENT	I-ENT
 -	O	O
 mediated	O	O
 apoptosis	O	O
@@ -780,7 +780,7 @@ repress	O	O
 the	O	O
 induction	O	O
 of	O	O
-Fas	B-ENT	B-ENT
+Fas	B-ENT	O
 -	I-ENT	O
 ligand	I-ENT	O
 and	O	O
@@ -853,14 +853,14 @@ Tyrosine	O	O
 112	O	O
 of	O	O
 latent	B-ENT	O
-membrane	I-ENT	O
+membrane	I-ENT	I-ENT
 protein	I-ENT	I-ENT
-2A	I-ENT	O
+2A	I-ENT	I-ENT
 is	O	O
 essential	O	O
 for	O	O
 protein	B-ENT	O
-tyrosine	I-ENT	O
+tyrosine	I-ENT	I-ENT
 kinase	I-ENT	I-ENT
 loading	O	O
 and	O	O
@@ -893,7 +893,7 @@ lost	O	O
 )	O	O
 ,	O	O
 the	O	O
-haloperidol	O	B-ENT
+haloperidol	O	O
 intrastriatal	O	O
 microinjections	O	O
 did	O	O
@@ -920,7 +920,7 @@ isolated	O	O
 mg	O	O
 of	O	O
 PDH	B-ENT	B-ENT
-complex	I-ENT	I-ENT
+complex	I-ENT	O
 with	O	O
 a	O	O
 specific	O	O

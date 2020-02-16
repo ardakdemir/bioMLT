@@ -18,3 +18,17 @@ My models in save_dir
 mybiobert_finetunedsquad
 
 mypretrained_finetuned6b_model
+
+
+===========
+FORMULATION FOR YES-NO QUESTIONS
+===========
+
+I used a FC layer only on the [CLS] token to get the logits for NO and YES
+
+No class is indexed at 0 and 1 is indexed at 1
+
+Similarly,
+During json generation I give as input, No logit as start_logit and Yes logit as end_logit.
+
+
