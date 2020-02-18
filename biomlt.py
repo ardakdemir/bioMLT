@@ -136,7 +136,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--example_num",
-        default=10,
+        default=0,
         type = int,
         help = "Number of examples to train the data"
     )
@@ -156,16 +156,61 @@ def hugging_parse_args():
         help="Index file for biobert pretrained model"
     )
     parser.add_argument(
-        "--squad_train_file",
+        "--squad_yes_no",
+        default=False,
+        action = "store_true"
+    )
+    parser.add_argument(
+        "--squad_train_factoid_file",
         default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
         + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
     )
+
     parser.add_argument(
-        "--squad_yes_no",
-        default=False,
-        action = "store_true"
+        "--squad_predict_factoid_file",
+        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
+        type=str,
+        help="the input evaluation file. if a data dir is specified, will look for the file there"
+        + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+    parser.add_argument(
+        "--squad_train_yesno_file",
+        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-yesno-6b-snippet.json",
+        type=str,
+        help="The input training file. If a data dir is specified, will look for the file there"
+        + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+
+    parser.add_argument(
+        "--squad_predict_yesno_file",
+        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-yesno-6b-snippet.json",
+        type=str,
+        help="the input evaluation file. if a data dir is specified, will look for the file there"
+        + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+    parser.add_argument(
+        "--squad_train_list_file",
+        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-list-6b-snippet-annotated.json",
+        type=str,
+        help="The input training file. If a data dir is specified, will look for the file there"
+        + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+
+    parser.add_argument(
+        "--squad_predict_list_file",
+        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-list-6b-snippet-annotated.json",
+        type=str,
+        help="the input evaluation file. if a data dir is specified, will look for the file there"
+        + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
+    )
+    parser.add_argument(
+        "--squad_train_file",
+        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
+        type=str,
+        help="The input training file. If a data dir is specified, will look for the file there"
+        + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
     )
 
     parser.add_argument(
@@ -604,7 +649,7 @@ class BioMLT(nn.Module):
         torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
         torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
 
-    def evaluate_qas(self,ind,only_preds = False):
+    def evaluate_qas(self,ind,only_preds = False,type='factoid'):
         device = self.args.device
         self.device = device
         args =self.args
@@ -612,7 +657,8 @@ class BioMLT(nn.Module):
             prefix = gettime()+"_"+str(ind)
         else : 
             prefix = self.args.model_save_name
-        qas_eval_dataset,examples,features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True)
+        qas_eval_dataset,examples,features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True,type=type)
+
         print("Size of the test dataset {}".format(len(qas_eval_dataset)))
         eval_sampler = SequentialSampler(qas_eval_dataset)
         eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.eval_batch_size)
@@ -647,10 +693,11 @@ class BioMLT(nn.Module):
                 
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 #logging.info("Bert out shape {}".format(bert_out.shape))
+
                 qas_out = self.get_qas(bert_out,
                                        batch,
                                        eval=True,
-                                       is_yes_no=self.args.squad_yes_no)
+                                       is_yes_no=self.args.squad_yes_no,type=type)
                 #qas_out = self.qas_head(**squad_inputs)
                 #print(qas_out)
                 #loss,  start_logits, end_logits = qas_out
@@ -663,12 +710,12 @@ class BioMLT(nn.Module):
             for i, example_index in enumerate(example_indices):
                 eval_feature = features[example_index.item()]
                 unique_id = int(eval_feature.unique_id)
-                if self.args.squad_yes_no:
+                if type=='yesno':
                     output = qas_out[i,:].detach().cpu().numpy()
                     yesno_logit = output
-                    print("What is start_logit {}".format(yesno_logit))
+                    #print("What is start_logit {}".format(yesno_logit))
                     probs = self.yesno_soft(torch.tensor(yesno_logit).unsqueeze(0))
-                    print("Yes-no probs : {}".format(probs))
+                    #print("Yes-no probs : {}".format(probs))
                     result = SquadResult(unique_id,
                                          float(yesno_logit[0]),float(yesno_logit[1]))
                 else:
@@ -702,7 +749,7 @@ class BioMLT(nn.Module):
             args.version_2_with_negative,
             args.null_score_diff_threshold,
             self.bert_tokenizer,
-            is_yes_no=self.args.squad_yes_no
+            is_yes_no=True if type=="yesno" else False
         )   
 
         if only_preds : 
@@ -749,7 +796,7 @@ class BioMLT(nn.Module):
         logging.info("Start Pred {}  start truth {}".format(start_pred,squad_inputs["start_positions"]))
         logging.info("End Pred {}  end truth {}".format(end_pred,squad_inputs["end_positions"]))
      
-    def get_qas(self, bert_output, batch, eval=False,is_yes_no = False):
+    def get_qas(self, bert_output, batch, eval=False,is_yes_no = False,type='factoid'):
 
         #batch = tuple(t.unsqueeze_(0) for t in batch)
         if eval:
@@ -773,9 +820,9 @@ class BioMLT(nn.Module):
                 "bert_outputs" : bert_output
             }
 
-        if not is_yes_no:
+        if type=='factoid':
             qas_outputs = self.qas_head(**squad_inputs)
-        else:
+        elif type=='yesno':
             ##!!!  CLS TOKEN  !!! ##
             yes_no_logits = self.yesno_head(bert_output[:,0])
             if not eval:
@@ -935,7 +982,7 @@ class BioMLT(nn.Module):
             self.qas_head.eval()
             self.ner_head.eval()
             with torch.no_grad():
-                self.evaluate_qas(index)
+                self.evaluate_qas(index,type='factoid')
                 self.eval_ner()
             #self.predict_ner()
 
@@ -948,9 +995,13 @@ class BioMLT(nn.Module):
         device = self.args.device
         args =hugging_parse_args()
         print("Is yes no ? {}".format(self.args.squad_yes_no))
+        #train_dataset = squad_load_and_cache_examples(args,
+        #                                              self.bert_tokenizer,
+        #                                              yes_no =self.args.squad_yes_no,type='yesno')
+        type = "yesno" if self.args.squad_yes_no else "factoid"
         train_dataset = squad_load_and_cache_examples(args,
                                                       self.bert_tokenizer,
-                                                      yes_no =self.args.squad_yes_no)
+                                                      yes_no =self.args.squad_yes_no,type=type)
 
         print("Training a model for {} type questions".
               format("YES-NO " if self.args.squad_yes_no else "FACTOID"))
@@ -1018,13 +1069,14 @@ class BioMLT(nn.Module):
                 
                 #qas_outputs = self.qas_head(**squad_inputs)
                 #print(qas_outputs[0].item())
+
                 loss = qas_outputs[0]
                 loss.backward()
                 self.bert_optimizer.step()
                 self.qas_head.optimizer.step()
                 self.yesno_optimizer.step()
                 total_loss += loss.item()
-                
+                print(loss.item()) 
                 if step%500==499:
                     if self.args.model_save_name is None:
                         checkpoint_name = self.args.mode+"_"+exp_prefix+"_check_{}_{}".format(epoch,step)
@@ -1034,7 +1086,9 @@ class BioMLT(nn.Module):
                     self.save_all_model(checkpoint_name)
                     logging.info("Average loss after {} steps : {}".format(step+1,total_loss/(step+1)))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
-            f1, exact, total  = self.evaluate_qas(epoch)
+            f1, exact, total  = self.evaluate_qas(epoch,type='factoid' if not self.args.squad_yes_no else "yesno")
+            #yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
+            print("Yes results {} {} {} ".format(yes_f1,yes_exact,yes_total))
             if f1 >= best_result :
                 best_result = f1
                 print("Best f1 of {}".format(f1))

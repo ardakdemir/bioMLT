@@ -400,7 +400,17 @@ def squad_bert2tokens(berttoks,tokenizer):
         if not tok.startswith("##"):
             i +=1
     return ids
-def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False,yes_no = False):
+def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False,yes_no = False,type="factoid"):
+    print("YES NO MU {} ".format(yes_no))
+    if type == "yesno":
+        args.squad_train_file = args.squad_train_yesno_file
+        args.squad_predict_file = args.squad_predict_yesno_file
+    if type == "list":
+        args.squad_train_file = args.squad_train_list_file
+        args.squad_predict_file = args.squad_predict_list_file
+    if type == "factoid":
+        args.squad_train_file = args.squad_train_factoid_file
+        args.squad_predict_file = args.squad_predict_factoid_file
     if args.local_rank not in [-1, 0] and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()

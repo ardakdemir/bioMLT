@@ -461,9 +461,9 @@ def compute_predictions_logits(
                             )
                         )
             else:
-                print("My  no yes entrypoint: ")
-                print(result.start_logits)
-                print(result.end_logits)
+                #print("My  no yes entrypoint: ")
+                #print(result.start_logits)
+                #print(result.end_logits)
                 ## NO is the 0 index
                 no_logit= result.start_logits
                 yes_logit = result.end_logits
@@ -541,7 +541,7 @@ def compute_predictions_logits(
                 nbest.append(_NbestPrediction(text=final_text, start_logit=pred.start_logit, end_logit=pred.end_logit))
         else:
             for pred in prelim_predictions:
-                print("No logit {}  yes logit {}".format(pred.start_logit, pred.end_logit))
+                #print("No logit {}  yes logit {}".format(pred.start_logit, pred.end_logit))
                 if pred.end_logit==0:
                     nbest.append(_NbestPrediction(text="no", start_logit=pred.start_logit, end_logit=0.0))
                 else:

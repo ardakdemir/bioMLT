@@ -27,4 +27,6 @@ python biomlt.py --mode qas --squad_train_file toy_qas.json --init_bert--squad_d
 
 !! toy train load previous model  ! ! load_all_model works!!
 
-python biomlt.py --mode qas --squad_train_file toy_qas.json --init_bert --squad_dir . --batch_size 1 --max_seq_length 20 --squad_predict_file toy_qas.json  --load_model_path save_dir/qas_2_16_3_42 --load_model --init_bert
+python biomlt.py --mode qas --squad_train_file toy_qas.json --init_bert --squad_dir . --batch_size 1 --max_seq_length 20 --squad_predict_file toy_qas.json  --load_model_path save_dir/qas_2_16_3_42 --load_model
+
+python biomlt.py --mode qas --squad_train_file toy_qas.json  --squad_dir . --batch_size 12  --squad_predict_file toy_qas.json  --init_bert
