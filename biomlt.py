@@ -82,6 +82,13 @@ def hugging_parse_args():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
+        "--pred_path",
+        default=None,
+        type=str,
+        required=False,
+        help="The output path for storing nbest predictions. Used for evaluating with the bioasq scripts",
+    )
+    parser.add_argument(
         "--nbest_path",
         default=None,
         type=str,
@@ -156,6 +163,11 @@ def hugging_parse_args():
         help="Index file for biobert pretrained model"
     )
     parser.add_argument(
+        "--only_squad",
+        default=False,
+        action = "store_true"
+    )
+    parser.add_argument(
         "--squad_yes_no",
         default=False,
         action = "store_true"
@@ -207,7 +219,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--squad_train_file",
-        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
+        default="train-v1.1.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
         + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -215,7 +227,7 @@ def hugging_parse_args():
 
     parser.add_argument(
         "--squad_predict_file",
-        default="/home/aakdemir/biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
+        default="dev-v1.1.json",
         type=str,
         help="the input evaluation file. if a data dir is specified, will look for the file there"
         + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -512,7 +524,6 @@ class BioMLT(nn.Module):
         #save_path = os.path.join(self.args['save_dir'],self.args['save_name'])
         logging.info("Model loaded  from: %s"%load_path)
         loaded_params = torch.load(load_path)
-        print("My params before loading")
         my_dict = self.state_dict()
         print("Yes-no head weights before loading")
         before = self.yesno_head.weight[:10]
@@ -520,7 +531,6 @@ class BioMLT(nn.Module):
         pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict()}
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
-        print("My params after  loading")
         print("Yes-no head weights after loading")
         print(self.yesno_head.weight[:3])
 
@@ -653,12 +663,16 @@ class BioMLT(nn.Module):
         device = self.args.device
         self.device = device
         args =self.args
+        self.bert_model.to(device)
+        self.qas_head.to(device)
+        self.yesno_head.to(device)
         if self.args.model_save_name is None:
             prefix = gettime()+"_"+str(ind)
         else : 
             prefix = self.args.model_save_name
-        qas_eval_dataset,examples,features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True,type=type)
-
+        qas_eval_dataset = self.qas_eval_dataset
+        examples = self.qas_eval_examples
+        features = self.qas_eval_features
         print("Size of the test dataset {}".format(len(qas_eval_dataset)))
         eval_sampler = SequentialSampler(qas_eval_dataset)
         eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.eval_batch_size)
@@ -670,6 +684,7 @@ class BioMLT(nn.Module):
         for batch in tqdm(eval_dataloader, desc = "Evaluating"):
             self.bert_model.eval()
             self.qas_head.eval()
+            self.yesno_head.eval()
             batch = tuple(t.to(self.device) for t in batch)
             #print("Batch shape  {}".format(batch[0].shape))
             #if len(batch[0].shape)==1:
@@ -727,7 +742,10 @@ class BioMLT(nn.Module):
 
         if not os.path.isdir(args.output_dir):
             os.makedirs(args.output_dir)
-        output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
+        if args.pred_path is not None:
+            output_prediction_file = args.pred_path
+        else:
+            output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
         if args.nbest_path is not None:
             output_nbest_file = args.nbest_path
         else:
@@ -872,7 +890,11 @@ class BioMLT(nn.Module):
         device = self.args.device
         self.bert_model.to(device)
         self.qas_head.to(device)
-        nbest_file, pred_file = self.evaluate_qas(0,only_preds=True)
+        self.load_eval_data()
+        type = "yesno" if self.args.squad_yes_no else "factoid"
+        if self.args.only_squad:
+            type = "squad"
+        nbest_file, pred_file = self.evaluate_qas(0,only_preds=True,type=type)
         print("Predictions are saved to {} \n N-best predictions are saved to {} ".format(pred_file,nbest_file))       
 
 
@@ -892,6 +914,7 @@ class BioMLT(nn.Module):
         self.device = device
         args =hugging_parse_args()
         self.huggins_args = args
+        self.qas_eval_dataset,self.qas_eval_examples,self.qas_eval_features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True, yes_no = self.args.squad_yes_no , type=type)
         qas_train_dataset = squad_load_and_cache_examples(args,
                                                           self.bert_tokenizer,
                                                           yes_no=self.args.squad_yes_no)
@@ -985,7 +1008,12 @@ class BioMLT(nn.Module):
                 self.evaluate_qas(index,type='factoid')
                 self.eval_ner()
             #self.predict_ner()
-
+    def load_eval_data(self):
+        args = self.args
+        type = "yesno" if self.args.squad_yes_no else "factoid"
+        if self.args.only_squad:
+            type = "squad"
+        self.qas_eval_dataset,self.qas_eval_examples,self.qas_eval_features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True, yes_no = self.args.squad_yes_no , type=type)
 
     def predict_ner(self):
         self.eval_ner()
@@ -999,9 +1027,12 @@ class BioMLT(nn.Module):
         #                                              self.bert_tokenizer,
         #                                              yes_no =self.args.squad_yes_no,type='yesno')
         type = "yesno" if self.args.squad_yes_no else "factoid"
+        if self.args.only_squad:
+            type = "squad"
         train_dataset = squad_load_and_cache_examples(args,
                                                       self.bert_tokenizer,
                                                       yes_no =self.args.squad_yes_no,type=type)
+        self.qas_eval_dataset, self.qas_eval_examples, self.qas_eval_features = squad_load_and_cache_examples(args,self.bert_tokenizer,evaluate=True,output_examples=True, yes_no = self.args.squad_yes_no , type=type)
 
         print("Training a model for {} type questions".
               format("YES-NO " if self.args.squad_yes_no else "FACTOID"))
@@ -1076,8 +1107,7 @@ class BioMLT(nn.Module):
                 self.qas_head.optimizer.step()
                 self.yesno_optimizer.step()
                 total_loss += loss.item()
-                print(loss.item()) 
-                if step%500==499:
+                if step%100==99:
                     if self.args.model_save_name is None:
                         checkpoint_name = self.args.mode+"_"+exp_prefix+"_check_{}_{}".format(epoch,step)
                     else :
@@ -1088,7 +1118,8 @@ class BioMLT(nn.Module):
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
             f1, exact, total  = self.evaluate_qas(epoch,type='factoid' if not self.args.squad_yes_no else "yesno")
             #yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
-            print("Yes results {} {} {} ".format(yes_f1,yes_exact,yes_total))
+            if self.args.squad_yes_no:
+                print("Yes results {} {} {} ".format(f1, exact, total))
             if f1 >= best_result :
                 best_result = f1
                 print("Best f1 of {}".format(f1))

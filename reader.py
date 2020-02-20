@@ -405,10 +405,10 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     if type == "yesno":
         args.squad_train_file = args.squad_train_yesno_file
         args.squad_predict_file = args.squad_predict_yesno_file
-    if type == "list":
+    elif type == "list":
         args.squad_train_file = args.squad_train_list_file
         args.squad_predict_file = args.squad_predict_list_file
-    if type == "factoid":
+    elif type == "factoid":
         args.squad_train_file = args.squad_train_factoid_file
         args.squad_predict_file = args.squad_predict_factoid_file
     if args.local_rank not in [-1, 0] and not evaluate:

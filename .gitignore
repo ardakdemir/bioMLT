@@ -5,6 +5,11 @@ result*txt
 *.o*
 core*
 squad_data
+pred_*
+nbest_*
+all_results_*
+result_*
+converted_*
 pytorch_cuda_tensorflow
 *_cached_*
 *_cache_*

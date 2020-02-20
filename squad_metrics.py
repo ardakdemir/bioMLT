@@ -541,8 +541,9 @@ def compute_predictions_logits(
                 nbest.append(_NbestPrediction(text=final_text, start_logit=pred.start_logit, end_logit=pred.end_logit))
         else:
             for pred in prelim_predictions:
+                
                 #print("No logit {}  yes logit {}".format(pred.start_logit, pred.end_logit))
-                if pred.end_logit==0:
+                if pred.start_index==0:
                     nbest.append(_NbestPrediction(text="no", start_logit=pred.start_logit, end_logit=0.0))
                 else:
                     nbest.append(_NbestPrediction(text="yes", start_logit=0, end_logit=pred.end_logit))
@@ -586,7 +587,7 @@ def compute_predictions_logits(
         assert len(nbest_json) >= 1
 
         if not version_2_with_negative or is_yes_no:
-            all_predictions[example.qas_id] = nbest_json[0]["text"]
+            all_predictions[example.qas_id] = [nbest_json[0]["text"],nbest_json[0]["probability"]]
         else:
             # predict "" iff the null score - the score of best non-null > threshold
             score_diff = score_null - best_non_null_entry.start_logit - (best_non_null_entry.end_logit)
@@ -605,7 +606,11 @@ def compute_predictions_logits(
     if version_2_with_negative:
         with open(output_null_log_odds_file, "w") as writer:
             writer.write(json.dumps(scores_diff_json, indent=4) + "\n")
-
+    if is_yes_no:
+        new_all_predictions = collections.OrderedDict()
+        for pred in all_predictions:
+            new_all_predictions[pred] = all_predictions[pred][0]
+        return new_all_predictions
     return all_predictions
 
 

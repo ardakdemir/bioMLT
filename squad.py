@@ -90,7 +90,7 @@ def squad_convert_example_to_features(example,
                                       is_training,
                                       is_yes_no=False):
     features = []
-    if is_training and not example.is_impossible:
+    if is_training and (not example.is_impossible or is_yes_no):
         # Get start and end position
         start_position = example.start_position
         end_position = example.end_position
@@ -206,7 +206,7 @@ def squad_convert_example_to_features(example,
         p_mask[cls_index] = 0
 
         span_is_impossible = example.is_impossible or is_yes_no
-        if not is_yes_no:
+        if not is_yes_no or not is_training:
             start_position = 0
             end_position = 0
         if is_training and not span_is_impossible:
@@ -420,6 +420,7 @@ class SquadProcessor(DataProcessor):
 
     train_file = None
     dev_file = None
+    
 
     def _get_example_from_tensor_dict(self, tensor_dict, evaluate=False):
         if not evaluate:
@@ -519,9 +520,32 @@ class SquadProcessor(DataProcessor):
             input_data = json.load(reader)["data"]
         return self._create_examples(input_data, "dev", only_data=only_data)
 
-    def _create_examples(self, input_data, set_type, only_data = False):
+    
+    def downsample_training_dataset(self,examples):
+        downsampled_examples = []
+        yes_list = []
+        no_list = []
+        for example in examples:
+            if example.answer_text == "yes":
+                yes_list.append(example)
+            else:
+                no_list.append(example)
+        np.random.shuffle(yes_list)
+        np.random.shuffle(no_list)
+        min_ = min(len(yes_list),len(no_list))
+        downsampled_examples = yes_list[:min_] + no_list[:min_]
+        np.random.shuffle(downsampled_examples)
+        #for d in downsampled_examples:
+        #    print("Example answer {} ".format(d.answer_text))
+        print("Generating {} examples for yes and {} examples for no ".format(min_,min_))
+        return downsampled_examples
+
+
+    def _create_examples(self, input_data, set_type, only_data = False,is_yes_no = False):
         is_training = set_type == "train"
         examples = []
+        yes_no_counts = []
+        is_yes_no_dataset = False
         for entry in tqdm(input_data):
             title = entry["title"]
             for paragraph in entry["paragraphs"]:
@@ -532,9 +556,8 @@ class SquadProcessor(DataProcessor):
                     start_position_character = None
                     answer_text = None
                     answers = []
-
                     if "is_impossible" in qa:
-                        is_impossible = qa["is_impossible"]
+                        is_impossible = qa["is_impossible"] and not qa['answers'] in ['yes','no']
                     else:
                         is_impossible = False
                     is_yes_no = False
@@ -542,6 +565,7 @@ class SquadProcessor(DataProcessor):
                         if is_training:
                             if qa["answers"] in ['yes','no']:
                                 answers = [{"text":qa['answers']}]
+                                is_yes_no_dataset = True
                                 answer_text = qa['answers']
                                 start_position_character = 0
                                 is_yes_no = True
@@ -570,6 +594,9 @@ class SquadProcessor(DataProcessor):
                     )
 
                     examples.append(example)
+        if is_training and is_yes_no_dataset:
+            examples = self.downsample_training_dataset(examples)
+           
         return examples
 
 
@@ -625,7 +652,6 @@ class SquadExample(object):
         doc_tokens = []
         char_to_word_offset = []
         prev_is_whitespace = True
-        print("")
         # Split on whitespace so that different tokens may be attributed to their original position.
         for c in self.context_text:
             if _is_whitespace(c):

@@ -9,7 +9,7 @@ epoch_num=5
 bioasq_dataset_folder='/home/aakdemir/biobert_data/datasets/QA/BioASQ/'
 bioasq_preprocessed_folder='/home/aakdemir/biobert_data/BioASQ-6b/'
 
-nbest_path='biomlt_train_pred_nbest_pred'
+nbest_path='nbest_pred_'${model_save_name}
 pred_path='pred_'${model_save_name}
 EVAL_PATH='/home/aakdemir/biobert_data/Evaluation-Measures'
 
@@ -23,7 +23,7 @@ out_for_bioasq_eval='input_for_bioasq_'${model_save_name}
 pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N yesno_pubmed 
+#$ -N yesno_pubmed_predict
 
 echo $EVAL_PATH
 echo $BIOBERT_PATH
@@ -38,8 +38,6 @@ cd ~/bioMLT
 pwd
 # First we train a model on the bioasq dataset and then test it on the test set!! 
 # Used for comparing the results for different pretrained models
-singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --squad_dir .  --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num --squad_yes_no --overwrite_cache
-
 #rm $nbest_path
 for test_num in 1 2 3 4 5
 do
@@ -49,9 +47,9 @@ do
     singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $output_dir"/"$model_save_name  --squad_dir . --nbest_path $nbest_path --load_model --squad_yes_no --squad_predict_yesno_file $squad_predict_yesno_file --overwrite_cache --pred_path $pred_path
 
     #rm $out_for_bioasq_eval
-    python ${myn2byesno_path} --nbest_path $pred_path --output_path $out_for_bioasq_eval'_'${test_num}
+    python ${myn2byesno_path} --nbest_path $pred_path --output_path $out_for_bioasq_eval
 
-    java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_for_bioasq_eval'_'${test_num} > result_for_${model_save_name}_${test_num}.txt
+    java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_for_bioasq_eval > result_for_${model_save_name}_${test_num}.txt
 done
 
 cat result_for_${model_save_name}_*.txt >> all_results_${model_save_name}.txt
