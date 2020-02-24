@@ -1,4 +1,5 @@
 import os
+import sys
 dicts = {"ner":  {"token" : 0 , "truth" : 1 , "ner_pred" : 2}}
 def sort_dataset(dataset,desc=True, sort = True):
 
@@ -29,8 +30,23 @@ def conll_writer(file_name, content, field_names, task_name,verbose=False):
             out.write("{}\n".format("\t".join(init)))
         out.write("\n")
     out.close()
+
 def unsort_dataset(dataset,orig_idx):
     zipped = list(zip(dataset,orig_idx))
     zipped.sort(key = lambda x : x[1])
     dataset , _ = list(zip(*(zipped)))
     return dataset
+
+
+def addbiotags(file_name,pref="ENT"):
+    d,f = os.path.split(file_name)
+    save_path = os.path.join(d,"ent_{}".format(f))
+    i_f = open(file_name).readlines()
+    s = "\n".join(["" if x.strip()=="" else "{}\t{}".format(x.split()[0],x.split()[1] if x.split()[1]=="O" else "{}-{}".format(x.split()[1],pref)) for x in i_f])
+    with open(save_path,"w") as o_f:
+        o_f.write(s)
+
+
+if __name__ == "__main__":
+    args = sys.argv
+    addbiotags(args[1])

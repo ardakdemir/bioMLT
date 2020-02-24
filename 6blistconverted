@@ -1,0 +1,214 @@
+{
+  "questions": [
+    {
+      "type": "list",
+      "id": "58f8a08370f9fc6f0f00001b",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "Skeletal"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "590c740d70f9fc6f0f00001d",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "Upc2p"
+        ],
+        [
+          "ERG2"
+        ],
+        [
+          "Osh1p-Osh7p"
+        ],
+        [
+          "Upc2p is a key regulator of ergosterol metabolism. They also suggest that Upc2p"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5925227670f9fc6f0f000020",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "thymidine hydroxylases"
+        ],
+        [
+          "SWI2/SNF2"
+        ],
+        [
+          "JGT"
+        ],
+        [
+          "JGT and base J-binding protein"
+        ],
+        [
+          "JBP2"
+        ],
+        [
+          "JBP1"
+        ],
+        [
+          "JBP1/2"
+        ],
+        [
+          "TH enzymes"
+        ],
+        [
+          "thymidine hydroxylase"
+        ],
+        [
+          "thymidine-hydroxylases"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a43b2d7966455904c00000c",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "find_circ"
+        ],
+        [
+          "PcircRNA_finder"
+        ],
+        [
+          "UROBORUS"
+        ],
+        [
+          "miARma-Seq"
+        ],
+        [
+          "RNA-seq"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a68ff52b750ff445500001c",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "extensor pollicis brevis tendon"
+        ],
+        [
+          "extensor pollicis brevis and/or abductor pollicis longus"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a6d0b2db750ff445500002d",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "CUL2LRR1"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a6d1143b750ff445500002e",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "Ufd1-Npl4"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a7238d32dc08e987e000009",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "SGLT2"
+        ],
+        [
+          "SGLT2 inhibitors, sotagliflozin is as effective as SGLT2"
+        ],
+        [
+          "SGLT1 and SGLT2"
+        ],
+        [
+          "sodium-glucose cotransporters 1 and 2"
+        ],
+        [
+          "SGLT-2"
+        ],
+        [
+          "SGLT1/SGLT2"
+        ],
+        [
+          "SGLT2 and intestinal SGLT1"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a737b483b9d13c70800000b",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "ipilimumab"
+        ],
+        [
+          "pembrolizumab"
+        ],
+        [
+          "Pembrolizumab versus ipilimumab"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a76196faacfb9cd4c000001",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "autoimmune hemolytic anemia"
+        ],
+        [
+          "immune thrombocytopenia"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "id": "5a882b5761bb38fb24000013",
+      "ideal_answer": [
+        "Dummy"
+      ],
+      "exact_answer": [
+        [
+          "Familial chilblain lupus"
+        ]
+      ]
+    }
+  ]
+}

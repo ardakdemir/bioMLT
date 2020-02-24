@@ -31,4 +31,19 @@ No class is indexed at 0 and 1 is indexed at 1
 Similarly,
 During json generation I give as input, No logit as start_logit and Yes logit as end_logit.
 
+squad_joint_model : squad_joint_factoid
+
+
+During testing predict all files at once!!!!! Rather than initializing model each time dayo!!!
+
+max_seq_length degistirdim 256ya
+
+
+====
+TODO
+====
+
+Get results on list type questions as well !! Today
+
+Squad ile baslayip list sonuclari da alalim
 

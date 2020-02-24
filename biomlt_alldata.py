@@ -8,6 +8,7 @@ from transformers.data.metrics.squad_metrics import (
             squad_evaluate,
             )
 from squad_metrics import compute_predictions_logits
+import numpy as np
 from conll_eval import evaluate_conll_file
 from vocab import Vocab
 import json
@@ -19,7 +20,7 @@ import os
 import torch.nn as nn
 import torch.optim as optim
 from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tokens, pubmed_files, squad_load_and_cache_examples
-from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
+from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler, ConcatDataset
 from tqdm import tqdm, trange
 from torch.nn.utils.rnn import pad_sequence
 import tokenization
@@ -677,128 +678,147 @@ class BioMLT(nn.Module):
         torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
         torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
 
-    def evaluate_qas(self,ind,only_preds = False,type='factoid'):
+    def evaluate_qas(self,ind,only_preds = False,types=['factoid','list','yesno']):
         device = self.args.device
         self.device = device
         args =self.args
         self.bert_model.to(device)
         self.qas_head.to(device)
         self.yesno_head.to(device)
+        f1s, totals, exacts = {}, {}, {}
+        nbests, preds = {}, {}
         if self.args.model_save_name is None:
             prefix = gettime()+"_"+str(ind)
         else : 
             prefix = self.args.model_save_name
-        qas_eval_dataset = self.qas_eval_dataset
-        examples = self.qas_eval_examples
-        features = self.qas_eval_features
-        print("Size of the test dataset {}".format(len(qas_eval_dataset)))
-        eval_sampler = SequentialSampler(qas_eval_dataset)
-        eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.eval_batch_size)
-        logger.info("Evaluation {} started".format(ind))
-        logger.info("***** Running evaluation {} with only_preds = {}*****".format(prefix,only_preds))
-        logger.info("  Num examples = %d", len(qas_eval_dataset))
-        logger.info("  Batch size = %d", args.eval_batch_size)
-        all_results = []
-        for batch in tqdm(eval_dataloader, desc = "Evaluating"):
-            self.bert_model.eval()
-            self.qas_head.eval()
-            self.yesno_head.eval()
-            batch = tuple(t.to(self.device) for t in batch)
-            #print("Batch shape  {}".format(batch[0].shape))
-            #if len(batch[0].shape)==1:
-            #    batch = tuple(t.unsqueeze_(0) for t in batch)
-            #logging.info(batch[0])
-            squad_inputs = {
-                "input_ids": batch[0],
-                "attention_mask": batch[1],
-                "token_type_ids": batch[2],
-                #"start_positions": batch[3],
-                #"end_positions": batch[4],
-            }
-            bert_inputs = {
-                "input_ids": batch[0],
-                "attention_mask": batch[1],
-                "token_type_ids": batch[2],
-            }
-            with torch.no_grad():
-                outputs = self.bert_model(**bert_inputs)
-                #squad_inputs["bert_outputs"] = outputs[-1][-2]
-                
-                bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
-                #logging.info("Bert out shape {}".format(bert_out.shape))
+        for type in types:
+            if args.pred_path is not None:
+                print("Pred path suffix : {}".format(args.pred_path))
+                args.pred_path = "{}_{}".format(type,args.pred_path)
+                print("Pred path for {} type : {} ".format(type,args.pred_path))
+            if args.nbest_path is not None:
+                print("Nbest path suffix : {}".format(args.nbest_path))
+                args.pred_path = "{}_{}".format(type,args.nbest_path)
+                print("Nbest path for {} type : {} ".format(type,args.nbest_path))
+            qas_eval_dataset = self.qas_eval_datasets[type]
+            examples = self.qas_eval_examples[type]
+            features = self.qas_eval_features[type]
+            print("Size of the test dataset {}".format(len(qas_eval_dataset)))
+            eval_sampler = SequentialSampler(qas_eval_dataset)
+            eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.eval_batch_size)
+            logger.info("Evaluation {} started".format(ind))
+            logger.info("***** Running evaluation {} with only_preds = {}*****".format(prefix,only_preds))
+            logger.info("  Num examples = %d", len(qas_eval_dataset))
+            logger.info("  Batch size = %d", args.eval_batch_size)
+            all_results = []
+            for batch in tqdm(eval_dataloader, desc = "Evaluating"):
+                self.bert_model.eval()
+                self.qas_head.eval()
+                self.yesno_head.eval()
+                batch = tuple(t.to(self.device) for t in batch)
+                #print("Batch shape  {}".format(batch[0].shape))
+                #if len(batch[0].shape)==1:
+                #    batch = tuple(t.unsqueeze_(0) for t in batch)
+                #logging.info(batch[0])
+                squad_inputs = {
+                    "input_ids": batch[0],
+                    "attention_mask": batch[1],
+                    "token_type_ids": batch[2],
+                    #"start_positions": batch[3],
+                    #"end_positions": batch[4],
+                }
+                bert_inputs = {
+                    "input_ids": batch[0],
+                    "attention_mask": batch[1],
+                    "token_type_ids": batch[2],
+                }
+                with torch.no_grad():
+                    outputs = self.bert_model(**bert_inputs)
+                    #squad_inputs["bert_outputs"] = outputs[-1][-2]
+                    
+                    bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+                    #logging.info("Bert out shape {}".format(bert_out.shape))
 
-                qas_out = self.get_qas(bert_out,
-                                       batch,
-                                       eval=True,
-                                       is_yes_no=self.args.squad_yes_no,type=type)
-                #qas_out = self.qas_head(**squad_inputs)
-                #print(qas_out)
-                #loss,  start_logits, end_logits = qas_out
-                #length = torch.sum(batch[1])
-                #start_logits = start_logits.cpu().detach().numpy()
-                #end_logits = end_logits.cpu().detach().numpy()
-                #tokens = self.bert_tokenizer.convert_ids_to_tokens(batch[0].squeeze(0).detach().cpu().numpy()[:length])
-                example_indices = batch[3]
-                #print("Example indices inside evaluate_qas {}".format(example_indices))
-            for i, example_index in enumerate(example_indices):
-                eval_feature = features[example_index.item()]
-                unique_id = int(eval_feature.unique_id)
-                if type=='yesno':
-                    output = qas_out[i,:].detach().cpu().numpy()
-                    yesno_logit = output
-                    #print("What is start_logit {}".format(yesno_logit))
-                    probs = self.yesno_soft(torch.tensor(yesno_logit).unsqueeze(0))
-                    #print("Yes-no probs : {}".format(probs))
-                    result = SquadResult(unique_id,
-                                         float(yesno_logit[0]),float(yesno_logit[1]))
-                else:
-                    output = [to_list(output[i]) for output in qas_out]
-                    start_logit,end_logit = output
-                    result = SquadResult(unique_id , start_logit, end_logit)
-                #print(result.start_logits)
-                all_results.append(result) 
+                    qas_out = self.get_qas(bert_out,
+                                           batch,
+                                           eval=True,
+                                           is_yes_no=self.args.squad_yes_no,type=type)
+                    #qas_out = self.qas_head(**squad_inputs)
+                    #print(qas_out)
+                    #loss,  start_logits, end_logits = qas_out
+                    #length = torch.sum(batch[1])
+                    #start_logits = start_logits.cpu().detach().numpy()
+                    #end_logits = end_logits.cpu().detach().numpy()
+                    #tokens = self.bert_tokenizer.convert_ids_to_tokens(batch[0].squeeze(0).detach().cpu().numpy()[:length])
+                    example_indices = batch[3]
+                    #print("Example indices inside evaluate_qas {}".format(example_indices))
+                for i, example_index in enumerate(example_indices):
+                    eval_feature = features[example_index.item()]
+                    unique_id = int(eval_feature.unique_id)
+                    if type=='yesno':
+                        output = qas_out[i,:].detach().cpu().numpy()
+                        yesno_logit = output
+                        #print("What is start_logit {}".format(yesno_logit))
+                        probs = self.yesno_soft(torch.tensor(yesno_logit).unsqueeze(0))
+                        #print("Yes-no probs : {}".format(probs))
+                        result = SquadResult(unique_id,
+                                             float(yesno_logit[0]),float(yesno_logit[1]))
+                    else:
+                        output = [to_list(output[i]) for output in qas_out]
+                        start_logit,end_logit = output
+                        result = SquadResult(unique_id , start_logit, end_logit)
+                    #print(result.start_logits)
+                    all_results.append(result) 
 
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(args.output_dir)
-        if args.pred_path is not None:
-            output_prediction_file = args.pred_path
-        else:
-            output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
-        if args.nbest_path is not None:
-            output_nbest_file = args.nbest_path
-        else:
-            output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix)) 
+            if not os.path.isdir(args.output_dir):
+                os.makedirs(args.output_dir)
+            if args.pred_path is not None:
+                output_prediction_file = args.pred_path
+            else:
+                output_prediction_file = os.path.join(args.output_dir, "{}_predictions_{}.json".format(type, prefix))
+            if args.nbest_path is not None:
+                output_nbest_file = args.nbest_path
+            else:
+                output_nbest_file = os.path.join(args.output_dir, "{}_nbest_predictions_{}.json".format(type,prefix)) 
 
-        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
-        print("Length of predictions {} feats  {} examples {} ".format(len(all_results),len(examples),len(features)))
-        predictions = compute_predictions_logits(
-            examples,
-            features,
-            all_results,
-            args.n_best_size,
-            args.max_answer_length,
-            args.do_lower_case,
-            output_prediction_file,
-            output_nbest_file,
-            output_null_log_odds_file,
-            args.verbose_logging,
-            args.version_2_with_negative,
-            args.null_score_diff_threshold,
-            self.bert_tokenizer,
-            is_yes_no=True if type=="yesno" else False
-        )   
+            output_null_log_odds_file = os.path.join(args.output_dir, "{}_null_odds_{}.json".format(type, prefix))
+            print("Length of predictions {} feats  {} examples {} ".format(len(all_results),len(examples),len(features)))
+            predictions = compute_predictions_logits(
+                examples,
+                features,
+                all_results,
+                args.n_best_size,
+                args.max_answer_length,
+                args.do_lower_case,
+                output_prediction_file,
+                output_nbest_file,
+                output_null_log_odds_file,
+                args.verbose_logging,
+                args.version_2_with_negative,
+                args.null_score_diff_threshold,
+                self.bert_tokenizer,
+                is_yes_no=True if type=="yesno" else False
+            )   
 
-        if only_preds : 
-            return output_nbest_file, output_prediction_file
-        print("example answer:: ")
-        print(examples[0].answers)
-        results = squad_evaluate(examples, predictions)
-        f1 = results['f1']
-        exact = results['exact']
-        total = results['total']
-        print("RESULTS : f1 {}  exact {} total {} ".format(f1, exact, total))
-        logging.info("RESULTS : f1 {} exact {} total {} ".format(f1, exact, total))
-        return f1, exact, total
+            if only_preds :
+                nbests[type] = output_nbest_file
+                preds[type] = output_prediction_file
+                continue
+                #return output_nbest_file, output_prediction_file
+            print("example answer:: ")
+            print(examples[0].answers)
+            results = squad_evaluate(examples, predictions)
+            f1 = results['f1']
+            exact = results['exact']
+            total = results['total']
+            print("RESULTS for {} : f1 {}  exact {} total {} ".format(type,f1, exact, total))
+            logging.info("RESULTS for {}: f1 {} exact {} total {} ".format(type,f1, exact, total))
+            f1s[type] = f1
+            exacts[type] = exact
+            totals[type]= total
+        if only_preds: 
+            return nbests, preds
+        return f1s[type], exacts[type], totals[type]
 
 
     def predict_qas(self,batch):
@@ -913,7 +933,7 @@ class BioMLT(nn.Module):
         type = "yesno" if self.args.squad_yes_no else "factoid"
         if self.args.only_squad:
             type = "squad"
-        nbest_file, pred_file = self.evaluate_qas(0,only_preds=True,type=type)
+        nbest_file, pred_file = self.evaluate_qas(0,only_preds=True,types=[type])
         if self.args.mode in ["ner","joint_flat"]:
             self.eval_ner()
         print("Predictions are saved to {} \n N-best predictions are saved to {} ".format(pred_file,nbest_file))       
@@ -1067,7 +1087,7 @@ class BioMLT(nn.Module):
             self.yesno_loss.eval()
             with torch.no_grad():
                 self.eval_ner()
-                f1, exact, total  = self.evaluate_qas(index,type='factoid' if not self.args.squad_yes_no else "yesno")
+                f1, exact, total  = self.evaluate_qas(index,types=['factoid' if not self.args.squad_yes_no else "yesno"])
                 #yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
                 if self.args.squad_yes_no:
                     print("Yes results {} {} {} ".format(f1, exact, total))
@@ -1088,6 +1108,28 @@ class BioMLT(nn.Module):
             ner_vocab = json.load(js)
             ner_vocab = Vocab(ner_vocab)
             return ner_vocab
+    
+    def load_qas_data(self, args, qa_types = ['yesno','list','factoid']):
+        qas_train_datasets = {}
+        qas_eval_datasets = {}
+        qas_eval_examples = {}
+        qas_eval_features = {}
+        if 'yesno' in qa_types:
+            qas_train_datasets["yesno"] = squad_load_and_cache_examples(args,
+                self.bert_tokenizer, yes_no=True, type='yesno')
+            qas_eval_datasets['yesno'],qas_eval_examples['yesno'], qas_eval_features['yesno'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True, yes_no = True , type='yesno')
+        if 'list' in qa_types:
+            qas_train_datasets["list"] = squad_load_and_cache_examples(args,
+                self.bert_tokenizer, yes_no=False, type='list')
+            qas_eval_datasets['list'],qas_eval_examples['list'], qas_eval_features['list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True, yes_no = False , type='list')
+        if 'factoid' in qa_types:
+            qas_train_datasets["factoid"] = squad_load_and_cache_examples(args,
+                self.bert_tokenizer, yes_no=False, type='factoid')
+            qas_eval_datasets['factoid'],qas_eval_examples['factoid'], qas_eval_features['factoid'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True, yes_no = True , type='factoid')
+        self.qas_train_datasets = qas_train_datasets     
+        self.qas_eval_datasets = qas_eval_datasets
+        self.qas_eval_examples = qas_eval_examples
+        self.qas_eval_features = qas_eval_features
     def load_eval_data(self):
         args = self.args
         type = "yesno" if self.args.squad_yes_no else "factoid"
@@ -1108,8 +1150,11 @@ class BioMLT(nn.Module):
 
 
     def train_qas(self):
+        qa_types = ["yesno", "list", "factoid"]
         device = self.args.device
         args =hugging_parse_args()
+        args.train_batch_size = self.args.batch_size
+        self.load_qas_data(args,qa_types=qa_types)
         print("Is yes no ? {}".format(self.args.squad_yes_no))
         #train_dataset = squad_load_and_cache_examples(args,
         #                                              self.bert_tokenizer,
@@ -1120,15 +1165,28 @@ class BioMLT(nn.Module):
             type = "squad"
         if self.args.qa_type is not None:
             type = self.args.qa_type
-        train_dataset = squad_load_and_cache_examples(args,
-                                                      self.bert_tokenizer,
-                                                      yes_no =self.args.squad_yes_no,type=type)
-        self.qas_eval_dataset, self.qas_eval_examples, self.qas_eval_features = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True, yes_no = self.args.squad_yes_no , type=type)
+        train_datasets = self.qas_train_datasets
+        #train_dataset = ConcatDataset([train_datasets[x] for x in train_datasets])
+        
+        if 'factoid' in qa_types or 'list' in qa_types:
+            f_l = []
+            if 'list' in qa_types:
+                f_l.append('list')
+            if 'factoid' in qa_types:
+                f_l.append('factoid')
+            train_dataset = ConcatDataset([train_datasets[x] for x in f_l])
+            if "yesno" in qa_types:
+                yesno_train_dataset = self.qas_train_datasets["yesno"]
+                yesno_sampler = RandomSampler(yesno_train_dataset)
+                yesno_dataloader = DataLoader(yesno_train_dataset,
+                    sampler=yesno_sampler,batch_size = args.train_batch_size)
+        else:
+            train_dataset = self.qas_train_datasets["yesno"]
 
+        
         print("Training a model for {} type questions".
               format("YES-NO " if self.args.squad_yes_no else "FACTOID"))
         print("Size of the train dataset {}".format(len(train_dataset)))
-        args.train_batch_size = self.args.batch_size
         #train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
@@ -1153,10 +1211,34 @@ class BioMLT(nn.Module):
         #self.ner_head.to(device)
         print("weights before training !!")
         print(self.qas_head.qa_outputs.weight[-10:])
+        print("Concat size {} yesno size {}".format(len(train_dataset),len(yesno_train_dataset)))
         for epoch, _ in enumerate(train_iterator):
             total_loss = 0
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
-            for step, batch in enumerate(epoch_iterator):
+            yesno_epoch_iterator = tqdm(yesno_dataloader, desc="yesno - Iteration")
+            self.bert_model.train()
+            self.qas_head.train()
+            self.yesno_head.train()
+            yes_size = len(yesno_train_dataset)
+            fact_size = len(train_dataset)
+            yes_rat = yes_size/(yes_size+fact_size)
+            #step_len = min(yes_size,fact_size)
+            step_len = 10
+            for step, (batch_1,batch_2) in enumerate(zip(epoch_iterator,yesno_epoch_iterator)):
+                if step >= step_len :
+                    break
+                rand = np.random.rand()
+                #print("rand val : {} ".format(rand))
+                if rand < yes_rat:
+                    batch = batch_2
+                    type = "yesno"
+                    print("yesno batch")
+                    print(batch[4][:10])
+                else:
+                    batch = batch_1
+                    type = "factoid"
+                    print("factoid batch")
+                    print(batch[4][:10])
                 #print("BATCH")
                 #print(batch)
                 #if step >10:
@@ -1167,10 +1249,10 @@ class BioMLT(nn.Module):
                 #batch = train_dataset[0]
                 #batch = tuple(t.unsqueeze(0) for t in batch)
                 #logging.info(batch[-1])
-                self.bert_model.train()
-                self.qas_head.train()
                 #logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
                 batch = tuple(t.to(device) for t in batch)
+                print("Batch shape {}".format(batch[0].shape))
+                print("End postiions {} ".format(batch[4][:10]))
                 bert_inputs = {
                     "input_ids": batch[0],
                     "attention_mask": batch[1],
@@ -1187,6 +1269,7 @@ class BioMLT(nn.Module):
                 #logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 #logging.info("Bert out shape {}".format(bert_out.shape))
+                print("Question type : {} ".format(type))
                 qas_outputs = self.get_qas(bert_out,batch,eval=False,is_yes_no=self.args.squad_yes_no,type=type)
                 
                 #qas_outputs = self.qas_head(**squad_inputs)
@@ -1209,7 +1292,7 @@ class BioMLT(nn.Module):
                     logging.info("Average loss after {} steps : {}".format(step+1,total_loss/(step+1)))
             print("Total loss {} for epoch {} ".format(total_loss , epoch))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
-            f1, exact, total  = self.evaluate_qas(epoch,type=type)
+            f1, exact, total  = self.evaluate_qas(epoch,types=qa_types)
             #yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
             if self.args.squad_yes_no:
                 print("Yes results {} {} {} ".format(f1, exact, total))
@@ -1457,6 +1540,7 @@ def main():
     if mode == "qas" :
         if predict:
             biomlt.run_test()
+            biomlt.load_train_data()
         else:
             print("Running train_qas")
             biomlt.train_qas()

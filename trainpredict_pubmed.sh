@@ -26,7 +26,7 @@ out_for_bioasq_eval=${output_dir}'/converted_'${model_save_name}
 pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N bertinit_train_pred
+#$ -N pubmed_train_pred
 
 echo $EVAL_PATH
 echo $BIOBERT_PATH
@@ -54,14 +54,14 @@ else
     result_file=${result_file}"_factoid"
 fi
 
-pwd
+wd
 # First we train a model on the bioasq dataset and then test it on the test set!! 
 # Used for comparing the results for different pretrained models
 if [ $qa_type = 'yesno' ]
 then
-    singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num --squad_yes_no --init_bert --overwrite_cache --squad_yes_no --qa_type $qa_type  --load_model
+    singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num --squad_yes_no  --overwrite_cache --squad_yes_no --qa_type $qa_type  --biobert_model_path ${pretrained_biobert_model_path}
 else
-    singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num --init_bert --overwrite_cache --qa_type $qa_type --load_model
+    singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num  --overwrite_cache --qa_type $qa_type --biobert_model_path ${pretrained_biobert_model_path}
 fi
     
 #rm $nbest_path
@@ -77,14 +77,14 @@ do
         singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $output_dir"/"$model_save_name --squad_predict_yesno_file $squad_predict_file  --nbest_path $nbest_path --pred_path $pred_path --squad_yes_no --init_bert --overwrite_cache --qa_type yesno
     elif [ $question_type = 'factoid' ]
     then
-        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_factoid_file $squad_predict_file --overwrite_cache --pred_path $pred_path --init_bert --qa_type factoid
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_factoid_file $squad_predict_file --overwrite_cache --pred_path $pred_path  --qa_type factoid
     else
-        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_list_file $squad_predict_file --overwrite_cache --pred_path $pred_path --init_bert --qa_type list
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_list_file $squad_predict_file --overwrite_cache --pred_path $pred_path  --qa_type list
 
     fi
     
     #rm $out_for_bioasq_eval
-    python ${converter} --nbest_path ${input_for_converter} --output_path $out_for_bioasq_eval'_'${test_num}
+    python ${converter} --nbest_path $input_for_converter --output_path $out_for_bioasq_eval'_'${test_num}
 
     java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_for_bioasq_eval'_'${test_num} > 'result_for_'${model_save_name}_${test_num}.txt
 done

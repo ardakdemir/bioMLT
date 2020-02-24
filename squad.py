@@ -594,8 +594,8 @@ class SquadProcessor(DataProcessor):
                     )
 
                     examples.append(example)
-        if is_training and is_yes_no_dataset:
-            examples = self.downsample_training_dataset(examples)
+        #if is_training and is_yes_no_dataset:
+        #    examples = self.downsample_training_dataset(examples)
            
         return examples
 
