@@ -223,7 +223,7 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
             if len(line.strip())==0:
                 if len(sent)>0:
                     sent.append([END_TAG, END_TAG ])
-                    if len(sent)>2:
+                    if len(sent)>2 and len(sent)<200:
                         new_dataset.append([root]+sent)
                     #new_dataset.append(sent)
                     sent = []
@@ -232,11 +232,13 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
                 row[0] = row[0].replace("\ufeff","")
                 sent.append(row)
                 label_counts.update([row[-1]])
-        if len(sent)>0:
+        if len(sent)>2 and len(sent)<200: 
             sent.append([END_TAG, END_TAG ])
             new_dataset.append([root]+sent)
             #new_dataset.append(sent)
         print("Number of sentences : {} ".format(len(new_dataset)))
+        print("Senntence lengths for NER")
+        print([len(sent) for sent in new_dataset])
         #print(new_dataset)
         new_dataset, orig_idx = sort_dataset(new_dataset, sort = True)
 
@@ -346,7 +348,8 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
             tokens.append(toks)
             #pos_inds.append(self.pos_vocab.map(poss))
             tok_inds.append(self.word_vocab.map(toks))
-            ner_inds.append(self.get_1d_targets(self.label_vocab.map(labels)))
+            #ner_inds.append(self.get_1d_targets(self.label_vocab.map(labels)))
+            ner_inds.append(self.label_vocab.map(labels))
         assert len(tok_inds)== len(ner_inds) == len(tokens) == len(batch)
         for toks in tokens:
             if toks[0]!="[CLS]":

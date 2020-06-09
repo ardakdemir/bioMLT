@@ -11,9 +11,10 @@ finetuned_model=$1
 model_save_name=$2
 question_type='factoid'
 batch_size=3
+epoch_num=20
 bioasq_dataset_folder='/home/aakdemir/biobert_data/datasets/QA/BioASQ/'
 bioasq_preprocessed_folder='/home/aakdemir/biobert_data/BioASQ-6b/'
-output_dir='save_dir'
+output_dir='allner_joint_savedir'
 nbest_path='nbest_pred_'${model_save_name}
 pred_path='pred_'${model_save_name}
 EVAL_PATH='/home/aakdemir/biobert_data/Evaluation-Measures'
@@ -40,7 +41,7 @@ out_for_bioasq_eval='converted_'${question_type}'_'${model_save_name}
 
 
 
-singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --mode 'joint_flat' --squad_dir . --biobert_model_path ${pretrained_biobert_model_path} --load_model --load_model_path ${finetuned_model} --batch_size $batch_size --eval_batch_size $batch_size --output_dir ${output_dir} --model_save_name ${model_save_name}
+singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --mode 'joint_flat' --squad_dir . --biobert_model_path ${pretrained_biobert_model_path} --load_model --load_model_path ${finetuned_model} --batch_size $batch_size --eval_batch_size $batch_size --output_dir ${output_dir} --model_save_name ${model_save_name} --num_train_epochs $epoch_num
 
 echo "Saving model to "${model_save_name}
 
@@ -63,3 +64,4 @@ do
 done
 
 python get_average.py result_for_${model_save_name}_ >> ${result_file}
+echo "All results saved to "$output_dir

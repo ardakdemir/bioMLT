@@ -20,7 +20,7 @@ args = parser.parse_args()
 #### Checking nbest_BioASQ-test prediction.json
 if not os.path.exists(args.nbest_path):
     print("No file exists!\n#### Fatal Error : Abort!")
-    raise
+    raise AssertionError("File not found in yesno converter")
 
 #### Reading Pred File
 with open(args.nbest_path, "r") as reader:

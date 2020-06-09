@@ -267,7 +267,7 @@ for multiQid in nbest_pred_dict:
 
         # check ends with , or .
         # check ()
-        print(a['text'])
+        #print(a['text'])
         if filter_incomplete(a['text']):
             # print('\tFilter', a['text'], sep='\t')
             continue

@@ -27,7 +27,7 @@ init_result_file=$result_file
 pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N squad_allqa_train_predict
+#$ -N all_data_train
 
 echo $EVAL_PATH
 echo $BIOBERT_PATH
@@ -57,50 +57,3 @@ fi
 #rm $nbest_path
 echo "Loading model from "$load_model_path
 
-for qa in 'yesno' 'list' 'factoid'
-do
-    question_type=$qa
-    echo " Predicting test files for "${question_type}
-    if [ $question_type = 'yesno' ]
-    then
-        echo ${question_type}' is yesno ?'
-        converter=$myn2byesno_path
-        input_for_converter=$pred_path
-        result_file=${init_result_file}"_yesno"
-    elif [ $question_type = 'list' ]
-    then 
-        converter=$my_n2b_list_path
-        input_for_converter=$nbest_path
-        result_file=${init_result_file}"_list"
-    else
-        converter=${BIOBERT_PATH}${n2bfactoid_path}
-        input_for_converter=$nbest_path
-        result_file=${init_result_file}"_factoid"
-    fi
-
-    echo "CONVERTER : "${converter}
-    echo "INPUT PATH: "${input_for_converter}
-    out_for_bioasq_eval='converted_'${question_type}'_'${model_save_name}
-    for test_num in 1 2 3 4 5
-    do
-        squad_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-'${question_type}'-6b-'${test_num}'-snippet.json'
-        gold_path=${bioasq_dataset_folder}'6B'${test_num}'_golden.json'
-        if [ $question_type = 'yesno' ]
-        then
-            singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path  --squad_yes_no --squad_predict_yesno_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type yesno
-        elif [ $question_type = 'list' ]
-        then
-            singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --nbest_path $nbest_path   --squad_predict_list_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type list
-        else
-            singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_factoid_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type factoid
-        fi
-        #rm $out_for_bioasq_eval
-        python ${converter} --nbest_path $input_for_converter --output_path $out_for_bioasq_eval'_'${test_num}
-
-        java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_for_bioasq_eval'_'${test_num} > result_for_${model_save_name}_${question_type}_${test_num}.txt
-    done
-    echo "PREDICTIONS COMPLETED"
-    echo "STORING AVERAGE ALL BATCHES FOR "${question_type}" IN : "${result_file}
-
-    python get_average.py result_for_${model_save_name}_${question_type}_ >> ${result_file}
-done

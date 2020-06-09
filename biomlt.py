@@ -693,11 +693,11 @@ class BioMLT(nn.Module):
         features = self.qas_eval_features
         print("Size of the test dataset {}".format(len(qas_eval_dataset)))
         eval_sampler = SequentialSampler(qas_eval_dataset)
-        eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.eval_batch_size)
+        eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler,batch_size = args.batch_size)
         logger.info("Evaluation {} started".format(ind))
         logger.info("***** Running evaluation {} with only_preds = {}*****".format(prefix,only_preds))
         logger.info("  Num examples = %d", len(qas_eval_dataset))
-        logger.info("  Batch size = %d", args.eval_batch_size)
+        logger.info("  Batch size = %d", args.batch_size)
         all_results = []
         for batch in tqdm(eval_dataloader, desc = "Evaluating"):
             self.bert_model.eval()

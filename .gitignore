@@ -24,3 +24,5 @@ bioner_data
 save_dir
 *log*
 *__pycache__*
+*prepared*
+*merged*

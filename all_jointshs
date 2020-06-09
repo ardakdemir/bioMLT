@@ -1,0 +1,217 @@
+/usr/local/bin/nosh
+output_dir='save_dir'
+finetuned_model=$1
+model_save_name=$2
+question_type=$3
+predict=$4
+#test_num=$2
+#squad_train_file='../biobert_data/qas_train_split.json'
+#squad_eval_file='../biobert_data/qas_dev_split.json'
+epoch_num=30
+bioasq_dataset_folder='/home/aakdemir/biobert_data/datasets/QA/BioASQ/'
+bioasq_preprocessed_folder='/home/aakdemir/biobert_data/BioASQ-6b/'
+
+nbest_path='nbest_pred_'${model_save_name}
+pred_path='pred_'${model_save_name}
+EVAL_PATH='/home/aakdemir/biobert_data/Evaluation-Measures'
+
+BIOBERT_PATH='/home/aakdemir/bioasq-biobert/'
+n2bfactoid_path='biocodes/transform_n2b_factoid.py'
+n2byesno_path='./biocodes/transform_n2b_yesno.py'
+myn2byesno_path='mytransformn2b_yesno.py'
+my_n2b_list_path='mytransform_n2b_list.py'
+result_file='qas_result_'${model_save_name}
+
+if [ $question_type = 'yesno' ]
+then
+    echo ${question_type}' is yesno ?'
+    converter=$myn2byesno_path
+    input_for_converter=$pred_path
+    result_file=${result_file}"_yesno"
+elif [ $question_type = 'list' ]
+then 
+    converter=$my_n2b_list_path
+    input_for_converter=$nbest_path
+    result_file=${result_file}"_list"
+else
+    converter=${BIOBERT_PATH}${n2bfactoid_path}
+    input_for_converter=$nbest_path
+    result_file=${result_file}"_factoid"
+fi
+
+echo "CONVERTER : "${converter}
+echo "INPUT PATH: "${input_for_converter}
+out_for_bioasq_eval='converted_'${question_type}'_'${model_save_name}
+# squad_predict_file=${bioasq_dataset_folder}'BioASQ-test-factoid-6b-'${test_num}'.json'
+#pretrained_biobert_model_path='../biobert_data/biobert-squadv1.1_pretrained'
+pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
+#$ -cwd
+#$ -l os7,v100=1,s_vmem=100G,mem_req=100G
+#$ -N squad_joint_train_predict
+
+echo $EVAL_PATH
+echo $BIOBERT_PATH
+echo $n2bfactoid_path
+echo $out_for_bioasq_eval
+echo "Fine tuning : "${finetuned_model}
+echo "Model to be saved:  "$model_save_name
+echo $squad_predict_file
+cd ~/bioMLT
+
+pwd
+
+if [ $predict = 0 ]
+then
+    echo " PREDICT IS "${predict}
+    # First we train a model on the bioasq dataset and then test it on the test set!! 
+    # Used for comparing the results for different pretrained models
+    if [ $question_type = 'yesno' ]
+    then
+        echo 'yesno training'
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --squad_dir .  --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num  --overwrite_cache  --load_model_path $finetuned_model --squad_yes_no --mode joint_flat --qa_type yesno
+    elif [ $question_type = 'factoid' ]
+    then
+        echo 'factoid training'
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py    --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num  --overwrite_cache  --load_model_path $finetuned_model  --mode joint_flat --qa_type factoid
+    else
+        echo 'list training'
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num  --overwrite_cache  --load_model_path $finetuned_model --mode joint_flat --qa_type list
+    fi
+    load_model_path=${output_dir}"/"${model_save_name}
+else
+    load_model_path=${finetuned_model}
+    echo "SKIPPING TRAINING  - MOVING TO PREDICTIONS"
+fi
+#rm $nbest_path
+echo "Loading model from "$load_model_path
+for test_num in 1 2 3 4 5
+do
+    
+    squad_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-'${question_type}'-6b-'${test_num}'-snippet.json'
+    gold_path=${bioasq_dataset_folder}'6B'${test_num}'_golden.json'
+    if [ $question_type = 'yesno' ]
+    then
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path  --squad_yes_no --squad_predict_yesno_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type yesno
+    elif [ $question_type = 'list' ]
+    then
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --nbest_path $nbest_path   --squad_predict_list_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type list
+    else
+        singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_factoid_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type factoid
+    fi
+    #rm $out_for_bioasq_eval
+    python ${converter} --nbest_path $input_for_converter --output_path $out_for_bioasq_eval'_'${test_num}
+
+    java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_for_bioasq_eval'_'${test_num} > result_for_${model_save_name}_${test_num}.txt
+done
+echo "PREDICTIONS COMPLETED"
+echo "STORING AVERAGE ALL BATCHES FOR "${question_type}" IN : "${result_file}
+
+python get_average.py result_for_${model_save_name}_ >> ${result_file}
+
+
+/usr/local/bin/nosh
+output_dir='save_dir'
+finetuned_model=$1
+model_save_name=$2
+predict=$3
+#test_num=$2
+#squad_train_file='../biobert_data/qas_train_split.json'
+#squad_eval_file='../biobert_data/qas_dev_split.json'
+epoch_num=10
+bioasq_dataset_folder='/home/aakdemir/biobert_data/datasets/QA/BioASQ/'
+bioasq_preprocessed_folder='/home/aakdemir/biobert_data/BioASQ-6b/'
+
+nbest_path='nbest_pred_'${model_save_name}
+pred_path='pred_'${model_save_name}
+EVAL_PATH='/home/aakdemir/biobert_data/Evaluation-Measures'
+
+BIOBERT_PATH='/home/aakdemir/bioasq-biobert/'
+n2bfactoid_path='biocodes/transform_n2b_factoid.py'
+n2byesno_path='./biocodes/transform_n2b_yesno.py'
+myn2byesno_path='mytransformn2b_yesno.py'
+my_n2b_list_path='mytransform_n2b_list.py'
+result_file='qas_result_'${model_save_name}
+init_result_file=$result_file
+
+# squad_predict_file=${bioasq_dataset_folder}'BioASQ-test-factoid-6b-'${test_num}'.json'
+#pretrained_biobert_model_path='../biobert_data/biobert-squadv1.1_pretrained'
+pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
+#$ -cwd
+#$ -l os7,v100=1,s_vmem=100G,mem_req=100G
+#$ -N squad_allqa_train_predict
+
+echo $EVAL_PATH
+echo $BIOBERT_PATH
+echo $n2bfactoid_path
+echo $out_for_bioasq_eval
+echo "Fine tuning : "${finetuned_model}
+echo "Model to be saved:  "$model_save_name
+echo $squad_predict_file
+cd ~/bioMLT
+
+pwd
+
+if [ $predict = 0 ]
+then
+    echo " PREDICT IS "${predict}
+    # First we train a model on the bioasq dataset and then test it on the test set!! 
+    # Used for comparing the results for different pretrained models
+    echo "Running training on all question types !! "
+    echo "First experimenting with qas aloneee"
+    echo "Best model will be saved in "${output_dir}/${model_save_name}
+    singularity exec --nv ~/singularity/pt-cuda-tf python biomlt_alldata.py --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num  --overwrite_cache  --load_model_path $finetuned_model 
+    load_model_path=${output_dir}"/"${model_save_name}
+else
+    load_model_path=${finetuned_model}
+    echo "SKIPPING TRAINING  - MOVING TO PREDICTIONS"
+fi
+#rm $nbest_path
+echo "Loading model from "$load_model_path
+
+for qa in 'yesno' 'list' 'factoid'
+do
+    question_type=$qa
+    echo " Predicting test files for "${question_type}
+    if [ $question_type = 'yesno' ]
+    then
+        echo ${question_type}' is yesno ?'
+        converter=$myn2byesno_path
+        input_for_converter=$pred_path
+        result_file=${init_result_file}"_yesno"
+    elif [ $question_type = 'list' ]
+    then 
+        converter=$my_n2b_list_path
+        input_for_converter=$nbest_path
+        result_file=${init_result_file}"_list"
+    else
+        converter=${BIOBERT_PATH}${n2bfactoid_path}
+        input_for_converter=$nbest_path
+        result_file=${init_result_file}"_factoid"
+    fi
+
+    echo "CONVERTER : "${converter}
+    echo "INPUT PATH: "${input_for_converter}
+    out_for_bioasq_eval='converted_'${question_type}'_'${model_save_name}
+    for test_num in 1 2 3 4 5
+    do
+        squad_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-'${question_type}'-6b-'${test_num}'-snippet.json'
+        gold_path=${bioasq_dataset_folder}'6B'${test_num}'_golden.json'
+        if [ $question_type = 'yesno' ]
+        then
+            singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path  --squad_yes_no --squad_predict_yesno_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type yesno
+        elif [ $question_type = 'list' ]
+        then
+            singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --nbest_path $nbest_path   --squad_predict_list_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type list
+        else
+            singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py --predict --load_model_path $load_model_path  --squad_dir . --nbest_path $nbest_path   --squad_predict_factoid_file $squad_predict_file --overwrite_cache --pred_path $pred_path --qa_type factoid
+        fi
+        #rm $out_for_bioasq_eval
+        python ${converter} --nbest_path $input_for_converter --output_path $out_for_bioasq_eval'_'${test_num}
+
+        java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_for_bioasq_eval'_'${test_num} > result_for_${model_save_name}_${question_type}_${test_num}.txt
+    done
+    echo "PREDICTIONS COMPLETED"
+    echo "STORING AVERAGE ALL BATCHES FOR "${question_type}" IN : "${result_file}
+
+    python get_average.py result_for_${model_save_name}_${question_type}_ >> ${result_file}
+done
