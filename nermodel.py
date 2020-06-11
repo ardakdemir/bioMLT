@@ -19,10 +19,11 @@ class NerModel(nn.Module):
         self.args = args
         self.input_dims = args.bert_output_dim
         self.label_voc = args.ner_label_vocab
-        self.output_dim = len(self.label_voc)*len(self.label_voc)
+        self.output_dim = len(self.label_voc)
 
         # Now I am calculating one-dimensional labels so taking the square of the label vocab
         # Treats transitions between tags as a different tag
+        # Ignore transitions because the labels are different
         # e.g LOC -> ORG   !=  O -> ORG
         self.classifier = nn.Linear(self.input_dims,self.output_dim )
         self.loss = CrossEntropyLoss()

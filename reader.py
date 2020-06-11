@@ -1,8 +1,8 @@
 import tokenization
 from transformers import *
-#from transformers import squad_convert_examples_to_features
+# from transformers import squad_convert_examples_to_features
 from transformers.tokenization_bert import whitespace_tokenize
-#from transformers.
+# from transformers.
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import random
@@ -17,32 +17,33 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 
 from squad import *
+
 random_seed = 12345
 rng = random.Random(random_seed)
 log_path = 'read_logger'
-#logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path, 'w', 'utf-8')], format='%(levelname)s - %(message)s')
-pretrained_bert_name  = 'bert-base-uncased'
-
+# logging.basicConfig(level=logging.DEBUG,handlers= [logging.FileHandler(log_path, 'w', 'utf-8')], format='%(levelname)s - %(message)s')
+pretrained_bert_name = 'bert-base-uncased'
 
 MaskedLmInstance = collections.namedtuple("MaskedLmInstance",
-                                              ["index", "label"])
+                                          ["index", "label"])
 
-def pubmed_files(root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"):
+
+def pubmed_files(root="/home/aakdemir/pubmed/pub/pmc/oa_bulk/"):
     if not os.path.isdir(root):
-        return ["PMC6961255.txt","PMC6958785.txt"]
-    #root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"
+        return ["PMC6961255.txt", "PMC6958785.txt"]
+    # root = "/home/aakdemir/pubmed/pub/pmc/oa_bulk/"
     folder_list = os.listdir(root)
     file_list = []
     names = set()
     for folder in folder_list:
-        fold_path = os.path.join(root,folder)
+        fold_path = os.path.join(root, folder)
         if os.path.isdir(fold_path):
             for file in os.listdir(fold_path):
                 if file.endswith(".txt"):
                     if file in names:
                         print("File with name {} exists in multiple folders")
                     names.add(file)
-                    file_list.append(os.path.join(root,folder,file))
+                    file_list.append(os.path.join(root, folder, file))
     print("Read {} files ".format(len(file_list)))
     return file_list
 
@@ -55,7 +56,7 @@ def my_squad_convert_example_to_features(example, max_seq_length, doc_stride, ma
         end_position = example.end_position
 
         # If the answer cannot be found in the text, then skip this example.
-        actual_text = " ".join(example.doc_tokens[start_position : (end_position + 1)])
+        actual_text = " ".join(example.doc_tokens[start_position: (end_position + 1)])
         cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text))
         if actual_text.find(cleaned_answer_text) == -1:
             logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
@@ -198,7 +199,8 @@ def my_squad_convert_example_to_features(example, max_seq_length, doc_stride, ma
                 span["token_type_ids"],
                 cls_index,
                 p_mask.tolist(),
-                example_index=0,  # Can not set unique_id and example_index here. They will be set after multiple processing.
+                example_index=0,
+                # Can not set unique_id and example_index here. They will be set after multiple processing.
                 unique_id=0,
                 paragraph_len=span["paragraph_len"],
                 token_is_max_context=span["token_is_max_context"],
@@ -210,8 +212,10 @@ def my_squad_convert_example_to_features(example, max_seq_length, doc_stride, ma
             )
         )
     return features
+
+
 def my_squad_convert_examples_to_features(
-    examples, tokenizer, max_seq_length, doc_stride,
+        examples, tokenizer, max_seq_length, doc_stride,
         max_query_length, is_training, return_dataset=False, threads=1,
         is_yes_no=False
 ):
@@ -251,7 +255,7 @@ def my_squad_convert_examples_to_features(
     """
 
     # Defining helper methods
-    #print(tokenizer)
+    # print(tokenizer)
     features = []
     threads = min(threads, cpu_count())
     with Pool(threads, initializer=squad_convert_example_to_features_init, initargs=(tokenizer,)) as p:
@@ -274,18 +278,18 @@ def my_squad_convert_examples_to_features(
     unique_id = 1000000000
     example_index = 0
 
-    print("Number of features {} generated from {} examples ".format(len(features),len(examples)))
+    print("Number of features {} generated from {} examples ".format(len(features), len(examples)))
     for example_features in tqdm(features, total=len(features), desc="add example index and unique id"):
         if not example_features:
             continue
-        #print(example_features)
+        # print(example_features)
         for example_feature in example_features:
             example_feature.example_index = example_index
             example_feature.unique_id = unique_id
             new_features.append(example_feature)
             unique_id += 1
         example_index += 1
-    print("Number of features {} generated from {} examples after for loop".format(len(new_features),len(examples)))
+    print("Number of features {} generated from {} examples after for loop".format(len(new_features), len(examples)))
     features = new_features
     del new_features
     if return_dataset == "pt":
@@ -300,11 +304,13 @@ def my_squad_convert_examples_to_features(
         all_cls_index = torch.tensor([f.cls_index for f in features], dtype=torch.long)
         all_p_mask = torch.tensor([f.p_mask for f in features], dtype=torch.float)
         all_is_impossible = torch.tensor([f.is_impossible for f in features], dtype=torch.float)
-        all_squad_bert2tokens = torch.tensor([squad_bert2tokens(f.input_ids,tokenizer) for f in features],dtype=torch.long)
+        all_squad_bert2tokens = torch.tensor([squad_bert2tokens(f.input_ids, tokenizer) for f in features],
+                                             dtype=torch.long)
         if not is_training:
             all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
             dataset = TensorDataset(
-                all_input_ids, all_attention_masks, all_token_type_ids, all_example_index, all_cls_index, all_p_mask,all_squad_bert2tokens
+                all_input_ids, all_attention_masks, all_token_type_ids, all_example_index, all_cls_index, all_p_mask,
+                all_squad_bert2tokens
             )
         else:
             if not is_yes_no:
@@ -336,7 +342,7 @@ def my_squad_convert_examples_to_features(
                     all_is_impossible,
                     all_squad_bert2tokens,
                 )
-        print("Just before returning squad f  {} d {}".format(len(features),len(dataset)))
+        print("Just before returning squad f  {} d {}".format(len(features), len(dataset)))
         return features, dataset
     elif return_dataset == "tf":
         if not is_tf_available():
@@ -389,18 +395,21 @@ def my_squad_convert_examples_to_features(
 
     return features
 
-def squad_bert2tokens(berttoks,tokenizer):
+
+def squad_bert2tokens(berttoks, tokenizer):
     berttoks = tokenizer.convert_ids_to_tokens(berttoks)
-    #logging.info(berttoks)
+    # logging.info(berttoks)
     ids = []
     i = 0
     for tok in berttoks:
         ids.append(i)
-        #print(tok)
+        # print(tok)
         if not tok.startswith("##"):
-            i +=1
+            i += 1
     return ids
-def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False,yes_no = False,type="factoid"):
+
+
+def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False, yes_no=False, type="factoid"):
     print("YES NO MU {} ".format(yes_no))
     if type == "yesno":
         args.squad_train_file = args.squad_train_yesno_file
@@ -416,8 +425,8 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
         torch.distributed.barrier()
 
     # Load data features from cache or dataset file
-    cache_folder = "squad_cache"
-    #input_dir = args.squad_dir if args.data_dir else "."
+    cache_folder = args.cache_folder
+    # input_dir = args.squad_dir if args.data_dir else "."
     input_dir = args.squad_dir
     if not evaluate:
         input_file_name = os.path.split(args.squad_train_file)[-1].split(".")[0]
@@ -426,14 +435,14 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     print("READING {} ".format(input_file_name))
     example_size = args.example_num
     cached_features_file = os.path.join(cache_folder,
-       input_dir,
-        "cached_{}_{}_{}_{}".format(
-          input_file_name,
-          "dev" if evaluate else "train",
-            list(filter(None, args.model_name_or_path.split("/"))).pop(),
-            str(args.max_seq_length)+"_"+str(example_size)+".txt",
-        ),
-    )
+                                        input_dir,
+                                        "cached_{}_{}_{}_{}".format(
+                                            input_file_name,
+                                            "dev" if evaluate else "train",
+                                            list(filter(None, args.model_name_or_path.split("/"))).pop(),
+                                            str(args.max_seq_length) + "_" + str(example_size) + ".txt",
+                                        ),
+                                        )
     print("Cache path {} ".format(cached_features_file))
     # Init features and dataset from cache if it exists
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
@@ -447,7 +456,8 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     else:
         logger.info("Creating features from dataset file at %s", input_dir)
 
-        if not input_dir and ((evaluate and not args.squad_predict_file) or (not evaluate and not args.squad_train_file)):
+        if not input_dir and (
+                (evaluate and not args.squad_predict_file) or (not evaluate and not args.squad_train_file)):
             try:
                 import tensorflow_datasets as tfds
             except ImportError:
@@ -459,14 +469,14 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             tfds_examples = tfds.load("squad")
             examples = SquadV1Processor().get_examples_from_dataset(tfds_examples, evaluate=evaluate)
         else:
-            #processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
+            # processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
             processor = SquadV1Processor()
             if evaluate:
                 processor.dev_file = args.squad_predict_file
                 print("Reading from {} {} ".format(input_dir, args.squad_predict_file))
                 examples = processor.get_dev_examples(input_dir,
                                                       filename=args.squad_predict_file,
-                                                      only_data = True if args.predict else False,
+                                                      only_data=True if args.predict else False,
                                                       )
             else:
                 processor.train_file = args.squad_train_file
@@ -489,8 +499,8 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             threads=args.threads,
             is_yes_no=yes_no
         )
-        print("We have e {} f {} d {} for eval  : {} ".format(len(examples),len(features),len(dataset),
-                evaluate))
+        print("We have e {} f {} d {} for eval  : {} ".format(len(examples), len(features), len(dataset),
+                                                              evaluate))
         if args.local_rank in [-1, 0]:
             if not os.path.exists(cached_features_file):
                 folder = os.path.split(cached_features_file)[0]
@@ -502,20 +512,6 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     if args.local_rank == 0 and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
-
-    #dataset_new = []
-    #for data in dataset:
-    #    ids = squad_bert2tokens(tokenizer,data[0])
-    #    data_x = ()
-    #    for x in data:
-    #        logging.info("Shape {} ".format(x.shape))
-    #        data_x = data_x + (x,)
-    #    data_x = data_x + (ids, )
-
-    #    dataset_new.append(data_x)
-
-    #dataset = dataset_new
-    #logging.info(dataset[0][-1])
     if output_examples:
         return dataset, examples, features
     return dataset
@@ -525,7 +521,7 @@ class TrainingInstance(object):
     """A single training instance (sentence pair)."""
 
     def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels,
-               is_random_next):
+                 is_random_next):
         self.tokens = tokens
         self.segment_ids = segment_ids
         self.is_random_next = is_random_next
@@ -548,6 +544,7 @@ class TrainingInstance(object):
     def __repr__(self):
         return self.__str__()
 
+
 class MyTextDataset(Dataset):
     def __init__(self, tokenizer: PreTrainedTokenizer, args, file_list: str, block_size=128):
         cache_folder = args.cache_folder
@@ -557,7 +554,7 @@ class MyTextDataset(Dataset):
             directory, filename = os.path.split(file_path)
             folder = os.path.split(directory)[-1]
             cached_features_file = os.path.join(
-                cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_"+folder+"_" + filename
+                cache_folder, args.model_type + "_cached_lm_" + str(block_size) + "_" + folder + "_" + filename
             )
 
             if os.path.exists(cached_features_file) and not args.overwrite_cache:
@@ -575,8 +572,10 @@ class MyTextDataset(Dataset):
 
                     tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
 
-                    for i in range(0, len(tokenized_text) - block_size + 1, block_size):  # Truncate in block of block_size
-                        self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i : i + block_size]))
+                    for i in range(0, len(tokenized_text) - block_size + 1,
+                                   block_size):  # Truncate in block of block_size
+                        self.examples.append(
+                            tokenizer.build_inputs_with_special_tokens(tokenized_text[i: i + block_size]))
                     # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
                     # If your dataset is small, first you should loook for a bigger one :-) and second you
                     # can change this behavior by adding (model specific) padding.
@@ -585,15 +584,18 @@ class MyTextDataset(Dataset):
                     with open(cached_features_file, "wb") as handle:
                         pickle.dump(self.examples, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 except:
-                    
+
                     logging.info("Skipping {} because of encoding".format(file_path))
                     skipped += 1
         print("{} files are skipped in total ".format(skipped))
+
     def __len__(self):
         return len(self.examples)
 
     def __getitem__(self, item):
         return torch.tensor(self.examples[item])
+
+
 class MyLineByLineTextDataset(Dataset):
     def __init__(self, tokenizer: PreTrainedTokenizer, args, file_list: str, block_size=512):
         self.examples = []
@@ -615,287 +617,286 @@ class MyLineByLineTextDataset(Dataset):
     def __getitem__(self, i):
         return torch.tensor(self.examples[i])
 
+
 ## Code taken from BERT original source code
 ## For both next sentence and masked language modeling
 class BertPretrainReader():
-    def __init__(self,read_dir,tokenizer,flags = None, vocab=None):
+    def __init__(self, read_dir, tokenizer, flags=None, vocab=None):
         self.FLAGS = flags
         self.read_dir = read_dir
         self.do_whole_word_mask = True
         self.vocab = vocab
-        self.tokenizer=tokenizer
-        self.dataset = self.create_training_instances(self.read_dir,self.tokenizer)
+        self.tokenizer = tokenizer
+        self.dataset = self.create_training_instances(self.read_dir, self.tokenizer)
         if self.vocab:
-            self.inv_vocab = {v:k for k,v in self.vocab.items()}
-    def create_training_instances(self,input_files, tokenizer, max_seq_length = 128,
-                                  dupe_factor  = 5, short_seq_prob = 0.1, masked_lm_prob=0.2,
-                                  max_predictions_per_seq = 28, rng = random.Random(random_seed)):
-      """Create `TrainingInstance`s from raw text."""
-      all_documents = [[]]
+            self.inv_vocab = {v: k for k, v in self.vocab.items()}
 
-      # Input file format:
-      # (1) One sentence per line. These should ideally be actual sentences, not
-      # entire paragraphs or arbitrary spans of text. (Because we use the
-      # sentence boundaries for the "next sentence prediction" task).
-      # (2) Blank lines between documents. Document boundaries are needed so
-      # that the "next sentence prediction" task doesn't span between documents.
-      for input_file in input_files:
-        with open(input_file, "r",encoding = 'utf-8') as reader:
-          while True:
-            line = tokenization.convert_to_unicode(reader.readline())
-            if not line:
-              break
-            line = line.strip()
+    def create_training_instances(self, input_files, tokenizer, max_seq_length=128,
+                                  dupe_factor=5, short_seq_prob=0.1, masked_lm_prob=0.2,
+                                  max_predictions_per_seq=28, rng=random.Random(random_seed)):
+        """Create `TrainingInstance`s from raw text."""
+        all_documents = [[]]
 
-            # Empty lines are used as document delimiters
-            if not line:
-              all_documents.append([])
-            tokens = tokenizer.tokenize(line)
-            if tokens:
-              all_documents[-1].append(tokens)
-      #return all_documents
-      # Remove empty documents
-      all_documents = [x for x in all_documents if x]
-      rng.shuffle(all_documents)
+        # Input file format:
+        # (1) One sentence per line. These should ideally be actual sentences, not
+        # entire paragraphs or arbitrary spans of text. (Because we use the
+        # sentence boundaries for the "next sentence prediction" task).
+        # (2) Blank lines between documents. Document boundaries are needed so
+        # that the "next sentence prediction" task doesn't span between documents.
+        for input_file in input_files:
+            with open(input_file, "r", encoding='utf-8') as reader:
+                while True:
+                    line = tokenization.convert_to_unicode(reader.readline())
+                    if not line:
+                        break
+                    line = line.strip()
 
-      vocab_words = list(tokenizer.vocab.keys())
-      instances = []
-      for _ in range(dupe_factor):
-        for document_index in range(len(all_documents)):
-          instances.extend(
-              self.create_instances_from_document(
-                  all_documents, document_index, max_seq_length, short_seq_prob,
-                  masked_lm_prob, max_predictions_per_seq, vocab_words, rng))
+                    # Empty lines are used as document delimiters
+                    if not line:
+                        all_documents.append([])
+                    tokens = tokenizer.tokenize(line)
+                    if tokens:
+                        all_documents[-1].append(tokens)
+        # return all_documents
+        # Remove empty documents
+        all_documents = [x for x in all_documents if x]
+        rng.shuffle(all_documents)
 
-      rng.shuffle(instances)
-      return instances
+        vocab_words = list(tokenizer.vocab.keys())
+        instances = []
+        for _ in range(dupe_factor):
+            for document_index in range(len(all_documents)):
+                instances.extend(
+                    self.create_instances_from_document(
+                        all_documents, document_index, max_seq_length, short_seq_prob,
+                        masked_lm_prob, max_predictions_per_seq, vocab_words, rng))
 
+        rng.shuffle(instances)
+        return instances
 
     def create_instances_from_document(self,
-        all_documents, document_index, max_seq_length, short_seq_prob,
-        masked_lm_prob, max_predictions_per_seq, vocab_words, rng):
-      """Creates `TrainingInstance`s for a single document."""
-      document = all_documents[document_index]
+                                       all_documents, document_index, max_seq_length, short_seq_prob,
+                                       masked_lm_prob, max_predictions_per_seq, vocab_words, rng):
+        """Creates `TrainingInstance`s for a single document."""
+        document = all_documents[document_index]
 
-      # Account for [CLS], [SEP], [SEP]
-      max_num_tokens = max_seq_length - 3
+        # Account for [CLS], [SEP], [SEP]
+        max_num_tokens = max_seq_length - 3
 
-      # We *usually* want to fill up the entire sequence since we are padding
-      # to `max_seq_length` anyways, so short sequences are generally wasted
-      # computation. However, we *sometimes*
-      # (i.e., short_seq_prob == 0.1 == 10% of the time) want to use shorter
-      # sequences to minimize the mismatch between pre-training and fine-tuning.
-      # The `target_seq_length` is just a rough target however, whereas
-      # `max_seq_length` is a hard limit.
-      target_seq_length = max_num_tokens
-      if rng.random() < short_seq_prob:
-        target_seq_length = rng.randint(2, max_num_tokens)
+        # We *usually* want to fill up the entire sequence since we are padding
+        # to `max_seq_length` anyways, so short sequences are generally wasted
+        # computation. However, we *sometimes*
+        # (i.e., short_seq_prob == 0.1 == 10% of the time) want to use shorter
+        # sequences to minimize the mismatch between pre-training and fine-tuning.
+        # The `target_seq_length` is just a rough target however, whereas
+        # `max_seq_length` is a hard limit.
+        target_seq_length = max_num_tokens
+        if rng.random() < short_seq_prob:
+            target_seq_length = rng.randint(2, max_num_tokens)
 
-      # We DON'T just concatenate all of the tokens from a document into a long
-      # sequence and choose an arbitrary split point because this would make the
-      # next sentence prediction task too easy. Instead, we split the input into
-      # segments "A" and "B" based on the actual "sentences" provided by the user
-      # input.
-      instances = []
-      current_chunk = []
-      current_length = 0
-      i = 0
-      while i < len(document):
-        segment = document[i]
-        current_chunk.append(segment)
-        current_length += len(segment)
-        if i == len(document) - 1 or current_length >= target_seq_length:
-          if current_chunk:
-            # `a_end` is how many segments from `current_chunk` go into the `A`
-            # (first) sentence.
-            a_end = 1
-            if len(current_chunk) >= 2:
-              a_end = rng.randint(1, len(current_chunk) - 1)
+        # We DON'T just concatenate all of the tokens from a document into a long
+        # sequence and choose an arbitrary split point because this would make the
+        # next sentence prediction task too easy. Instead, we split the input into
+        # segments "A" and "B" based on the actual "sentences" provided by the user
+        # input.
+        instances = []
+        current_chunk = []
+        current_length = 0
+        i = 0
+        while i < len(document):
+            segment = document[i]
+            current_chunk.append(segment)
+            current_length += len(segment)
+            if i == len(document) - 1 or current_length >= target_seq_length:
+                if current_chunk:
+                    # `a_end` is how many segments from `current_chunk` go into the `A`
+                    # (first) sentence.
+                    a_end = 1
+                    if len(current_chunk) >= 2:
+                        a_end = rng.randint(1, len(current_chunk) - 1)
 
-            tokens_a = []
-            for j in range(a_end):
-              tokens_a.extend(current_chunk[j])
+                    tokens_a = []
+                    for j in range(a_end):
+                        tokens_a.extend(current_chunk[j])
 
-            tokens_b = []
-            # Random next
-            is_random_next = False
-            if len(current_chunk) == 1 or rng.random() < 0.5:
-              is_random_next = True
-              target_b_length = target_seq_length - len(tokens_a)
+                    tokens_b = []
+                    # Random next
+                    is_random_next = False
+                    if len(current_chunk) == 1 or rng.random() < 0.5:
+                        is_random_next = True
+                        target_b_length = target_seq_length - len(tokens_a)
 
-              # This should rarely go for more than one iteration for large
-              # corpora. However, just to be careful, we try to make sure that
-              # the random document is not the same as the document
-              # we're processing.
-              for _ in range(10):
-                random_document_index = rng.randint(0, len(all_documents) - 1)
-                if random_document_index != document_index:
-                  break
+                        # This should rarely go for more than one iteration for large
+                        # corpora. However, just to be careful, we try to make sure that
+                        # the random document is not the same as the document
+                        # we're processing.
+                        for _ in range(10):
+                            random_document_index = rng.randint(0, len(all_documents) - 1)
+                            if random_document_index != document_index:
+                                break
 
-              random_document = all_documents[random_document_index]
-              random_start = rng.randint(0, len(random_document) - 1)
-              for j in range(random_start, len(random_document)):
-                tokens_b.extend(random_document[j])
-                if len(tokens_b) >= target_b_length:
-                  break
-              # We didn't actually use these segments so we "put them back" so
-              # they don't go to waste.
-              num_unused_segments = len(current_chunk) - a_end
-              i -= num_unused_segments
-            # Actual next
-            else:
-              is_random_next = False
-              for j in range(a_end, len(current_chunk)):
-                tokens_b.extend(current_chunk[j])
-            self.truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng)
+                        random_document = all_documents[random_document_index]
+                        random_start = rng.randint(0, len(random_document) - 1)
+                        for j in range(random_start, len(random_document)):
+                            tokens_b.extend(random_document[j])
+                            if len(tokens_b) >= target_b_length:
+                                break
+                        # We didn't actually use these segments so we "put them back" so
+                        # they don't go to waste.
+                        num_unused_segments = len(current_chunk) - a_end
+                        i -= num_unused_segments
+                    # Actual next
+                    else:
+                        is_random_next = False
+                        for j in range(a_end, len(current_chunk)):
+                            tokens_b.extend(current_chunk[j])
+                    self.truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng)
 
-            assert len(tokens_a) >= 1
-            assert len(tokens_b) >= 1
+                    assert len(tokens_a) >= 1
+                    assert len(tokens_b) >= 1
 
-            tokens = []
-            segment_ids = []
-            tokens.append("[CLS]")
-            segment_ids.append(0)
-            for token in tokens_a:
-              tokens.append(token)
-              segment_ids.append(0)
+                    tokens = []
+                    segment_ids = []
+                    tokens.append("[CLS]")
+                    segment_ids.append(0)
+                    for token in tokens_a:
+                        tokens.append(token)
+                        segment_ids.append(0)
 
-            tokens.append("[SEP]")
-            segment_ids.append(0)
+                    tokens.append("[SEP]")
+                    segment_ids.append(0)
 
-            for token in tokens_b:
-              tokens.append(token)
-              segment_ids.append(1)
-            tokens.append("[SEP]")
-            segment_ids.append(1)
+                    for token in tokens_b:
+                        tokens.append(token)
+                        segment_ids.append(1)
+                    tokens.append("[SEP]")
+                    segment_ids.append(1)
 
-            (tokens, masked_lm_positions,
-             masked_lm_labels) = self.create_masked_lm_predictions(
-                 tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng)
-            instance = TrainingInstance(
-                tokens=tokens,
-                segment_ids=segment_ids,
-                is_random_next=is_random_next,
-                masked_lm_positions=masked_lm_positions,
-                masked_lm_labels=masked_lm_labels)
-            instances.append(instance)
-          current_chunk = []
-          current_length = 0
-        i += 1
+                    (tokens, masked_lm_positions,
+                     masked_lm_labels) = self.create_masked_lm_predictions(
+                        tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng)
+                    instance = TrainingInstance(
+                        tokens=tokens,
+                        segment_ids=segment_ids,
+                        is_random_next=is_random_next,
+                        masked_lm_positions=masked_lm_positions,
+                        masked_lm_labels=masked_lm_labels)
+                    instances.append(instance)
+                current_chunk = []
+                current_length = 0
+            i += 1
 
-      return instances
+        return instances
 
-
-
-    def create_masked_lm_predictions(self,tokens, masked_lm_prob,
+    def create_masked_lm_predictions(self, tokens, masked_lm_prob,
                                      max_predictions_per_seq, vocab_words, rng):
-      """Creates the predictions for the masked LM objective."""
+        """Creates the predictions for the masked LM objective."""
 
-      cand_indexes = []
-      for (i, token) in enumerate(tokens):
-        if token == "[CLS]" or token == "[SEP]":
-          continue
-        # Whole Word Masking means that if we mask all of the wordpieces
-        # corresponding to an original word. When a word has been split into
-        # WordPieces, the first token does not have any marker and any subsequence
-        # tokens are prefixed with ##. So whenever we see the ## token, we
-        # append it to the previous set of word indexes.
-        #
-        # Note that Whole Word Masking does *not* change the training code
-        # at all -- we still predict each WordPiece independently, softmaxed
-        # over the entire vocabulary.
-        if (self.do_whole_word_mask and len(cand_indexes) >= 1 and
-            token.startswith("##")):
-          cand_indexes[-1].append(i)
-        else:
-          cand_indexes.append([i])
-
-      rng.shuffle(cand_indexes)
-
-      output_tokens = list(tokens)
-
-      num_to_predict = min(max_predictions_per_seq,
-                           max(1, int(round(len(tokens) * masked_lm_prob))))
-
-      masked_lms = []
-      covered_indexes = set()
-      for index_set in cand_indexes:
-        if len(masked_lms) >= num_to_predict:
-          break
-        # If adding a whole-word mask would exceed the maximum number of
-        # predictions, then just skip this candidate.
-        if len(masked_lms) + len(index_set) > num_to_predict:
-          continue
-        is_any_index_covered = False
-        for index in index_set:
-          if index in covered_indexes:
-            is_any_index_covered = True
-            break
-        if is_any_index_covered:
-          continue
-        for index in index_set:
-          covered_indexes.add(index)
-
-          masked_token = None
-          # 80% of the time, replace with [MASK]
-          if rng.random() < 0.8:
-            masked_token = "[MASK]"
-          else:
-            # 10% of the time, keep original
-            if rng.random() < 0.5:
-              masked_token = tokens[index]
-            # 10% of the time, replace with random word
+        cand_indexes = []
+        for (i, token) in enumerate(tokens):
+            if token == "[CLS]" or token == "[SEP]":
+                continue
+            # Whole Word Masking means that if we mask all of the wordpieces
+            # corresponding to an original word. When a word has been split into
+            # WordPieces, the first token does not have any marker and any subsequence
+            # tokens are prefixed with ##. So whenever we see the ## token, we
+            # append it to the previous set of word indexes.
+            #
+            # Note that Whole Word Masking does *not* change the training code
+            # at all -- we still predict each WordPiece independently, softmaxed
+            # over the entire vocabulary.
+            if (self.do_whole_word_mask and len(cand_indexes) >= 1 and
+                    token.startswith("##")):
+                cand_indexes[-1].append(i)
             else:
-              masked_token = vocab_words[rng.randint(0, len(vocab_words) - 1)]
+                cand_indexes.append([i])
 
-          output_tokens[index] = masked_token
+        rng.shuffle(cand_indexes)
 
-          masked_lms.append(MaskedLmInstance(index=index, label=tokens[index]))
-      assert len(masked_lms) <= num_to_predict
-      masked_lms = sorted(masked_lms, key=lambda x: x.index)
+        output_tokens = list(tokens)
 
-      masked_lm_positions = []
-      masked_lm_labels = []
-      for p in masked_lms:
-        masked_lm_positions.append(p.index)
-        masked_lm_labels.append(p.label)
+        num_to_predict = min(max_predictions_per_seq,
+                             max(1, int(round(len(tokens) * masked_lm_prob))))
 
-      return (output_tokens, masked_lm_positions, masked_lm_labels)
+        masked_lms = []
+        covered_indexes = set()
+        for index_set in cand_indexes:
+            if len(masked_lms) >= num_to_predict:
+                break
+            # If adding a whole-word mask would exceed the maximum number of
+            # predictions, then just skip this candidate.
+            if len(masked_lms) + len(index_set) > num_to_predict:
+                continue
+            is_any_index_covered = False
+            for index in index_set:
+                if index in covered_indexes:
+                    is_any_index_covered = True
+                    break
+            if is_any_index_covered:
+                continue
+            for index in index_set:
+                covered_indexes.add(index)
 
-    def truncate_seq_pair(self,tokens_a, tokens_b, max_num_tokens, rng):
-      """Truncates a pair of sequences to a maximum sequence length."""
-      while True:
-        total_length = len(tokens_a) + len(tokens_b)
-        if total_length <= max_num_tokens:
-          break
+                masked_token = None
+                # 80% of the time, replace with [MASK]
+                if rng.random() < 0.8:
+                    masked_token = "[MASK]"
+                else:
+                    # 10% of the time, keep original
+                    if rng.random() < 0.5:
+                        masked_token = tokens[index]
+                    # 10% of the time, replace with random word
+                    else:
+                        masked_token = vocab_words[rng.randint(0, len(vocab_words) - 1)]
 
-        trunc_tokens = tokens_a if len(tokens_a) > len(tokens_b) else tokens_b
-        assert len(trunc_tokens) >= 1
+                output_tokens[index] = masked_token
 
-        # We want to sometimes truncate from the front and sometimes from the
-        # back to add more randomness and avoid biases.
-        if rng.random() < 0.5:
-            del trunc_tokens[0]
-        else:
-            trunc_tokens.pop()
-    def __getitem__(self,ind):
+                masked_lms.append(MaskedLmInstance(index=index, label=tokens[index]))
+        assert len(masked_lms) <= num_to_predict
+        masked_lms = sorted(masked_lms, key=lambda x: x.index)
+
+        masked_lm_positions = []
+        masked_lm_labels = []
+        for p in masked_lms:
+            masked_lm_positions.append(p.index)
+            masked_lm_labels.append(p.label)
+
+        return (output_tokens, masked_lm_positions, masked_lm_labels)
+
+    def truncate_seq_pair(self, tokens_a, tokens_b, max_num_tokens, rng):
+        """Truncates a pair of sequences to a maximum sequence length."""
+        while True:
+            total_length = len(tokens_a) + len(tokens_b)
+            if total_length <= max_num_tokens:
+                break
+
+            trunc_tokens = tokens_a if len(tokens_a) > len(tokens_b) else tokens_b
+            assert len(trunc_tokens) >= 1
+
+            # We want to sometimes truncate from the front and sometimes from the
+            # back to add more randomness and avoid biases.
+            if rng.random() < 0.5:
+                del trunc_tokens[0]
+            else:
+                trunc_tokens.pop()
+
+    def __getitem__(self, ind):
         instance = self.dataset[ind]
 
         ## if we get them as batch we have to reapply this step
         token_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(instance.tokens))
         mask_label_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(instance.masked_lm_labels))
         masked_lm_positions = torch.tensor(instance.masked_lm_positions)
-        mask = torch.ones(token_ids.shape,dtype=torch.bool)
+        mask = torch.ones(token_ids.shape, dtype=torch.bool)
         mask[masked_lm_positions] = 0
-        mask_labels = token_ids.masked_fill(mask,-100)
+        mask_labels = token_ids.masked_fill(mask, -100)
         mask_labels[masked_lm_positions] = mask_label_ids
         mask_labels.unsqueeze_(0)
         token_ids.unsqueeze_(0)
         print("Token id shape {} ".format(token_ids.shape))
-        next_label = torch.tensor([ 0 if instance.is_random_next  else  1])
+        next_label = torch.tensor([0 if instance.is_random_next else 1])
         token_type_ids = torch.tensor(instance.segment_ids).unsqueeze(0)
         return token_ids, mask_labels, next_label, token_type_ids
-
 
 
 def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args):
@@ -923,28 +924,32 @@ def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args):
     # The rest of the time (10% of the time) we keep the masked input tokens unchanged
     return inputs, labels
 
+
 if __name__ == "__main__":
     file_list = ["PMC6961255.txt"]
     args = parse_args()
     bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
-    #train_dataset = LineByLineTextDataset(bert_tokenizer,args, file_list)
-    train_dataset = MyTextDataset(bert_tokenizer,args,file_list)
-    #print("Padding var mii", train_dataset[-1])
+    # train_dataset = LineByLineTextDataset(bert_tokenizer,args, file_list)
+    train_dataset = MyTextDataset(bert_tokenizer, args, file_list)
+    # print("Padding var mii", train_dataset[-1])
 
-    #print(train_dataset[0])
+    # print(train_dataset[0])
     train_sampler = RandomSampler(train_dataset)
+
+
     def collate(examples):
         return pad_sequence(examples, batch_first=True, padding_value=bert_tokenizer.pad_token_id)
+
 
     train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(
         train_dataset, sampler=train_sampler, batch_size=10, collate_fn=collate
     )
-    #self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
+    # self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
     epoch_iterator = tqdm(train_dataloader, desc="Iteration")
     for step, batch in enumerate(epoch_iterator):
         print("Padding var mi inside ", batch.shape)
-        #print("Batch shape {} ".format(batch.shape))
-        #print("First input {} ".format(batch[0]))
+        # print("Batch shape {} ".format(batch.shape))
+        # print("First input {} ".format(batch[0]))
         inputs, labels = mask_tokens(batch, bert_tokenizer, args)
-        #print(inputs.shape)
+        # print(inputs.shape)
