@@ -1653,7 +1653,7 @@ class BioMLT(nn.Module):
                 self.bert_optimizer.step()
                 ner_loss = ner_loss + loss.item()
             avg_ner_loss = ner_loss/eval_interval
-            print("Average ner loss : {}".format())
+            print("Average ner loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
             f1, p, r = self.eval_ner()
             print("F1 {}".format(f1))
