@@ -1625,11 +1625,15 @@ class BioMLT(nn.Module):
         best_f1 = 0
         avg_ner_losses = []
         epoch_num = args.num_train_epochs
+        print("Total epochs over data {} ".format(epoch_num))
+        eval_interval = 1000
+        len_data = len(self.ner_reader)
+        print("Length of each epoch {}".format(len_data))
+        epoch_num = epoch_num * len_data//eval_interval
         print("Will train for {} epochs ".format(epoch_num))
+
         for j in range(epoch_num):
-            print("Length of each epoch {}".format(len(self.ner_reader)))
             ner_loss = 0
-            eval_interval = 100
             # eval_interval = len(self.ner_reader)
             for i in range(eval_interval):
                 self.bert_optimizer.zero_grad()
