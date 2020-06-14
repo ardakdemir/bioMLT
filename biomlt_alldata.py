@@ -1647,11 +1647,12 @@ class BioMLT(nn.Module):
                 # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
                 # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
                 loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
-                print(loss.item())
                 # print("Predictions")
                 # print(torch.argmax(out_logits,dim=2))
                 # print("Trues")
                 # print(ner_inds)
+                if i%100 == 99:
+                    print("Average loss on {} batches : {}".format(i+1,ner_loss/(i+1)))
                 loss.backward()
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
@@ -1659,6 +1660,7 @@ class BioMLT(nn.Module):
             avg_ner_loss = ner_loss/eval_interval
             print("Average ner loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
+            print("Evaluatio for epoch {} ".format(j))
             f1, p, r = self.eval_ner()
             print("F1 {}".format(f1))
             results.append([f1, p, r])
@@ -1720,7 +1722,7 @@ class BioMLT(nn.Module):
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
             if i % 50 == 49:
-                logging.info("Processed {} batches".format(i + 1))
+                #logging.info("Processed {} batches".format(i + 1))
                 # break
         # print(all_sents)
         # print(all_truths)
