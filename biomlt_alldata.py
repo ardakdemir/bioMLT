@@ -1721,9 +1721,10 @@ class BioMLT(nn.Module):
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-            if i % 50 == 49:
-                #logging.info("Processed {} batches".format(i + 1))
+            # if i % 50 == 49:
+            #     logging.info("Processed {} batches".format(i + 1))
                 # break
+
         # print(all_sents)
         # print(all_truths)
         # print(all_preds)
