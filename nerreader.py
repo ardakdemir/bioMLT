@@ -217,6 +217,7 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
         dataset = open(self.file_path,encoding='utf-8').readlines()
         new_dataset = []
         sent = []
+        cropped_long_sentence = 0
         label_counts = Counter()
         root = [START_TAG, START_TAG]
         for line in dataset:
@@ -225,6 +226,8 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
                     sent.append([END_TAG, END_TAG ])
                     if len(sent)>2 and len(sent)<200:
                         new_dataset.append([root]+sent)
+                    elif len(sent)>200:
+                        cropped_long_sentence += 1
                     #new_dataset.append(sent)
                     sent = []
             else:
@@ -232,11 +235,12 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
                 row[0] = row[0].replace("\ufeff","")
                 sent.append(row)
                 label_counts.update([row[-1]])
-        if len(sent)>2 and len(sent)<200: 
+        if len(sent)>2 and len(sent)<200:
             sent.append([END_TAG, END_TAG ])
             new_dataset.append([root]+sent)
             #new_dataset.append(sent)
         print("Number of sentences : {} ".format(len(new_dataset)))
+        print("Cropped long sentences for {}  : {} ".format(self.file_path,cropped_long_sentence))
         print("Senntence lengths for NER")
         print([len(sent) for sent in new_dataset])
         #print(new_dataset)
@@ -323,7 +327,7 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
     def __len__(self):
         return len(self.batched_dataset)
 
-    
+
     def __getitem__(self,idx,random=True):
         """
             Indexing for the DepDataset
