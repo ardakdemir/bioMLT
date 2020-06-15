@@ -1634,6 +1634,8 @@ class BioMLT(nn.Module):
 
         for j in range(epoch_num):
             ner_loss = 0
+            self.bert_model.train()
+            self.ner_head.train()
             # eval_interval = len(self.ner_reader)
             for i in range(eval_interval):
                 self.bert_optimizer.zero_grad()
@@ -1658,9 +1660,12 @@ class BioMLT(nn.Module):
                 self.bert_optimizer.step()
                 ner_loss = ner_loss + loss.item()
             avg_ner_loss = ner_loss/eval_interval
+
             print("Average ner loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
-            print("Evaluatio for epoch {} ".format(j))
+            print("Evaluation for epoch {} ".format(j))
+            self.bert_model.eval()
+            self.ner_head.eval()
             f1, p, r = self.eval_ner()
             print("F1 {}".format(f1))
             results.append([f1, p, r])
