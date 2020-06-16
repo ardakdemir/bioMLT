@@ -1418,9 +1418,9 @@ class BioMLT(nn.Module):
             if sum(f1s.values()) > best_sum:
                 best_sum = sum(f1s.values())
                 print("Overall best model found!! Saving to {} ".format(self.args.model_save_name))
-            save_name = "mode_{}_exp_{}".format(self.args.mode,
-                                                exp_prefix) if self.args.model_save_name is None else self.args.model_save_name
-            self.save_all_model(save_name)
+                save_name = "mode_{}_exp_{}".format(self.args.mode,
+                                                    exp_prefix) if self.args.model_save_name is None else self.args.model_save_name
+                self.save_all_model(save_name)
             for q in qa_types:
                 print("Results for {}  f1 : {} exact : {} total : {} ".format(q, f1s[q], exacts[q], totals[q]))
                 f1 = f1s[q]
@@ -1439,7 +1439,7 @@ class BioMLT(nn.Module):
             print("Writing results to {}".format(qas_save_path))
             with open(qas_save_path,"a") as out:
                 s = "List\tyes-no\tfactoid\n"
-                s = "\t".join([str(best_results[q]) for q in ["list","yesno","factoid"]])+"\n"
+                s = s+ "\t".join([str(best_results[q]) for q in ["list","yesno","factoid"]])+"\n"
                 out.write(s)
 
     def pretrain_mlm(self):

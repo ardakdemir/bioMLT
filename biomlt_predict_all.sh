@@ -44,7 +44,7 @@ do
     squad_yesno_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-yesno-6b-'${test_num}'-snippet.json'
     gold_path=${bioasq_dataset_folder}'6B'${test_num}'_golden.json'
     nbest_path=${output_dir}'/nbest_pred_'${test_num}
-    pred_path=${}'/preds_'${test_num}
+    pred_path=${output_dir}'/preds_'${test_num}
     out_for_bioasq_eval=${output_dir}"/transformed_preds_"${test_num}
     out_json=${output_dir}'/merged_json_batch_'${test_num}
     singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --predict --load_model_path $load_model_path --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file --squad_predict_factoid_file $squad_predict_factoid_file --output_dir ${output_dir} --pred_path $pred_path --nbest_path $nbest_path --load_model  --mode qas
