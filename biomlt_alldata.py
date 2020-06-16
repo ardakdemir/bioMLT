@@ -85,7 +85,7 @@ def hugging_parse_args():
         default='biomlt_config',
         type=str,
         required=False,
-        help="The output directory where the model predictions and checkpoints will be written.",
+        help="Configuration file for the biomlt model.",
     )
     parser.add_argument(
         "--pred_path",
@@ -148,7 +148,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--max_seq_length",
-        default=128,
+        default=512,
         type=int,
         help="The maximum total input sequence length after WordPiece tokenization. Sequences "
              "longer than this will be truncated, and sequences shorter than this will be padded.",
@@ -461,14 +461,6 @@ def generate_pred_content(tokens, preds, truths=None, lens=None, label_voc=None)
     return sents
 
 
-# Wrapper class to combine NER with bioasq
-class BioMTL(nn.Module):
-    def __init__(self):
-        super(BioMLT, self).__init__()
-        self.BioMLT = BioMLT()
-        self.args = self.BioMLT.args
-        self.ner_head = NerModel(self.args)
-
 
 class BioMLT(nn.Module):
     def __init__(self):
@@ -561,7 +553,6 @@ class BioMLT(nn.Module):
     def save_all_model(self, save_path=None, weights=True):
         if self.args.model_save_name is None and save_path is None:
             save_name = os.path.join(self.args.output_dir, "{}_{}".format(self.args.mode, exp_prefix))
-
         else:
             if save_path is None:
                 save_path = self.args.model_save_name
@@ -1402,7 +1393,7 @@ class BioMLT(nn.Module):
 
                 # qas_outputs = self.qas_head(**squad_inputs)
                 print("Output shape")
-                print(qas_outputs.shape)
+                print(qas_outputs[1].shape)
 
                 loss = qas_outputs[0]
                 loss.backward()
