@@ -1603,7 +1603,8 @@ class BioMLT(nn.Module):
     def train_ner(self):
         eval_file = self.args.ner_dev_file
         eval_file_name = os.path.split(eval_file)[1].split(".")[0]
-        model_save_name = "best_ner_model_on_{}".format(eval_file_name)
+        ner_type = os.path.split(eval_file)[0].split("/")[-1]
+        model_save_name = "best_ner_model_on_{}".format(ner_type)
         self.load_ner_data(eval_file=eval_file)
         # if self.args.load_model:
         #    self.ner_reader.label_vocab = self.ner_label_vocab
@@ -1676,9 +1677,9 @@ class BioMLT(nn.Module):
         print("Average losses")
         print(avg_ner_losses)
         result_save_path = os.path.join(args.output_dir, args.ner_result_file)
-        self.write_ner_result(result_save_path, eval_file_name, results, best_epoch)
+        self.write_ner_result(result_save_path, ner_type, results, best_epoch)
 
-    def write_ner_result(self, result_save_path, eval_file_name, results, best_epoch):
+    def write_ner_result(self, result_save_path, ner_type, results, best_epoch):
         logging.info("Writing  results for ner to {}".format(result_save_path))
         if not os.path.exists(result_save_path):
             s = "DATASET\tPRE\tREC\tF-1\n"
@@ -1686,7 +1687,7 @@ class BioMLT(nn.Module):
             s = ""
         with open(result_save_path, "a") as o:
             f1, p, r = results[best_epoch]
-            s += "{}\t{}\t{}\t{}\n".format(eval_file_name, p, r, f1)
+            s += "{}\t{}\t{}\t{}\n".format(ner_type, p, r, f1)
             o.write(s)
 
     ## Now we are using the same dataset for training and testing##
