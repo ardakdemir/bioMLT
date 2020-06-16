@@ -5,12 +5,7 @@ model_save_name=$1
 #test_num=$2
 #squad_train_file='../biobert_data/qas_train_split.json'
 #squad_eval_file='../biobert_data/qas_dev_split.json'
-epoch_num=5
-bioasq_dataset_folder='/home/aakdemir/biobert_data/datasets/QA/BioASQ/'
-bioasq_preprocessed_folder='/home/aakdemir/biobert_data/BioASQ-6b/'
-
-nbest_path='biomlt_train_pred_nbest_pred'
-pred_path='pred_'${model_save_name}
+epoch_num=10
 EVAL_PATH='/home/aakdemir/biobert_data/Evaluation-Measures'
 
 BIOBERT_PATH='/home/aakdemir/bioasq-biobert'
@@ -36,9 +31,9 @@ echo $squad_predict_file
 cd ~/bioMLT
 
 pwd
-# First we train a model on the bioasq dataset and then test it on the test set!! 
+# First we train a model on the bioasq8b dataset and then test it on the test sets!!
 # Used for comparing the results for different pretrained models
-singularity exec --nv ~/singularity/pt-cuda-tf python biomlt.py  --squad_dir .  --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num --squad_yes_no --overwrite_cache
+singularity exec --nv ~/singularity/pt-cuda-tf python biomlt_alldata.py --biobert_model_path $pretrained_biobert_model_path --model_save_name $model_save_name --output_dir $output_dir  --num_train_epochs $epoch_num --squad_yes_no --overwrite_cache
 
 #rm $nbest_path
 for test_num in 1 2 3 4 5

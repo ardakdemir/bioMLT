@@ -435,7 +435,6 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     print("READING {} ".format(input_file_name))
     example_size = args.example_num
     cached_features_file = os.path.join(cache_folder,
-                                        input_dir,
                                         "cached_{}_{}_{}_{}".format(
                                             input_file_name,
                                             "dev" if evaluate else "train",

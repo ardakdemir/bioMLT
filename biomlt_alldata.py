@@ -148,7 +148,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--max_seq_length",
-        default=256,
+        default=128,
         type=int,
         help="The maximum total input sequence length after WordPiece tokenization. Sequences "
              "longer than this will be truncated, and sequences shorter than this will be padded.",
@@ -191,7 +191,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--squad_train_factoid_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
+        default="biobert_data/BioASQ-training8b/training8b_squadformat_train_factoid.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -199,14 +199,14 @@ def hugging_parse_args():
 
     parser.add_argument(
         "--squad_predict_factoid_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet-annotated.json",
+        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet.json",
         type=str,
         help="the input evaluation file. if a data dir is specified, will look for the file there"
              + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
     )
     parser.add_argument(
         "--squad_train_yesno_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-yesno-6b-snippet.json",
+        default="biobert_data/BioASQ-training8b/training8b_squadformat_train_yesno.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -221,7 +221,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--squad_train_list_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-list-6b-snippet-annotated.json",
+        default="biobert_data/BioASQ-training8b/training8b_squadformat_train_list.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -229,7 +229,7 @@ def hugging_parse_args():
 
     parser.add_argument(
         "--squad_predict_list_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-list-6b-snippet-annotated.json",
+        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-list-6b-snippet.json",
         type=str,
         help="the input evaluation file. if a data dir is specified, will look for the file there"
              + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -1386,6 +1386,7 @@ class BioMLT(nn.Module):
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
+                print("Question type {}".format(type))
                 # logging.info("Input ids shape : {}".format(batch[0].shape))
                 # bert2toks = batch[-1]
                 outputs = self.bert_model(**bert_inputs)
@@ -1400,7 +1401,8 @@ class BioMLT(nn.Module):
                 qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
 
                 # qas_outputs = self.qas_head(**squad_inputs)
-                # print(qas_outputs[0].item())
+                print("Output shape")
+                print(qas_outputs.shape)
 
                 loss = qas_outputs[0]
                 loss.backward()
@@ -1715,9 +1717,6 @@ class BioMLT(nn.Module):
                 return
             # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
             # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-            if i == 0:
-                logging.info("What do ner inds look like ")
-                logging.info(ner_inds)
             preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True)
             tokens_ = tokens[-1]
             l = len(tokens_)
