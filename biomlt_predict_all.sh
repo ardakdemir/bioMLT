@@ -39,9 +39,9 @@ pwd
 for test_num in 1 2 3 4 5
 do
     
-    squad_factoid_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-factoid-6b-'${test_num}'-snippet.json'
-    squad_list_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-list-6b-'${test_num}'-snippet.json'
-    squad_yesno_predict_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-yesno-6b-'${test_num}'-snippet.json'
+    squad_predict_factoid_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-factoid-6b-'${test_num}'-snippet.json'
+    squad_predict_list_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-list-6b-'${test_num}'-snippet.json'
+    squad_predict_yesno_file=${bioasq_preprocessed_folder}'test/Snippet-as-is/BioASQ-test-yesno-6b-'${test_num}'-snippet.json'
     gold_path=${bioasq_dataset_folder}'6B'${test_num}'_golden.json'
     nbest_path=${output_dir}'/nbest_pred_'${test_num}
     pred_path=${output_dir}'/preds_'${test_num}
