@@ -1439,7 +1439,7 @@ class BioMLT(nn.Module):
             print("Writing results to {}".format(qas_save_path))
             with open(qas_save_path,"a") as out:
                 s = "List\tyes-no\tfactoid\n"
-                s = "\t".join([best_results[q] for q in ["list","yesno","factoid"]])+"\n"
+                s = "\t".join([str(best_results[q]) for q in ["list","yesno","factoid"]])+"\n"
                 out.write(s)
 
     def pretrain_mlm(self):
