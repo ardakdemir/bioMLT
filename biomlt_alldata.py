@@ -923,8 +923,8 @@ class BioMLT(nn.Module):
             return ner_outs
 
     def run_test(self):
-        assert self.args.load_model_path is not None, "Model path to be loaded must be defined to run in predict mode!!!"
-        self.load_all_model(self.args.load_model_path)
+        # assert self.args.load_model_path is not None, "Model path to be loaded must be defined to run in predict mode!!!"
+        # self.load_all_model(self.args.load_model_path)
 
         device = self.args.device
         self.bert_model.to(device)
@@ -1741,7 +1741,7 @@ class BioMLT(nn.Module):
 
 def main():
     biomlt = BioMLT()
-    qa_types = ['list', 'yesno', 'factoid']
+    qa_types = ['factoid']
     mode = biomlt.args.mode
     predict = biomlt.args.predict
     if mode == "qas":
