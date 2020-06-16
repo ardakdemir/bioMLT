@@ -1391,10 +1391,6 @@ class BioMLT(nn.Module):
                 # logging.info("Bert out shape {}".format(bert_out.shape))
                 qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
 
-                # qas_outputs = self.qas_head(**squad_inputs)
-                print("Output shape")
-                print(qas_outputs[1].shape)
-
                 loss = qas_outputs[0]
                 loss.backward()
                 self.bert_optimizer.step()
