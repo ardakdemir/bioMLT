@@ -241,8 +241,6 @@ torch.tensor([seq_ids],dtype=torch.long), torch.tensor(bert2tok), lab])
             #new_dataset.append(sent)
         print("Number of sentences : {} ".format(len(new_dataset)))
         print("Cropped long sentences for {}  : {} ".format(self.file_path,cropped_long_sentence))
-        print("Senntence lengths for NER")
-        print([len(sent) for sent in new_dataset])
         #print(new_dataset)
         new_dataset, orig_idx = sort_dataset(new_dataset, sort = True)
 
