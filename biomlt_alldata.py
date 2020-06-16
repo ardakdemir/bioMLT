@@ -109,6 +109,13 @@ def hugging_parse_args():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
+        "--qas_result_file",
+        default='qas_results',
+        type=str,
+        required=False,
+        help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument(
         "--output_dir",
         default='save_dir',
         type=str,
@@ -692,6 +699,9 @@ class BioMLT(nn.Module):
         self.yesno_head.to(device)
         f1s, totals, exacts = {}, {}, {}
         nbests, preds = {}, {}
+        self.bert_model.eval()
+        self.qas_head.eval()
+        self.yesno_head.eval()
         if self.args.model_save_name is None:
             prefix = gettime() + "_" + str(ind)
         else:
@@ -714,9 +724,7 @@ class BioMLT(nn.Module):
             logger.info("  Batch size = %d", args.eval_batch_size)
             all_results = []
             for batch in tqdm(eval_dataloader, desc="Evaluating"):
-                self.bert_model.eval()
-                self.qas_head.eval()
-                self.yesno_head.eval()
+
                 batch = tuple(t.to(self.device) for t in batch)
                 # print("Batch shape  {}".format(batch[0].shape))
                 # if len(batch[0].shape)==1:
@@ -744,15 +752,7 @@ class BioMLT(nn.Module):
                                            batch,
                                            eval=True,
                                            is_yes_no=self.args.squad_yes_no, type=type)
-                    # qas_out = self.qas_head(**squad_inputs)
-                    # print(qas_out)
-                    # loss,  start_logits, end_logits = qas_out
-                    # length = torch.sum(batch[1])
-                    # start_logits = start_logits.cpu().detach().numpy()
-                    # end_logits = end_logits.cpu().detach().numpy()
-                    # tokens = self.bert_tokenizer.convert_ids_to_tokens(batch[0].squeeze(0).detach().cpu().numpy()[:length])
                     example_indices = batch[3]
-                    # print("Example indices inside evaluate_qas {}".format(example_indices))
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
                     unique_id = int(eval_feature.unique_id)
@@ -1439,6 +1439,12 @@ class BioMLT(nn.Module):
                     logging.info("Saving best model for {} questions with {} f1  to {}".format(q, f1,
                                                                                                save_name))
                     self.save_all_model(save_name)
+            qas_save_path = os.path.join(self.args.output_dir,self.args.qas_result_file)
+            print("Writing results to {}".format(qas_save_path))
+            with open(qas_save_path,"a") as out:
+                s = "List\tyes-no\tfactoid\n"
+                s = "\t".join([best_results[q] for q in ["list","yesno","factoid"]])+"\n"
+                out.write(s)
 
     def pretrain_mlm(self):
         device = self.args.device
@@ -1662,6 +1668,7 @@ class BioMLT(nn.Module):
             self.ner_head.eval()
             f1, p, r = self.eval_ner()
             print("F1 {}".format(f1))
+            logging.info("F1 {}".format(f1))
             results.append([f1, p, r])
             if f1 > best_f1:
                 best_epoch = j
