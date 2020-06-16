@@ -8,7 +8,7 @@ cd ~
 pwd
 
 
-ner_data_folder="biobert_data/datasets/NER/"
+ner_data_folder="biobert_data/datasets/NER"
 for file in $(ls ${ner_data_folder})
 do
     folder_path=$ner_data_folder"/"$file
