@@ -1207,6 +1207,13 @@ class BioMLT(nn.Module):
         print("Saving ner results to {} ".format(result_save_path))
         self.write_ner_result(result_save_path, eval_file_name, ner_results, best_ner_ind)
 
+        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
+        print("Writing results to {}".format(qas_save_path))
+        with open(qas_save_path, "a") as out:
+            s = "List\tyes-no\tfactoid\n"
+            s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
+            out.write(s)
+
     def load_ner_vocab(self):
         if self.args.ner_vocab_path is None:
             print("Ner vocab must be defined for the prediction mode!! ! ! ! !")
@@ -1753,15 +1760,14 @@ def main():
             print("Running train_qas")
             biomlt.train_qas()
     elif mode == "joint_flat":
-        biomlt.train_qas_ner()
+        if predict:
+            biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=True)
+            biomlt.run_test()
+        else:
+            biomlt.train_qas_ner()
     elif mode == "ner":
         biomlt.train_ner()
-    # biomlt.train_qas_ner()
-    # biomlt.pretrain_mlm()
-    # mymodel = BertForMaskedLM.from_pretrained("save_dir",output_hidden_states=True)
-    # config = BertConfig.from_json_file(args.biobert_tf_config)
-    # biobert = BertModel.from_pretrained(args.biobert_tf_model,config=config,from_tf=True)
-    # print(biobert)
+
 
 
 if __name__ == "__main__":
