@@ -1151,14 +1151,14 @@ class BioMLT(nn.Module):
                 self.qas_head.optimizer.step()
 
                 epoch_loss += total_loss.item()
-                if step % 100 == 99:
-                    if self.args.model_save_name is None:
-                        checkpoint_name = self.args.mode + "_" + exp_prefix + "_check_{}_{}".format(epoch, step)
-                    else:
-                        checkpoint_name = self.args.model_save_name + "_check_{}_{}".format(epoch, step)
-                    logging.info("Saving checkpoint to {}".format(checkpoint_name))
-                    self.save_all_model(checkpoint_name)
-                    logging.info("Average loss after {} steps : {}".format(step + 1, epoch_loss / (step + 1)))
+                # if step % 100 == 99:
+                #     if self.args.model_save_name is None:
+                #         checkpoint_name = self.args.mode + "_" + exp_prefix + "_check_{}_{}".format(epoch, step)
+                #     else:
+                #         checkpoint_name = self.args.model_save_name + "_check_{}_{}".format(epoch, step)
+                #     logging.info("Saving checkpoint to {}".format(checkpoint_name))
+                #     self.save_all_model(checkpoint_name)
+                #     logging.info("Average loss after {} steps : {}".format(step + 1, epoch_loss / (step + 1)))
 
             self.bert_model.eval()
             self.qas_head.eval()
@@ -1183,10 +1183,10 @@ class BioMLT(nn.Module):
                 print("Sum of best results {} ".format(sum(best_results.values())))
                 if sum(f1s.values()) > best_sum:
                     best_sum = sum(f1s.values())
-                    print("Ovesrall best model found!! Saving to {} ".format(self.args.model_save_name))
-                save_name = "mode_{}_exp_{}".format(self.args.mode,
-                                                    exp_prefix) if self.args.model_save_name is None else self.args.model_save_name
-                self.save_all_model(save_name)
+                    print("Overall best model found!! Saving to {} ".format(self.args.model_save_name))
+                    save_name = "mode_{}_exp_{}".format(self.args.mode,
+                                                        exp_prefix) if self.args.model_save_name is None else self.args.model_save_name
+                    self.save_all_model(save_name)
                 for q in qa_types:
                     print("Results for {}  f1 : {} exact : {} total : {} ".format(q, f1s[q], exacts[q], totals[q]))
                     f1 = f1s[q]
