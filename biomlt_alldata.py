@@ -1741,7 +1741,7 @@ class BioMLT(nn.Module):
 
 def main():
     biomlt = BioMLT()
-    qa_types = ['factoid']
+    qa_types = ['yesno','list','factoid']
     mode = biomlt.args.mode
     predict = biomlt.args.predict
     if mode == "qas":
