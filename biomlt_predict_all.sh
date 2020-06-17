@@ -47,7 +47,7 @@ do
     pred_path=${output_dir}'/preds_'${test_num}
     out_for_bioasq_eval=${output_dir}"/transformed_preds_"${test_num}
     out_json=${output_dir}'/merged_json_batch_'${test_num}
-    singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --predict --load_model_path $load_model_path --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file --squad_predict_factoid_file $squad_predict_factoid_file --output_dir ${output_dir} --pred_path $pred_path --nbest_path $nbest_path 
+    singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --predict --load_model_path $load_model_path --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file --squad_predict_factoid_file $squad_predict_factoid_file --output_dir ${output_dir} --pred_path $pred_path --nbest_path $nbest_path
 
     #rm $out_for_bioasq_eval
     python ${my_n2b_yesno_path}  --nbest_path $pred_path'_yesno.json' --output_path $out_for_bioasq_eval'_yesno'
@@ -56,9 +56,9 @@ do
     python bioMLT/merge_predictions.py ${out_for_bioasq_eval}  ${out_json}
     result_path=${output_dir}"/results_for_batch_"${test_num}
     echo "STORING RESULTS FOR BATCH "${test_num}" to "${result_path}
-    java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_json > result_path
+    java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_json > $result_path
 done 
 
 all_results_file=${output_dir}'/all_results_'${save_name}'.txt'
-echo "Combining results for each batch to "
+echo "Combining results for each batch to "$all_results_file
 cat ${output_dir}"/results_for_batch_*" >> ${all_results_file}
