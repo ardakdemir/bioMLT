@@ -53,7 +53,7 @@ do
     python ${my_n2b_yesno_path}  --nbest_path $pred_path'_yesno.json' --output_path $out_for_bioasq_eval'_yesno'
     python ${my_n2b_factoid_path} --nbest_path $nbest_path'_factoid.json' --output_path $out_for_bioasq_eval'_factoid'
     python ${my_n2b_list_path} --nbest_path $nbest_path'_list.json' --output_path $out_for_bioasq_eval'_list'
-    python merge_predictions.py ${out_for_bioasq_eval}  ${out_json}
+    python bioMLT/merge_predictions.py ${out_for_bioasq_eval}  ${out_json}
     result_path=${output_dir}"/results_for_batch_"${test_num}
     echo "STORING RESULTS FOR BATCH "${test_num}" to "${result_path}
     java -Xmx10G -cp ${EVAL_PATH}/flat/BioASQEvaluation/dist/BioASQEvaluation.jar evaluation.EvaluatorTask1b -phaseB -e 5 $gold_path  $out_json > result_path

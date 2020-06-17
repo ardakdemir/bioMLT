@@ -1622,7 +1622,7 @@ class BioMLT(nn.Module):
         avg_ner_losses = []
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
-        eval_interval = 1000
+        eval_interval = len_data//2
         len_data = len(self.ner_reader)
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data//eval_interval
