@@ -61,4 +61,4 @@ done
 
 all_results_file=${output_dir}'/all_results_'${save_name}'.txt'
 echo "Combining results for each batch to "$all_results_file
-cat ${output_dir}"/results_for_batch_*" >> ${all_results_file}
+cat ${output_dir}"/results_for_batch_"* >> ${all_results_file}
