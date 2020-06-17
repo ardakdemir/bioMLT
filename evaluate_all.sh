@@ -1,4 +1,6 @@
 save_name=$1
+EVAL_PATH='biobert_data/Evaluation-Measures'
+
 output_dir='output_for_'${save_name}
 bioasq_dataset_folder='biobert_data/datasets/QA/BioASQ/'
 for test_num in 1 2 3 4 5
