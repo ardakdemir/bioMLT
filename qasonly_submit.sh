@@ -1,6 +1,5 @@
 /usr/local/bin/nosh
 output_dir='qasonly_1606'
-epoch_num=4
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N qas_only_train
