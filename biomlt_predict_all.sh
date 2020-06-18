@@ -19,7 +19,7 @@ my_n2b_list_path='bioMLT/mytransform_n2b_list.py'
 my_n2b_factoid_path='bioMLT/mytransform_n2b_factoid.py'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N  predict_all -e predict_all_err  -o predict_all_out
+#$ -N  predict_all 
 echo $EVAL_PATH
 echo $BIOBERT_PATH
 echo $n2bfactoid_path
