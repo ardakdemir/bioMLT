@@ -1,7 +1,7 @@
 /usr/local/bin/nosh
 output_dir_temp=${1}
 epoch=5
-baseline_model_path='biobert-squadv1.1_pretrained'
+baseline_model_path='biobert_data/biobert-squadv1.1_pretrained'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N joint_flat_train
