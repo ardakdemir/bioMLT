@@ -20,7 +20,7 @@ do
         train_file=$folder_path"/ent_train_dev.tsv"
         dev_file=$folder_path"/ent_test.tsv"
         echo "Training and testing NER respectively on "
-        my_dir=output_dir_pref"_"$file
+        my_dir=${output_dir_pref}"_"$file
         model_path=${my_dir}"/"${model_pref}"_"${file}
         output_dir='output_for_'${my_dir}
         overleaf_table_file="overleaf_table_for_"${my_dir}
