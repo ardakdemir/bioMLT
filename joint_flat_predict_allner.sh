@@ -36,7 +36,7 @@ do
             pred_path=${output_dir}'/preds_'${test_num}
             out_for_bioasq_eval=${output_dir}"/transformed_preds_"${test_num}
             out_json=${output_dir}'/merged_json_batch_'${test_num}
-            singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --predict --load_model_path $load_model_path --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file --squad_predict_factoid_file $squad_predict_factoid_file --output_dir ${output_dir} --pred_path $pred_path --nbest_path $nbest_path
+            singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --predict --load_model_path $model_path --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file --squad_predict_factoid_file $squad_predict_factoid_file --output_dir ${output_dir} --pred_path $pred_path --nbest_path $nbest_path
 
             #rm $out_for_bioasq_eval
             python ${my_n2b_yesno_path}  --nbest_path $pred_path'_yesno.json' --output_path $out_for_bioasq_eval'_yesno'
