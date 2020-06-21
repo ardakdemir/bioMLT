@@ -7,6 +7,8 @@ my_n2b_yesno_path='bioMLT/mytransformn2b_yesno.py'
 my_n2b_list_path='bioMLT/mytransform_n2b_list.py'
 my_n2b_factoid_path='bioMLT/mytransform_n2b_factoid.py'
 out_for_bioasq_eval='input_for_bioasq'
+bioasq_dataset_folder='biobert_data/datasets/QA/BioASQ/'
+bioasq_preprocessed_folder='biobert_data/BioASQ-6b/'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N joint_flat_predict_all

@@ -4,7 +4,7 @@ pretrained_model_path=$2
 epoch=30
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N joint_flat_myfinetuned 
+#$ -N joint_flat_myfinetuned
 cd ~
 
 ner_data_folder="biobert_data/datasets/NER"
