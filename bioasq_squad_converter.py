@@ -12,7 +12,7 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
     save_dir = os.path.split(bioasq_json_path)[0]
     version = os.path.split(bioasq_json_path)[-1].split(".")[0]
     title = version
-    
+
     qs = bioasq_json["questions"]
     all_questions = defaultdict(list)
     q_count = 0
@@ -25,11 +25,11 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
         any_snippet_count = 0
         q_count+=1
         question = q["body"]
-        
+
         q_type = q["type"]
         if type == "train":
             ideal_answer = q['ideal_answer']
-            if q_type !="summary": 
+            if q_type !="summary":
                 exact_answer = q['exact_answer']
         q_id = q["id"]
         if q_type in ['list','factoid']:
@@ -44,9 +44,11 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
                     all_questions[q_type].append(qas)
                 elif q_type=="factoid":
                     answers = exact_answer
+                    print(exact_answer)
                     for ans in answers:
+                        print(ans)
                         context=context.lower()
-                        ind = context.find(ans.lower())
+                        ind = context.find(ans[0].lower())
                         if ind !=-1:
                             qas["qas"][0]["answers"] = [{"text":ans,"answer_start":ind}]
                             all_questions[q_type].append(qas)
@@ -95,4 +97,3 @@ if __name__=="__main__":
     bioasq_path = args[1]
     d_type = args[2]
     all_jsons = bioasq_to_squad(bioasq_path,type=d_type)
-
