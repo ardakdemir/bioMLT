@@ -1669,6 +1669,7 @@ class BioMLT(nn.Module):
                 loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
                 # print("Predictions")
                 # print(torch.argmax(out_logits,dim=2))
+                print("Ner loss {} ".format(loss.item()))
                 # print("Trues")
                 # print(ner_inds)
                 if i % 100 == 99:
@@ -1684,7 +1685,8 @@ class BioMLT(nn.Module):
             print("Evaluation for epoch {} ".format(j))
             self.bert_model.eval()
             self.ner_head.eval()
-            f1, p, r = self.eval_ner()
+            # f1, p, r = self.eval_ner()
+            f1, p, r = 0, 0, 0
             print("F1 {}".format(f1))
             logging.info("F1 {}".format(f1))
             results.append([f1, p, r])

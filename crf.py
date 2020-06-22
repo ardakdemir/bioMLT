@@ -78,24 +78,24 @@ class CRFLoss(nn.Module):
         # logging.info("Targets")
         # logging.info(targets[-1]//(scores.size()[2]))
         lengths = lengths
-        targets = targets[:, :]
-        scores = scores[:, :]
+        targets = targets[:, 1:]
+        scores = scores[:, 1:]
+        lengths = torch.tensor([l-1 for l in lengths])
         targets = targets.unsqueeze(2)
+
         batch_size = scores.size()[0]
         # scores_ =  scores.view(scores.size()[0],scores.size()[1],-1)
         score_before_sum = torch.gather(scores.reshape(scores.size()[0], scores.size()[1], -1), 2, targets).squeeze(2)
-
         score_before_sums = pack_padded_sequence(score_before_sum, lengths, batch_first=True)
         # print(score_before_sum[0])
         gold_score = score_before_sums[0].sum()
 
         ## forward score : initialize from start tag
         forward_scores = torch.zeros(batch_size, self.tagset_size).to(self.device)
-        forward_scores[:batch_size] = self._log_sum_exp(scores[:, 0, :, :], dim=2)
+        # forward_scores[:batch_size] = self._log_sum_exp(scores[:, 0, :, :], dim=2)
         ## burada  hangisi  dogru emin   degilim index1-> index2 or  opposite?
         ## i think  opposite  is correct
-        # forward_scores[:batch_size] = scores[:,0,:,self.tag2ind[self.START_TAG]]
-
+        forward_scores[:batch_size] = scores[:,0,:,START_IND]
         ## forward score unsqueeze 2ydi 1 yaptim cunku ilk index next tag olarak 
         ## kurguluyorum
         for i in range(1, scores.size()[1]):

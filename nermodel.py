@@ -28,8 +28,8 @@ class NerModel(nn.Module):
         if self.args.crf:
             logging.info("Using CRF with NER")
             logging.info("Using NER with CRF")
-            self.classifier = CRF(self.input_dims, self.output_dim,self.device)
-            self.loss = CRFLoss(self.output_dim,device = self.device)
+            self.classifier = CRF(self.input_dims, self.num_labels, self.device)
+            self.loss = CRFLoss(self.num_labels, device = self.device)
         else:
             self.classifier = nn.Linear(self.input_dims, self.output_dim)
             self.loss = CrossEntropyLoss(ignore_index = PAD_IND)
@@ -40,7 +40,6 @@ class NerModel(nn.Module):
     def _viterbi_decode(self, feats, sent_len):
         start_ind = START_IND
         end_ind = END_IND
-        print("Start index : {}  End index : {}".format(start_ind,end_ind))
         # feats = feats[:,end_ind+1:,end_ind+1:]
         parents = [[torch.tensor(start_ind) for x in range(feats.size()[1])]]
         layer_scores = feats[1, :, start_ind]
@@ -73,22 +72,10 @@ class NerModel(nn.Module):
 
             ## view tehlikeli bir hareket!!!!
             if self.args.crf:
-                print("CRF WUUUHUUUUU")
-                print("Shape of output")
                 lengths = torch.sum((labels > self.num_labels), axis=1)
-                print(lengths)
                 loss = self.loss(out_logits, labels, lengths)
-                print("Label shape {}".format(labels.shape))
-                print("Losss")
-                print(loss.item())
             else:
-                print(labels.view(-1))
-                print(out_logits.shape)
                 loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
-                for label in labels:
-                    print(label)
-                    if PAD_IND in label:
-                        print("PAD FOund")
             return loss, out_logits
 
         return out_logits
