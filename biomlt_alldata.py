@@ -1763,7 +1763,7 @@ class BioMLT(nn.Module):
         with open(transition_file,"w") as o:
             transitions = to_list(self.ner_head.classifier.transition)
             o.write(transitions)
-            o.write("\")
+            o.write("\n")
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
