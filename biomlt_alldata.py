@@ -1760,7 +1760,8 @@ class BioMLT(nn.Module):
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir,'ner_out')
         transition_file = os.path.join(self.args.output_dir,'crf_transitions')
-        with open(transition_file,"w") as o:
+
+        with open(transition_file,"a") as o:
             transitions = to_list(self.ner_head.classifier.transition)
             print("Transitions")
             print(transitions)

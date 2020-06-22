@@ -19,8 +19,7 @@ do
         echo "Training and testing respectively on "
         echo $train_file
         echo $dev_file
-
-        singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --mode ner --output_dir $output_dir  --num_train_epochs $epoch_num --ner_train_file $train_file --ner_dev_file $dev_file --load_model
+        singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode ner --output_dir $output_dir  --num_train_epochs $epoch_num --ner_train_file $train_file --ner_dev_file $dev_file --load_model
     fi
 done
 
