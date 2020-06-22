@@ -1754,12 +1754,13 @@ class BioMLT(nn.Module):
         # print(all_lens)
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
         orig_idx = dataset.orig_idx
-        sents = unsort_dataset(sents, orig_idx)
+        # sents = unsort_dataset(sents, orig_idx)
         conll_file = 'ner_out'
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
-        prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
-        logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
+        prec, rec, f1 = 0,0,0
+        # prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
+        # print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
+        # logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
         return round(f1, 2), round(prec, 2), round(rec, 2)
 
 
