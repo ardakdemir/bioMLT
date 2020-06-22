@@ -1759,6 +1759,11 @@ class BioMLT(nn.Module):
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir,'ner_out')
+        transition_file = os.path.join(self.args.output_dir,'crf_transitions')
+        with open(transition_file,"w") as o:
+            transitions = to_list(self.ner_head.classifier.transition)
+            o.write(transitions)
+            o.write("\")
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
