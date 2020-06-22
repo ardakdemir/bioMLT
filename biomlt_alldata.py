@@ -903,15 +903,11 @@ class BioMLT(nn.Module):
             voc_size = len(self.ner_reader.label_vocab)
             if self.args.crf:
                 sent_len = out_logits.shape[1]
-                print("Sent length {}".format(sent_len))
                 for i in range(out_logits.shape[0]):
                     pred, score = self.ner_head._viterbi_decode(out_logits[i, :], sent_len)
-                    print("Viterbi output : {}".format(pred))
-                    preds.append(pred)
                 for pred in preds:
                     ## MAP [CLS] and [SEP] predictions to O
                     pred = [p // voc_size for p in pred]
-                    print(pred)
                     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                     self.ner_reader.label_vocab.unmap(pred)))
                     all_preds.append(pred)
@@ -923,18 +919,12 @@ class BioMLT(nn.Module):
                     p = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                  self.ner_reader.label_vocab.unmap(pred)))
                 all_preds.append(p)
-            print("MAPPED PREDICTIONS")
-            print(all_preds)
             all_ner_inds = []
             if ner_inds is not None:
                 if not self.args.crf:
                     ner_inds = ner_inds.detach().cpu().numpy()
                 else:
-                    print("Ner labels before dividing")
-                    print(ner_inds)
                     ner_inds = ner_inds.detach().cpu().numpy() // voc_size
-                    print("Ner labels after dividing")
-                    print(ner_inds)
                 for n in ner_inds:
                     n_n = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                    self.ner_reader.label_vocab.unmap(n)))
@@ -1732,6 +1722,8 @@ class BioMLT(nn.Module):
             data = [d.to(self.device) for d in data]
             sent_lens, masks, tok_inds, ner_inds, \
             bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+            if i > 10 :
+                break
             try:
                 outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
             except:
