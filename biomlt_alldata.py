@@ -905,7 +905,7 @@ class BioMLT(nn.Module):
                 sent_len = out_logits.shape[1]
                 for i in range(out_logits.shape[0]):
                     pred, score = self.ner_head._viterbi_decode(out_logits[i, :], sent_len)
-                    preds.appennd(pred)
+                    preds.append(pred)
 
                 for pred in preds:
                     ## MAP [CLS] and [SEP] predictions to O
