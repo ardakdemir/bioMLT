@@ -1686,8 +1686,8 @@ class BioMLT(nn.Module):
             print("Evaluation for epoch {} ".format(j))
             self.bert_model.eval()
             self.ner_head.eval()
-            # f1, p, r = self.eval_ner()
-            f1, p, r = 0, 0, 0
+            f1, p, r = self.eval_ner()
+            # f1, p, r = 0, 0, 0
             print("F1 {}".format(f1))
             logging.info("F1 {}".format(f1))
             results.append([f1, p, r])
