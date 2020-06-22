@@ -1648,8 +1648,8 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        # eval_interval = len_data//2
-        eval_interval = 100
+        eval_interval = len_data//2
+        # eval_interval = 100
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
@@ -1756,7 +1756,6 @@ class BioMLT(nn.Module):
         # print(all_preds)
         # print(all_lens)
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
-        print(sents)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir,'ner_out')
