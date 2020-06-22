@@ -909,7 +909,7 @@ class BioMLT(nn.Module):
 
                 for pred in preds:
                     ## MAP [CLS] and [SEP] predictions to O
-                    print("Before Viterbi result {}".format(pred))
+                    # print("Before Viterbi result {}".format(pred))
                     # pred = [p // voc_size for p in pred]
                     # print("Before Viterbi result {}".format(pred))
                     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,

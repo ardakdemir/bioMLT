@@ -56,6 +56,7 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
                             any_snippet_count=1
                         else:
                             logging.info('could not find "{}"===== in ===== "{}""'.format(ans,context))
+                            print('could not find "{}"===== in ===== "{}""'.format(ans,context))
                             not_found_count +=1
                             continue
                 elif q_type=="list":
@@ -82,7 +83,7 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
             no_snippet_count+=1
     print("{} questions and {} snippets".format(q_count,snip_count))
     print("{} answers cannot found inside the snippet\n{} answers were found".format(not_found_count,found_count))
-    print("{} out of {} questions with no snippet found ".format(no_snippet_count,fact_list_count))
+    print("{} out of {} fact-list questions with no snippet found ".format(no_snippet_count,fact_list_count))
     all_jsons = {}
     for q in all_questions:
         all_jsons[q] = {"version":version,"data":[{"paragraphs":all_questions[q],"title":title}]}
