@@ -1670,7 +1670,6 @@ class BioMLT(nn.Module):
                 loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
                 # print("Predictions")
                 # print(torch.argmax(out_logits,dim=2))
-                print("Ner loss {} ".format(loss.item()))
                 # print("Trues")
                 # print(ner_inds)
                 if i % 100 == 99:
@@ -1754,6 +1753,7 @@ class BioMLT(nn.Module):
         # print(all_preds)
         # print(all_lens)
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
+        print(sents)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir,'ner_out')

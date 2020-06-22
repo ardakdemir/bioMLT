@@ -33,6 +33,8 @@ def conll_writer(file_name, content, field_names, task_name,verbose=False):
     out.close()
 
 def unsort_dataset(dataset,orig_idx):
+    print(dataset)
+    print(orig_idx)
     zipped = list(zip(dataset,orig_idx))
     zipped.sort(key = lambda x : x[1])
     dataset , _ = list(zip(*(zipped)))
