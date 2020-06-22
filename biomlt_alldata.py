@@ -1767,7 +1767,7 @@ class BioMLT(nn.Module):
             print(transitions)
             logging.info("Transitions")
             logging.info(transitions)
-            o.write("\n".join(" ".join(transitions)))
+            o.write("\n".join([" ".join([trans for trans in transition]) for transition in transitions]))
             o.write("\n")
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
