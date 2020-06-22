@@ -1645,7 +1645,7 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        eval_interval = 10
+        eval_interval = len_data//2
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
@@ -1724,8 +1724,6 @@ class BioMLT(nn.Module):
             data = [d.to(self.device) for d in data]
             sent_lens, masks, tok_inds, ner_inds, \
             bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
-            if i > 10 :
-                break
             try:
                 outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
             except:
@@ -1756,15 +1754,13 @@ class BioMLT(nn.Module):
         # print(all_lens)
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
         orig_idx = dataset.orig_idx
-        # sents = unsort_dataset(sents, orig_idx)
-
+        sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir,'ner_out')
-        print(sents)
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
-        prec, rec, f1 = 0,0,0
-        # prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        # print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
-        # logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
+        # prec, rec, f1 = 0,0,0
+        prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
+        print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
+        logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
         return round(f1, 2), round(prec, 2), round(rec, 2)
 
 
