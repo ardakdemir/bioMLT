@@ -1649,7 +1649,7 @@ class BioMLT(nn.Module):
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
         eval_interval = len_data//2
-        # eval_interval = 100
+        eval_interval = 100
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
