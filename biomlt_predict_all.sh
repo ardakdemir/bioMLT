@@ -62,3 +62,5 @@ done
 all_results_file=${output_dir}'/all_results_'${save_name}'.txt'
 echo "Combining results for each batch to "$all_results_file
 cat ${output_dir}"/results_for_batch_"* >> ${all_results_file}
+overleaf_table_file="overleaf_table_for_"${my_dir}
+python result_converter.py ${output_dir} ${overleaf_table_file}
