@@ -13,6 +13,7 @@ def sort_dataset(dataset,desc=True, sort = True):
     dataset, orig_idx = list(zip(*zipped))
     return dataset, orig_idx
 
+
 def conll_writer(file_name, content, field_names, task_name,verbose=False):
     out = open(file_name,'w',encoding = 'utf-8')
     task_dict = dicts[task_name]

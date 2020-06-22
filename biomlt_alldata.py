@@ -61,6 +61,10 @@ def hugging_parse_args():
         help="The path to load the model to continue training."
     )
     parser.add_argument(
+        "--crf", default=False, action="store_true",
+        help="Whether to use CRF for NER head"
+    )
+    parser.add_argument(
         "--version_2_with_negative",
         action="store_true",
         default=True,
@@ -468,7 +472,6 @@ def generate_pred_content(tokens, preds, truths=None, lens=None, label_voc=None)
     return sents
 
 
-
 class BioMLT(nn.Module):
     def __init__(self):
         super(BioMLT, self).__init__()
@@ -541,7 +544,7 @@ class BioMLT(nn.Module):
         load_path = self.args.load_model_path
         # save_path = os.path.join(self.args['save_dir'],self.args['save_name'])
         logging.info("Model loaded  from: %s" % load_path)
-        loaded_params = torch.load(load_path,map_location=torch.device('cpu'))
+        loaded_params = torch.load(load_path, map_location=torch.device('cpu'))
         my_dict = self.state_dict()
         print("Yes-no head weights before loading")
         before = self.yesno_head.weight[:10]
@@ -664,8 +667,8 @@ class BioMLT(nn.Module):
         sch_path = os.path.join(self.args.output_dir, "scheduler.pt")
         opt_path = os.path.join(self.args.outpt_dir, "optimizer.pt")
         if os.path.isfile(sch_path) and os.path.isfile(opt_path):
-            self.bert_optimizer.load_state_dict(torch.load(opt_path,map_location=torch.device('cpu')))
-            self.bert_scheduler.load_state_dict(torch.load(sch_path,map_location=torch.device('cpu')))
+            self.bert_optimizer.load_state_dict(torch.load(opt_path, map_location=torch.device('cpu')))
+            self.bert_scheduler.load_state_dict(torch.load(sch_path, map_location=torch.device('cpu')))
         logging.info("Could not load model from {}".format(self.args.output_dir))
         logging.info("Initializing Masked LM from {} ".format(pretrained_bert_name))
         # self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name)
@@ -896,20 +899,42 @@ class BioMLT(nn.Module):
         if predict:
             all_preds = []
             out_logits = self.ner_head(bert_hiddens, ner_inds, pred=predict)
+            preds = []
             voc_size = len(self.ner_reader.label_vocab)
-            # print(bert2toks[-1])
-            # preds = torch.argmax(out_logits,dim=2).detach().cpu().numpy()//voc_size
-            preds = torch.argmax(out_logits, dim=2).detach().cpu().numpy()
-            # print("Preds ", preds)
-            for pred in preds:
-                ## MAP [CLS] and [SEP] predictions to O
-                p = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
-                             self.ner_reader.label_vocab.unmap(pred)))
+            if self.args.crf:
+                sent_len = out_logits.shape[1]
+                print("Sent length {}".format(sent_len))
+                for i in range(out_logits.shape[0]):
+                    pred, score = self.ner_head._viterbi_decode(out_logits[i, :], sent_len)
+                    print("Viterbi output : {}".format(pred))
+                    preds.append(pred)
+                for pred in preds:
+                    ## MAP [CLS] and [SEP] predictions to O
+                    pred = [p // voc_size for p in pred]
+                    print(pred)
+                    pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
+                                    self.ner_reader.label_vocab.unmap(pred)))
+                    all_preds.append(pred)
+            else:
+                preds = torch.argmax(out_logits, dim=2).detach().cpu().numpy()
+                # print("Preds ", preds)
+                for pred in preds:
+                    ## MAP [CLS] and [SEP] predictions to O
+                    p = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
+                                 self.ner_reader.label_vocab.unmap(pred)))
                 all_preds.append(p)
+            print("MAPPED PREDICTIONS")
+            print(all_preds)
             all_ner_inds = []
             if ner_inds is not None:
-                # ner_inds = ner_inds.detach().cpu().numpy()//voc_size
-                ner_inds = ner_inds.detach().cpu().numpy()
+                if not self.args.crf:
+                    ner_inds = ner_inds.detach().cpu().numpy()
+                else:
+                    print("Ner labels before dividing")
+                    print(ner_inds)
+                    ner_inds = ner_inds.detach().cpu().numpy() // voc_size
+                    print("Ner labels after dividing")
+                    print(ner_inds)
                 for n in ner_inds:
                     n_n = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                    self.ner_reader.label_vocab.unmap(n)))
@@ -949,7 +974,7 @@ class BioMLT(nn.Module):
         print("Reading NER data from {}".format(self.ner_path))
         self.ner_reader = DataReader(
             self.ner_path, "NER", tokenizer=self.bert_tokenizer,
-            batch_size=self.args.ner_batch_size)
+            batch_size=self.args.ner_batch_size, crf=self.args.crf)
         if self.args.load_model:
             # self.ner_reader.label_vocab = self.ner_label_vocab
             # self.args.ner_label_vocab = self.ner_label_vocab
@@ -964,7 +989,7 @@ class BioMLT(nn.Module):
         print("Will evaluate NER model on {}".format(eval_file_path))
         self.ner_eval_reader = DataReader(
             eval_file_path, "NER", tokenizer=self.bert_tokenizer,
-            batch_size=self.args.ner_batch_size, for_eval=True)
+            batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
         print("NER label vocab indexes for evaluation set before assignment {} ".format(
             self.ner_eval_reader.label_vocab.w2ind))
         self.ner_eval_reader.label_vocab = self.args.ner_label_vocab
@@ -1272,7 +1297,7 @@ class BioMLT(nn.Module):
                                                                                                               type=type)
         self.ner_eval_reader = DataReader(
             self.args.ner_test_file, "NER", tokenizer=self.bert_tokenizer,
-            batch_size=self.args.ner_batch_size)
+            batch_size=self.args.ner_batch_size, crf=self.args.crf)
         ner_label_vocab = self.load_ner_vocab()
         print("Prediction data for NER is loaded from {} ".format(self.args.ner_test_file))
         self.ner_eval_reader.label_vocab = ner_label_vocab
@@ -1442,11 +1467,11 @@ class BioMLT(nn.Module):
                     logging.info("Saving best model for {} questions with {} f1  to {}".format(q, f1,
                                                                                                save_name))
                     self.save_all_model(save_name)
-            qas_save_path = os.path.join(self.args.output_dir,self.args.qas_result_file)
+            qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
             print("Writing results to {}".format(qas_save_path))
-            with open(qas_save_path,"a") as out:
+            with open(qas_save_path, "a") as out:
                 s = "List\tyes-no\tfactoid\n"
-                s = s+ "\t".join([str(best_results[q]) for q in ["list","yesno","factoid"]])+"\n"
+                s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
                 out.write(s)
 
     def pretrain_mlm(self):
@@ -1630,17 +1655,17 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        eval_interval = len_data//2
+        eval_interval = 10
         print("Length of each epoch {}".format(len_data))
-        epoch_num = epoch_num * len_data//eval_interval
+        epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
 
-        for j in range(epoch_num):
+        for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
             self.ner_head.train()
             # eval_interval = len(self.ner_reader)
-            for i in range(eval_interval):
+            for i in tqdm(range(eval_interval), desc="Training"):
                 self.bert_optimizer.zero_grad()
                 self.ner_head.optimizer.zero_grad()
                 tokens, bert_batch_after_padding, data = self.ner_reader[i]
@@ -1656,13 +1681,13 @@ class BioMLT(nn.Module):
                 # print(torch.argmax(out_logits,dim=2))
                 # print("Trues")
                 # print(ner_inds)
-                if i%100 == 99:
-                    print("Average loss on {} batches : {}".format(i+1,ner_loss/(i+1)))
+                if i % 100 == 99:
+                    print("Average loss on {} batches : {}".format(i + 1, ner_loss / (i + 1)))
                 loss.backward()
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
                 ner_loss = ner_loss + loss.item()
-            avg_ner_loss = ner_loss/eval_interval
+            avg_ner_loss = ner_loss / eval_interval
 
             print("Average ner loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
@@ -1729,7 +1754,7 @@ class BioMLT(nn.Module):
             all_truths.extend(ner_inds)
             # if i % 50 == 49:
             #     logging.info("Processed {} batches".format(i + 1))
-                # break
+            # break
 
         # print(all_sents)
         # print(all_truths)
@@ -1748,7 +1773,7 @@ class BioMLT(nn.Module):
 
 def main():
     biomlt = BioMLT()
-    qa_types = ['yesno','list','factoid']
+    qa_types = ['yesno', 'list', 'factoid']
     mode = biomlt.args.mode
     predict = biomlt.args.predict
     if mode == "qas":
@@ -1767,7 +1792,6 @@ def main():
             biomlt.train_qas_ner()
     elif mode == "ner":
         biomlt.train_ner()
-
 
 
 if __name__ == "__main__":
