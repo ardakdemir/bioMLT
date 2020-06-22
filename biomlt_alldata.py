@@ -1649,7 +1649,7 @@ class BioMLT(nn.Module):
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
         eval_interval = len_data//2
-        eval_interval = 100
+        # eval_interval = 100
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
@@ -1762,7 +1762,11 @@ class BioMLT(nn.Module):
         transition_file = os.path.join(self.args.output_dir,'crf_transitions')
         with open(transition_file,"w") as o:
             transitions = to_list(self.ner_head.classifier.transition)
-            o.write(transitions)
+            print("Transitions")
+            print(transitions)
+            logging.info("Transitions")
+            logging.info(transitions)
+            o.write(" ".join(transitions))
             o.write("\n")
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
