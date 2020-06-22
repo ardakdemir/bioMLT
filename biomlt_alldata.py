@@ -910,6 +910,7 @@ class BioMLT(nn.Module):
                 for pred in preds:
                     ## MAP [CLS] and [SEP] predictions to O
                     pred = [p // voc_size for p in pred]
+                    print("Viterbi result {}".format(pred))
                     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                     self.ner_reader.label_vocab.unmap(pred)))
 
