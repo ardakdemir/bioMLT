@@ -905,11 +905,14 @@ class BioMLT(nn.Module):
                 sent_len = out_logits.shape[1]
                 for i in range(out_logits.shape[0]):
                     pred, score = self.ner_head._viterbi_decode(out_logits[i, :], sent_len)
+                    preds.apped(pred)
+
                 for pred in preds:
                     ## MAP [CLS] and [SEP] predictions to O
                     pred = [p // voc_size for p in pred]
                     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                     self.ner_reader.label_vocab.unmap(pred)))
+                    
                     all_preds.append(pred)
             else:
                 preds = torch.argmax(out_logits, dim=2).detach().cpu().numpy()
@@ -1732,7 +1735,7 @@ class BioMLT(nn.Module):
                 logging.info("Tokens")
                 logging.info(tokens)
                 print(tokens)
-                return
+                continue
             # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
             # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
             preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True)
