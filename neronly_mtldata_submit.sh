@@ -6,7 +6,7 @@ epoch_num=10
 #$ -N ner_only_train_crf_mtldatasets
 cd ~
 
-dataset_list=("BC5CDR-chem" "BC5CDR-disease" "NCBI-disease" "JNLPBA" "BC4CHEMD" "linnaeus")
+dataset_list=("JNLPBA" "BC4CHEMD" "linnaeus")
 
 ner_data_folder="MTL-Bioinformatics-2016/data"
 for folder in $(ls ${ner_data_folder})
