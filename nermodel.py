@@ -36,8 +36,8 @@ class NerModel(nn.Module):
         self.lr = args.ner_lr
         self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}], \
                                      lr=self.lr, eps=1e-6)
-        if self.dropout:
-            self.dropout = nn.Dropout(self.ner_drop)
+
+        self.dropout = nn.Dropout(self.ner_drop)
     def _viterbi_decode(self, feats, sent_len):
         start_ind = START_IND
         end_ind = END_IND
