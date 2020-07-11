@@ -5,7 +5,6 @@ epoch_num=10
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_train_crf_mtldatasets
 cd ~
-pwd
 
 dataset_list=("BC5CDR-chem" "BC5CDR-disease" "NCBI-disease" "JNLPBA" "BC4CHEMD" "linnaeus")
 

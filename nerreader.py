@@ -45,8 +45,10 @@ def bert2token(my_tokens, bert_tokens, bert_ind=0):
                 token_sum += token
             inds.append(ind)
             bert_ind += 1
-        assert len(token_sum) == len(my_token), logging.info(
-            "{} {} {} {}".format(my_token, token_sum, my_tokens, bert_tokens))
+        if not len(token_sum) == len(my_token):
+            print("PROBLEMATIC TOKENIZATION")
+            print("{} {} {} {}".format(my_token, token_sum, my_tokens, bert_tokens))
+            return
         token_sum = ""
 
     return inds, ind + 1
