@@ -17,7 +17,7 @@ do
     if [[ $folder == *"-IOB" ]]
     then
         x=$(echo $folder | rev | cut -c 5- | rev)
-        if [[ " ${init_list[@]} " =~ " ${x} " ]]
+        if [[ " ${dataset_list[@]} " =~ " ${x} " ]]
         then
     		echo "Training for "$file
             train_file=$folder_path"/train_dev.tsv"
