@@ -36,8 +36,12 @@ def bert2token(my_tokens, bert_tokens, bert_ind=0):
     bert_ind = bert_ind
     for ind in range(len(my_tokens)):
         my_token = my_tokens[ind]
-
-        while len(token_sum) != len(my_token) and bert_ind < len(bert_tokens):
+        token = bert_tokens[bert_ind]
+        if token == UNK: #UNK token handler
+            inds.append(ind)
+            bert_ind = bert_ind + 1
+            continue
+        while len(token_sum) != len(my_token) and bert_ind < len(bert_tokens) :
             token = bert_tokens[bert_ind]
             if token.startswith("##"):
                 token_sum += token[2:]
