@@ -65,18 +65,15 @@ class NerModel(nn.Module):
     # add the attention masks to exclude cls and pad etc.
     def forward(self, batch, labels=None, pred=False):
         out_logits = self.classifier(batch)
-        if self.dropout:
+        if self.dropout and not pred:
             print("Before dropout")
-            print(out_logits[0])
             out_logits = self.dropout(out_logits)
             print("Applying dropout")
-            print(out_logits[0])
         # print(out_logits.shape)
         # print(labels.shape)a
         if pred:
             return out_logits
         if labels is not None:
-
             ## view tehlikeli bir hareket!!!!
             if self.args.crf:
                 lengths = torch.sum((labels > self.num_labels), axis=1)
