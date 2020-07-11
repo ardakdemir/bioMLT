@@ -16,6 +16,7 @@ class NerModel(nn.Module):
         self.args = args
         self.input_dims = args.bert_output_dim
         self.label_voc = args.ner_label_vocab
+        self.ner_drop = 0.5
         self.num_labels = len(self.label_voc)
         self.output_dim = len(self.label_voc) * len(self.label_voc)
         self.device = args.device
@@ -26,7 +27,6 @@ class NerModel(nn.Module):
         # self.classifier = nn.Linear(self.input_dims, self.output_dim)
         # self.loss = CrossEntropyLoss()
         if self.args.crf:
-            logging.info("Using CRF with NER")
             logging.info("Using NER with CRF")
             self.classifier = CRF(self.input_dims, self.num_labels, self.device)
             self.loss = CRFLoss(self.num_labels, device = self.device)
@@ -36,7 +36,8 @@ class NerModel(nn.Module):
         self.lr = args.ner_lr
         self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}], \
                                      lr=self.lr, eps=1e-6)
-
+        if self.dropout:
+            self.dropout = nn.Dropout(self.ner_drop)
     def _viterbi_decode(self, feats, sent_len):
         start_ind = START_IND
         end_ind = END_IND
@@ -64,6 +65,9 @@ class NerModel(nn.Module):
     # add the attention masks to exclude cls and pad etc.
     def forward(self, batch, labels=None, pred=False):
         out_logits = self.classifier(batch)
+        if self.dropout:
+            out_logits = self.dropout(out_logits)
+
         # print(out_logits.shape)
         # print(labels.shape)a
         if pred:

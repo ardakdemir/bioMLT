@@ -96,7 +96,7 @@ class CRFLoss(nn.Module):
         ## burada  hangisi  dogru emin   degilim index1-> index2 or  opposite?
         ## i think  opposite  is correct
         forward_scores[:batch_size] = scores[:,0,:,START_IND]
-        ## forward score unsqueeze 2ydi 1 yaptim cunku ilk index next tag olarak 
+        ## forward score unsqueeze 2ydi 1 yaptim cunku ilk index next tag olarak
         ## kurguluyorum
         for i in range(1, scores.size()[1]):
             batch_size_t = sum([1 if lengths[x] > i else 0 for x in range(lengths.size()[0])])
