@@ -66,9 +66,7 @@ class NerModel(nn.Module):
     def forward(self, batch, labels=None, pred=False):
         out_logits = self.classifier(batch)
         if self.dropout and not pred:
-            print("Before dropout")
             out_logits = self.dropout(out_logits)
-            print("Applying dropout")
         # print(out_logits.shape)
         # print(labels.shape)a
         if pred:
