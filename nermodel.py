@@ -16,7 +16,7 @@ class NerModel(nn.Module):
         self.args = args
         self.input_dims = args.bert_output_dim
         self.label_voc = args.ner_label_vocab
-        self.ner_drop = 0.5
+        self.ner_drop = 0.3
         self.num_labels = len(self.label_voc)
         self.output_dim = len(self.label_voc) * len(self.label_voc)
         self.device = args.device

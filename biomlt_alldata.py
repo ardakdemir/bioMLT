@@ -939,6 +939,7 @@ class BioMLT(nn.Module):
                 return all_preds
         # logging.info("NER output {} ".format(ner_outs.))
         else:
+            print("BERT HIDDEN SHAPE {}".format(bert_hiddens.shape))
             ner_outs = self.ner_head(bert_hiddens, ner_inds)
             return ner_outs
 
