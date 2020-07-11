@@ -12,14 +12,13 @@ dataset_list=("BC5CDR-chem" "BC5CDR-disease" "NCBI-disease" "JNLPBA" "BC4CHEMD" 
 ner_data_folder="MTL-Bioinformatics-2016/data"
 for folder in $(ls ${ner_data_folder})
 do
-    echo $file
-    folder_path=$ner_data_folder"/"$file
+    folder_path=$ner_data_folder"/"$folder
     if [[ $folder == *"-IOB" ]]
     then
         x=$(echo $folder | rev | cut -c 5- | rev)
         if [[ " ${dataset_list[@]} " =~ " ${x} " ]]
         then
-    		echo "Training for "$file
+    		echo "Training for "$folder
             train_file=$folder_path"/train_dev.tsv"
             dev_file=$folder_path"/test.tsv"
             echo "Training and testing respectively on "
