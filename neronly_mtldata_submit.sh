@@ -12,6 +12,7 @@ dataset_list=("BC5CDR-chem" "BC5CDR-disease" "NCBI-disease" "JNLPBA" "BC4CHEMD" 
 ner_data_folder="MTL-Bioinformatics-2016/data"
 for file in $(ls ${ner_data_folder})
 do
+    echo $file
     folder_path=$ner_data_folder"/"$file
     if [[ $folder == *"-IOB" ]]
     then
