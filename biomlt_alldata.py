@@ -1864,7 +1864,7 @@ class BioMLT(nn.Module):
                 logging.info(tokens)
                 print(tokens)
                 continue
-            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True,target_index = target_index)
+            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True,task_index = target_index)
             tokens_ = tokens[-1]
 
             all_sents.extend(tokens)
