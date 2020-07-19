@@ -1740,7 +1740,7 @@ class BioMLT(nn.Module):
                 self.save_all_model(model_save_name)
         print("Average losses")
         print(avg_ner_losses)
-        result_save_path = os.path.join(args.output_dir, args.ner_result_file)
+        result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
         self.write_ner_result(result_save_path, ner_type, results, best_epoch)
 
     def train_ner(self):
