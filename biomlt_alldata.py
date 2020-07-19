@@ -14,7 +14,6 @@ from vocab import Vocab
 import json
 import copy
 import torch
-import torchvision
 import random
 import os
 import torch.nn as nn
@@ -32,6 +31,7 @@ from qasmodel import QasModel
 import argparse
 from torch.nn import CrossEntropyLoss, MSELoss
 import datetime
+import logging
 
 pretrained_bert_name = 'bert-base-cased'
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute)
@@ -125,6 +125,29 @@ def hugging_parse_args():
         type=str,
         required=False,
         help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument(
+        "--target_index",
+        default=0,
+        type=int,
+        required=False,
+        help="The index of the target ner task (inside the eval files)",
+    )
+    parser.add_argument(
+        "--ner_train_files",
+        default=["a", "b"],
+        nargs="*",
+        type=str,
+        required=False,
+        help="The list of training files for the ner task",
+    )
+    parser.add_argument(
+        "--ner_test_files",
+        default=["a", "b"],
+        nargs="*",
+        type=str,
+        required=False,
+        help="The list of test files for the ner task",
     )
     parser.add_argument(
         "--model_type", type=str, default='bert', required=False,
@@ -312,7 +335,7 @@ def hugging_parse_args():
         "--model_save_name", default=None, type=str, help="Model name to save"
     )
     parser.add_argument(
-        "--mode", default="qas", choices=['qas', 'joint_flat', 'ner', 'qas_ner'],
+        "--mode", default="qas", choices=['qas', 'multiner','joint_flat', 'ner', 'qas_ner'],
         help="Determine in which mode to use the Multi-tasking framework"
     )
     parser.add_argument(
@@ -517,16 +540,16 @@ class BioMLT(nn.Module):
              'weight_decay_rate': 0.0}
         ]
 
-        self.yesno_head = nn.Linear(self.bert_out_dim, 2)
-        # self.qa_outputs =
-        self.yesno_soft = nn.Softmax(dim=1)
-        self.yesno_loss = CrossEntropyLoss()
-        self.yesno_lr = self.args.qas_lr
-        self.yesno_optimizer = optim.AdamW([{"params": self.yesno_head.parameters()},
-                                            {"params": self.yesno_soft.parameters()}],
-                                           lr=self.yesno_lr, eps=self.args.qas_adam_epsilon)
+        if self.args.mode not in ["ner", "multi_ner"]:
+            self.yesno_head = nn.Linear(self.bert_out_dim, 2)
+            self.yesno_soft = nn.Softmax(dim=1)
+            self.yesno_loss = CrossEntropyLoss()
+            self.yesno_lr = self.args.qas_lr
+            self.yesno_optimizer = optim.AdamW([{"params": self.yesno_head.parameters()},
+                                                {"params": self.yesno_soft.parameters()}],
+                                               lr=self.yesno_lr, eps=self.args.qas_adam_epsilon)
 
-        self.qas_head = QasModel(self.args)
+            self.qas_head = QasModel(self.args)
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                                     lr=2e-5)
@@ -893,14 +916,15 @@ class BioMLT(nn.Module):
         # self.qas_head.optimizer.step()
         return qas_outputs
 
-    def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False):
+    def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False,task_index = None):
         bert_hiddens = self._get_bert_batch_hidden(bert_output, bert2toks)
-
+        ner_head = self.ner_head if  task_index is None else self.ner_heads[task_index]
+        reader = self.ner_reader if  task_index is None else self.ner_readers[task_index]
         if predict:
             all_preds = []
-            out_logits = self.ner_head(bert_hiddens, ner_inds, pred=predict)
+            out_logits = ner_head(bert_hiddens, ner_inds, pred=predict)
             preds = []
-            voc_size = len(self.ner_reader.label_vocab)
+            voc_size = len(reader.label_vocab)
             if self.args.crf:
                 sent_len = out_logits.shape[1]
                 for i in range(out_logits.shape[0]):
@@ -913,7 +937,7 @@ class BioMLT(nn.Module):
                     # pred = [p // voc_size for p in pred]
                     # print("Before Viterbi result {}".format(pred))
                     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
-                                    self.ner_reader.label_vocab.unmap(pred)))
+                                    reader.label_vocab.unmap(pred)))
 
                     all_preds.append(pred)
             else:
@@ -922,7 +946,7 @@ class BioMLT(nn.Module):
                 for pred in preds:
                     ## MAP [CLS] and [SEP] predictions to O
                     p = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
-                                 self.ner_reader.label_vocab.unmap(pred)))
+                                 reader.label_vocab.unmap(pred)))
                 all_preds.append(p)
             all_ner_inds = []
             if ner_inds is not None:
@@ -932,14 +956,14 @@ class BioMLT(nn.Module):
                     ner_inds = ner_inds.detach().cpu().numpy() // voc_size
                 for n in ner_inds:
                     n_n = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
-                                   self.ner_reader.label_vocab.unmap(n)))
+                                   reader.label_vocab.unmap(n)))
                     all_ner_inds.append(n_n)
                 return all_preds, all_ner_inds
             else:
                 return all_preds
         # logging.info("NER output {} ".format(ner_outs.))
         else:
-            ner_outs = self.ner_head(bert_hiddens, ner_inds)
+            ner_outs = ner_head(bert_hiddens, ner_inds)
             return ner_outs
 
     def run_test(self):
@@ -964,16 +988,41 @@ class BioMLT(nn.Module):
                 "=== {} question results=== \n Predictions  are saved to {} \n N-best predictions are saved to {} ".format(
                     q_t, pred_files[q_t], nbest_files[q_t]))
 
+    def load_multiner_data(self):
+        # now initializing Ner head here !!
+        print("Reading NER data from {}".format(self.ner_path))
+        self.ner_readers = []
+        self.ner_eval_readers = []
+        train_files = self.args.ner_train_files
+        eval_files = self.args.ner_test_files
+        for train_file, eval_file in zip(train_files, eval_files):
+            ner_reader = DataReader(
+                train_file, "NER", tokenizer=self.bert_tokenizer,
+                batch_size=self.args.ner_batch_size, crf=self.args.crf)
+            ner_eval_reader = DataReader(
+                eval_file, "NER", tokenizer=self.bert_tokenizer,
+                batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
+            ner_eval_reader.label_vocab = ner_reader.label_vocab
+            self.ner_readers.append(ner_reader)
+            self.ner_eval_readers.append(ner_eval_reader)
+
+    def init_multiner_models(self):
+        # now initializing Ner head here !!
+        print("Reading NER data from {}".format(self.ner_path))
+        ner_heads = []
+        for reader in self.ner_readers:
+            args = self.args
+            args.ner_label_dim = len(reader.l2ind)
+            ner_head = NerModel(args)
+            ner_heads.append(ner_head)
+        self.ner_heads = ner_heads
+
     def load_ner_data(self, eval_file=None):
         # now initializing Ner head here !!
         print("Reading NER data from {}".format(self.ner_path))
         self.ner_reader = DataReader(
             self.ner_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, crf=self.args.crf)
-        if self.args.load_model:
-            # self.ner_reader.label_vocab = self.ner_label_vocab
-            # self.args.ner_label_vocab = self.ner_label_vocab
-            print("Model lodaded")
         self.args.ner_label_vocab = self.ner_reader.label_vocab
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
@@ -1622,6 +1671,85 @@ class BioMLT(nn.Module):
         logging.info("{} {} ".format("Real tokens", tokens))
         logging.info("{} {} ".format("Predictions", pred_tokens))
 
+    def train_multiner(self):
+        target_index = self.args.target_index
+        eval_file = self.args.ner_test_files[target_index]
+        ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
+                         enumerate(self.args.ner_test_files) if i != target_index]
+        ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
+        ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
+        model_save_name = "best_ner_model_{}".format(ner_type)
+        self.load_multiner_data()
+        self.init_multiner_models()
+        device = self.args.device
+        # device = "cpu"        print("Starting training for NER in {} ".format(device))
+        self.bert_model.to(device)
+        self.bert_model.train()
+        for i in range(len(self.ner_heads)):
+            self.ner_heads[i].to(device)
+            self.ner_heads[i].train()
+        results = []
+        best_epoch = 0
+        best_f1 = 0
+        avg_ner_losses = []
+        epoch_num = self.args.num_train_epochs
+        print("Total epochs over data {} ".format(epoch_num))
+        # Currently uses the minimum length dataset
+        len_data = min([len(reader) for reader in self.ner_readers])
+        eval_interval = len_data // 2
+        # eval_interval = 100
+        print("Length of each epoch {}".format(len_data))
+        epoch_num = epoch_num * len_data // eval_interval
+        print("Will train for {} epochs ".format(epoch_num))
+
+        for j in tqdm(range(epoch_num), desc="Epochs"):
+            ner_loss = 0
+            self.bert_model.train()
+            for i in range(len(self.ner_heads)):
+                self.ner_heads[i].to(device)
+                self.ner_heads[i].train()
+            # eval_interval = len(self.ner_reader)
+            for i in tqdm(range(eval_interval), desc="Training"):
+                self.bert_optimizer.zero_grad()
+                for a in range(len(self.ner_heads)):
+                    self.ner_heads[a].optimizer.zero_grad()
+                task_index = np.random.randint(len(self.ner_heads))
+                print("Index of the dataset for this iteration {} ".format(task_index))
+                tokens, bert_batch_after_padding, data = self.ner_readers[task_index][i]
+                # print("Number of sentences in the batch : {}".format(len(tokens)))
+                data = [d.to(device) for d in data]
+                sent_lens, masks, tok_inds, ner_inds, \
+                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+                outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
+                loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds, task_index=task_index)
+                if i % 100 == 99:
+                    print("Average loss on {} batches : {}".format(i + 1, ner_loss / (i + 1)))
+                loss.backward()
+                self.ner_heads[task_index].optimizer.step()
+                self.bert_optimizer.step()
+                ner_loss = ner_loss + loss.item()
+            avg_ner_loss = ner_loss / eval_interval
+
+            print("Average ner loss : {}".format(avg_ner_loss))
+            avg_ner_losses.append(avg_ner_loss)
+            print("Evaluation for epoch {} ".format(j))
+            self.bert_model.eval()
+            for a in range(len(self.ner_heads)):
+                self.ner_head.eval()
+            f1, p, r = self.eval_multiner(target_index)
+            # f1, p, r = 0, 0, 0
+            print("F1 {}".format(f1))
+            logging.info("F1 {}".format(f1))
+            results.append([f1, p, r])
+            if f1 > best_f1:
+                best_epoch = j
+                best_f1 = f1
+                self.save_all_model(model_save_name)
+        print("Average losses")
+        print(avg_ner_losses)
+        result_save_path = os.path.join(args.output_dir, args.ner_result_file)
+        self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+
     def train_ner(self):
         eval_file = self.args.ner_dev_file
         eval_file_name = os.path.split(eval_file)[1].split(".")[0]
@@ -1650,7 +1778,7 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        eval_interval = len_data//2
+        eval_interval = len_data // 2
         # eval_interval = 100
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
@@ -1715,7 +1843,46 @@ class BioMLT(nn.Module):
             s += "{}\t{}\t{}\t{}\n".format(ner_type, p, r, f1)
             o.write(s)
 
-    ## Now we are using the same dataset for training and testing##
+    def eval_multiner(self,target_index):
+        print("Starting evaluation for ner")
+        self.ner_eval_readers[target_index].for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+        dataset = self.ner_eval_readers[target_index]
+        all_sents = []
+        all_lens = []
+        all_preds = []
+        all_truths = []
+        for i, batch in enumerate(dataset):
+            tokens, bert_batch_after_padding, data = batch
+            data = [d.to(self.device) for d in data]
+            sent_lens, masks, tok_inds, ner_inds, \
+            bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+            try:
+                outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
+            except:
+                print("Problematic batch")
+                print(bert_batch_ids)
+                logging.info("Tokens")
+                logging.info(tokens)
+                print(tokens)
+                continue
+            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True,target_index = target_index)
+            tokens_ = tokens[-1]
+
+            all_sents.extend(tokens)
+            all_lens.extend(sent_lens)
+            all_preds.extend(preds)
+            all_truths.extend(ner_inds)
+        sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
+        orig_idx = dataset.orig_idx
+        sents = unsort_dataset(sents, orig_idx)
+        conll_file = os.path.join(self.args.output_dir, 'ner_out')
+        conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
+        # prec, rec, f1 = 0,0,0
+        prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
+        print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
+        logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
+        return round(f1, 2), round(prec, 2), round(rec, 2)
+
     def eval_ner(self):
         print("Starting evaluation for ner")
         self.ner_eval_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
@@ -1749,29 +1916,11 @@ class BioMLT(nn.Module):
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-            # if i % 50 == 49:
-            #     logging.info("Processed {} batches".format(i + 1))
-            # break
-
-        # print(all_sents)
-        # print(all_truths)
-        # print(all_preds)
-        # print(all_lens)
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
-        conll_file = os.path.join(self.args.output_dir,'ner_out')
-        transition_file = os.path.join(self.args.output_dir,'crf_transitions')
-
-        with open(transition_file,"a") as o:
-            transitions = to_list(self.ner_head.classifier.transition)
-            print("Transitions")
-            print(transitions)
-            logging.info("Transitions")
-            logging.info(transitions)
-            o.write("Transitions for new epoch")
-            o.write("\n".join([" ".join([str(trans) for trans in transition]) for transition in transitions]))
-            o.write("\n")
+        conll_file = os.path.join(self.args.output_dir, 'ner_out')
+        transition_file = os.path.join(self.args.output_dir, 'crf_transitions')
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
@@ -1801,6 +1950,8 @@ def main():
             biomlt.train_qas_ner()
     elif mode == "ner":
         biomlt.train_ner()
+    elif mode == "multiner":
+        biomlt.train_multiner()
 
 
 if __name__ == "__main__":
