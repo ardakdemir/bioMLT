@@ -477,7 +477,7 @@ def parse_args():
     return args
 
 
-def generate_pred_content(tokens, preds, truths=None, lens=None, label_voc=None):
+def generate_pred_content(tokens, preds, truths=None, lens=None):
     ## this is where the start token and  end token get eliminated!!
     sents = []
     if truths:
@@ -1866,7 +1866,7 @@ class BioMLT(nn.Module):
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-        sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
+        sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir, 'ner_out')
@@ -1910,7 +1910,7 @@ class BioMLT(nn.Module):
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-        sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens, self.args.ner_label_vocab)
+        sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir, 'ner_out')
