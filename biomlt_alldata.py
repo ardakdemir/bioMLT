@@ -335,7 +335,7 @@ def hugging_parse_args():
         "--model_save_name", default=None, type=str, help="Model name to save"
     )
     parser.add_argument(
-        "--mode", default="qas", choices=['qas', 'multiner','joint_flat', 'ner', 'qas_ner'],
+        "--mode", default="qas", choices=['qas', 'multiner', 'joint_flat', 'ner', 'qas_ner'],
         help="Determine in which mode to use the Multi-tasking framework"
     )
     parser.add_argument(
@@ -916,10 +916,10 @@ class BioMLT(nn.Module):
         # self.qas_head.optimizer.step()
         return qas_outputs
 
-    def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False,task_index = None):
+    def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False, task_index=None):
         bert_hiddens = self._get_bert_batch_hidden(bert_output, bert2toks)
-        ner_head = self.ner_head if  task_index is None else self.ner_heads[task_index]
-        reader = self.ner_reader if  task_index is None else self.ner_readers[task_index]
+        ner_head = self.ner_head if task_index is None else self.ner_heads[task_index]
+        reader = self.ner_reader if task_index is None else self.ner_readers[task_index]
         if predict:
             all_preds = []
             out_logits = ner_head(bert_hiddens, ner_inds, pred=predict)
@@ -928,23 +928,17 @@ class BioMLT(nn.Module):
             if self.args.crf:
                 sent_len = out_logits.shape[1]
                 for i in range(out_logits.shape[0]):
-                    pred, score = self.ner_head._viterbi_decode(out_logits[i, :], sent_len)
+                    pred, score = ner_head._viterbi_decode(out_logits[i, :], sent_len)
                     preds.append(pred)
 
                 for pred in preds:
-                    ## MAP [CLS] and [SEP] predictions to O
-                    # print("Before Viterbi result {}".format(pred))
-                    # pred = [p // voc_size for p in pred]
-                    # print("Before Viterbi result {}".format(pred))
                     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                     reader.label_vocab.unmap(pred)))
 
                     all_preds.append(pred)
             else:
                 preds = torch.argmax(out_logits, dim=2).detach().cpu().numpy()
-                # print("Preds ", preds)
                 for pred in preds:
-                    ## MAP [CLS] and [SEP] predictions to O
                     p = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                  reader.label_vocab.unmap(pred)))
                 all_preds.append(p)
@@ -1842,9 +1836,10 @@ class BioMLT(nn.Module):
             s += "{}\t{}\t{}\t{}\n".format(ner_type, p, r, f1)
             o.write(s)
 
-    def eval_multiner(self,target_index):
+    def eval_multiner(self, target_index):
         print("Starting evaluation for ner")
-        self.ner_eval_readers[target_index].for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+        self.ner_eval_readers[
+            target_index].for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
         dataset = self.ner_eval_readers[target_index]
         all_sents = []
         all_lens = []
@@ -1864,7 +1859,7 @@ class BioMLT(nn.Module):
                 logging.info(tokens)
                 print(tokens)
                 continue
-            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True,task_index = target_index)
+            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True, task_index=target_index)
             tokens_ = tokens[-1]
 
             all_sents.extend(tokens)
