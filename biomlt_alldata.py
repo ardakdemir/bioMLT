@@ -1714,7 +1714,6 @@ class BioMLT(nn.Module):
                 for a in range(len(self.ner_heads)):
                     self.ner_heads[a].optimizer.zero_grad()
                 task_index = np.random.randint(len(self.ner_heads))
-                print("Index of the dataset for this iteration {} ".format(task_index))
                 tokens, bert_batch_after_padding, data = self.ner_readers[task_index][i]
                 # print("Number of sentences in the batch : {}".format(len(tokens)))
                 data = [d.to(device) for d in data]
@@ -1735,7 +1734,7 @@ class BioMLT(nn.Module):
             print("Evaluation for epoch {} ".format(j))
             self.bert_model.eval()
             for a in range(len(self.ner_heads)):
-                self.ner_head.eval()
+                self.ner_heads[a].eval()
             f1, p, r = self.eval_multiner(target_index)
             # f1, p, r = 0, 0, 0
             print("F1 {}".format(f1))
