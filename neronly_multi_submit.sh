@@ -1,9 +1,13 @@
 /usr/local/bin/nosh
 output_dir=$1
+if [ -d $output_dir ]
+then
+  rm $output_dir
+fi
 epoch_num=5
 total_train_steps=2000
 #$ -cwd
-#$ -l os7,v100=1,s_vmem=100G,mem_req=100G
+#$ -l v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_multi
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
