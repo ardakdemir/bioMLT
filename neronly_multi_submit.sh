@@ -34,10 +34,10 @@ do
                   singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode multiner --total_train_steps $total_train_steps --output_dir $output_dir  --num_train_epochs $epoch_num --ner_train_files  $target_train_file  $aux_train_file --ner_dev_file $target_dev_file $aux_dev_file --load_model
                fi
             fi
-            aux=$(($aux + 1)))
+            aux=$(($aux + 1))
         done
     fi
-    target=$((target + 1)))
+    target=$((target + 1))
 done
 
 echo "All results are stored in "$output_dir
