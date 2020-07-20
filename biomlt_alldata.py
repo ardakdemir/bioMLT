@@ -50,8 +50,8 @@ def to_list(tensor):
     return tensor.detach().cpu().tolist()
 
 
-def get_gradient(losses, index=-1):
-    return losses[index] - losses[index - 1]
+def get_gradient(losses, step_size):
+    return (losses[-1] - losses[max(0,len(losses-step_size-1))]) / step_size
 
 
 def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
@@ -1807,8 +1807,9 @@ class BioMLT(nn.Module):
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * eval_freq
         print("Will train for {} epochs ".format(epoch_num))
-        total_steps = (len_data * epoch_num)
+        total_steps = (eval_interval * epoch_num)
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
+        step_size = total_steps / 20
         step_for_grad_intervals = [int(total_steps * s) for s in loss_grad_intervals]
         losses_for_learning_curve = []
         grads = []
@@ -1840,7 +1841,7 @@ class BioMLT(nn.Module):
                 total_loss = total_loss + cur_loss
                 losses_for_learning_curve.append(total_loss / step)
                 if step in step_for_grad_intervals:
-                    grad = get_gradient(losses_for_learning_curve, index=-1)
+                    grad = get_gradient(losses_for_learning_curve, step_size)
                     grads.append(grad)
             avg_ner_loss = ner_loss / eval_interval
 
