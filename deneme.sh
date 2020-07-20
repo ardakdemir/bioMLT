@@ -1,12 +1,17 @@
-ner_data_folder="ner_data/bioner_data"
-for file in $(ls ${ner_data_folder})
+ner_data_folder="biobert_data/datasets/NER"
+x=$(ls ${ner_data_folder})
+echo $x
+ind=0
+for folder_1 in $x
 do
-    folder_path=$ner_data_folder"/"$file
-    if [ -d $folder_path ]
+  c=0
+  for folder_2 in $x
+  do
+    if [ $ind -le $c ]
     then
-        train_file=$folder_path"/bio_"$file"_train.tsv"
-        dev_file=$folder_path"/bio_"$file"_devel.tsv"
-        echo $train_file
-        echo $dev_file
+      echo $folder_1 $folder_2
     fi
+    c=$(($c + 1))
+  done
+  ind=$(($ind+1))
 done
