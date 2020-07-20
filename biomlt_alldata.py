@@ -1711,7 +1711,7 @@ class BioMLT(nn.Module):
         logging.info("{} {} ".format("Predictions", pred_tokens))
 
     def train_multiner(self):
-        if hasattr(args,"target_index"):
+        if hasattr(self.args,"target_index"):
             target_index = self.args.target_index
             eval_file = self.args.ner_test_files[target_index]
             ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
@@ -1751,7 +1751,7 @@ class BioMLT(nn.Module):
         best_epochs = [-1 for i in range(len(self.ner_heads))]
         avg_ner_losses = []
         epoch_num = self.args.num_train_epochs
-        if not hasattr(args, "total_train_steps"):
+        if not hasattr(self.args, "total_train_steps"):
             len_data = len(self.ner_readers[target_index])
             len_data = len_data // shrink
             eval_interval = len_data // eval_freq
@@ -1796,7 +1796,7 @@ class BioMLT(nn.Module):
             for a in range(len(self.ner_heads)):
                 self.ner_heads[a].eval()
 
-            if hasattr(args,"target_index"):
+            if hasattr(self.args,"target_index"):
 
                 print("Running evaluation only for {}".format(target_index))
                 f1, p, r = self.eval_multiner(target_index)
@@ -1824,10 +1824,11 @@ class BioMLT(nn.Module):
                         self.save_all_model(model_save_names[i])
         print("Average losses")
         print(avg_ner_losses)
-        if hasattr(args, "target_index"):
+        if hasattr(self.args, "target_index"):
             result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
         else:
+            print("Saving results for all datasets")
             for i in range(len(self.ner_heads)):
                 ner_type = ner_types[i]
                 best_epoch = best_epochs[i]
