@@ -1,7 +1,7 @@
 /usr/local/bin/nosh
 output_dir=$1
 epoch_num=5
-total_train_steps=1000
+total_train_steps=10000
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_single
