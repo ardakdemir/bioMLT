@@ -22,7 +22,7 @@ do
             aux_folder_path=$ner_data_folder"/"aux_file
             if [ -d $aux_folder_path ]
             then
-                if [ $target -le $aux]
+                if [ $target -le $aux ]
                 then
                   target_train_file=$folder_path"/ent_train_dev.tsv"
                   target_dev_file=$folder_path"/ent_test.tsv"
