@@ -32,6 +32,7 @@ import argparse
 from torch.nn import CrossEntropyLoss, MSELoss
 import datetime
 import logging
+import matplotlib.pyplot as plt
 
 pretrained_bert_name = 'bert-base-cased'
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute)
@@ -49,6 +50,25 @@ def to_list(tensor):
     return tensor.detach().cpu().tolist()
 
 
+def get_gradient(losses,index=-1):
+    return losses[index] - losses[index-1]
+
+def plot_save_array(save_dir,file_name,dataset_name, y,x_axis=None):
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+    file_path = os.path.join(save_dir, file_name)
+    plot_path = os.path.join(save_dir, dataset_name+"_lr_curve_plot.png")
+    x_vals = [str(x) for x in x_axis] if x_axis is not None else [str(i+1) for i in range(len(y))]
+    if not os.path.exists(file_path):
+        s = "DATASET\t{}\n".format("\t".join(x_vals))
+    else:
+        s = ""
+    with open(file_path, "a") as o:
+        s += "{}\n".format("\t".join())
+        o.write(s)
+    plt.figure()
+    plt.plot(x_vals,y)
+    plt.savefig(plot_path)
 def hugging_parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Working  on {}".format(device))
@@ -64,6 +84,11 @@ def hugging_parse_args():
         "--crf", default=False, action="store_true",
         help="Whether to use CRF for NER head"
     )
+    parser.add_argument(
+        "--only_lr_curve", default=False, action="store_true",
+        help="If set, skips the evaluation, only for NER task"
+    )
+
     parser.add_argument(
         "--version_2_with_negative",
         action="store_true",
@@ -1695,7 +1720,6 @@ class BioMLT(nn.Module):
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
-
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
@@ -1771,12 +1795,18 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        eval_interval = len_data // 2
+        eval_interval = len_data // 200
         # eval_interval = 100
         print("Length of each epoch {}".format(len_data))
         epoch_num = epoch_num * len_data // eval_interval
         print("Will train for {} epochs ".format(epoch_num))
-
+        total_steps = (len_data * epoch_num)/100
+        loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
+        step_for_grad_intervals = [int(total_steps*s) for s in loss_grad_intervals]
+        losses_for_learning_curve = []
+        grads = []
+        step = 0
+        total_loss = 0
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
@@ -1794,16 +1824,17 @@ class BioMLT(nn.Module):
                 # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
                 # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
                 loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
-                # print("Predictions")
-                # print(torch.argmax(out_logits,dim=2))
-                # print("Trues")
-                # print(ner_inds)
-                if i % 100 == 99:
-                    print("Average loss on {} batches : {}".format(i + 1, ner_loss / (i + 1)))
                 loss.backward()
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
-                ner_loss = ner_loss + loss.item()
+                step = step + 1
+                cur_loss = loss.item()
+                ner_loss = ner_loss + cur_loss
+                total_loss = total_loss + cur_loss
+                losses_for_learning_curve.append(total_loss/step)
+                if step in step_for_grad_intervals:
+                    grad = get_gradient(losses_for_learning_curve,index=-1)
+                    grads.append(grad)
             avg_ner_loss = ner_loss / eval_interval
 
             print("Average ner loss : {}".format(avg_ner_loss))
@@ -1811,19 +1842,29 @@ class BioMLT(nn.Module):
             print("Evaluation for epoch {} ".format(j))
             self.bert_model.eval()
             self.ner_head.eval()
-            f1, p, r = self.eval_ner()
-            # f1, p, r = 0, 0, 0
-            print("F1 {}".format(f1))
-            logging.info("F1 {}".format(f1))
-            results.append([f1, p, r])
-            if f1 > best_f1:
-                best_epoch = j
-                best_f1 = f1
-                self.save_all_model(model_save_name)
+            if not self.args.only_lr_curve:
+                f1, p, r = self.eval_ner()
+                # f1, p, r = 0, 0, 0
+                print("F1 {}".format(f1))
+                logging.info("F1 {}".format(f1))
+                results.append([f1, p, r])
+                if f1 > best_f1:
+                    best_epoch = j
+                    best_f1 = f1
+                    self.save_all_model(model_save_name)
+            else:
+                print("Skipping evaluation only running training for lr curve")
         print("Average losses")
         print(avg_ner_losses)
-        result_save_path = os.path.join(args.output_dir, args.ner_result_file)
-        self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+        print("Gradients of the loss curve")
+        print(grads)
+        if not self.args.only_lr_curve:
+            result_save_path = os.path.join(args.output_dir, args.ner_result_file)
+            self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+        save_dir = self.args.output_dir
+        file_name = "ner_learning_curves"
+        dataset_name = ner_type
+        plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
 
     def write_ner_result(self, result_save_path, ner_type, results, best_epoch):
         logging.info("Writing  results for ner to {}".format(result_save_path))
@@ -1946,6 +1987,7 @@ def main():
         biomlt.train_ner()
     elif mode == "multiner":
         biomlt.train_multiner()
+
 
 
 if __name__ == "__main__":
