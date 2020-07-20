@@ -1712,17 +1712,32 @@ class BioMLT(nn.Module):
         logging.info("{} {} ".format("Predictions", pred_tokens))
 
     def train_multiner(self):
-        target_index = self.args.target_index
-        eval_file = self.args.ner_test_files[target_index]
-        ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
-                         enumerate(self.args.ner_test_files) if i != target_index]
-        ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
-        ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
-        model_save_name = "best_ner_model_{}".format(ner_type)
+        if hasattr(args,"target_index"):
+            target_index = self.args.target_index
+            eval_file = self.args.ner_test_files[target_index]
+            ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
+                             enumerate(self.args.ner_test_files) if i != target_index]
+            ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
+            ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
+            model_save_name = "best_ner_model_{}".format(ner_type)
+            print("Running experiment with a specific target index : {} target data : {} ".format(target_index,ner_target_type))
+        else:
+            print("Running MTL without specific target NER task")
+            ner_types = []
+            model_save_names = []
+            for i in range(len(self.args.ner_train_files)):
+                target_index = i
+                eval_file = self.args.ner_test_files[target_index]
+                ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
+                                 enumerate(self.args.ner_test_files) if i != target_index]
+                ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
+                ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
+                model_save_name = "best_ner_model_{}".format(ner_type)
+                ner_types.append(ner_type)
+                model_save_names.apped(model_save_name)
         self.load_multiner_data()
         self.init_multiner_models()
         device = self.args.device
-        # device = "cpu"        print("Starting training for NER in {} ".format(device))
         self.bert_model.to(device)
         self.bert_model.train()
         for i in range(len(self.ner_heads)):
@@ -1730,31 +1745,38 @@ class BioMLT(nn.Module):
             self.ner_heads[i].train()
         results = []
         best_epoch = 0
+        shrink = 1
+        eval_freq = 2
         best_f1 = 0
+        best_f1s = [0 for i in range(len(self.ner_heads))]
+        best_epochs = [-1 for i in range(len(self.ner_heads))]
         avg_ner_losses = []
         epoch_num = self.args.num_train_epochs
-        print("Total epochs over data {} ".format(epoch_num))
-        # Currently uses the minimum length dataset
-        len_data = min([len(reader) for reader in self.ner_readers])
-        eval_interval = len_data // 2
-        # eval_interval = 100
-        print("Length of each epoch {}".format(len_data))
-        epoch_num = epoch_num * len_data // eval_interval
-        print("Will train for {} epochs ".format(epoch_num))
+        if not hasattr(args, "total_train_steps"):
+            len_data = len(self.ner_readers[target_index])
+            len_data = len_data // shrink
+            eval_interval = len_data // eval_freq
+            print("Length of training {}".format(len_data))
+            print("Length of each epoch {}".format(eval_interval))
+            epoch_num = epoch_num * eval_freq
+            print("Will train for {} epochs ".format(epoch_num))
+        else:
+            total_steps = args.total_train_steps // shrink
+            eval_interval = total_steps // epoch_num
+            print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
+
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
             for i in range(len(self.ner_heads)):
                 self.ner_heads[i].to(device)
                 self.ner_heads[i].train()
-            # eval_interval = len(self.ner_reader)
             for i in tqdm(range(eval_interval), desc="Training"):
                 self.bert_optimizer.zero_grad()
                 for a in range(len(self.ner_heads)):
                     self.ner_heads[a].optimizer.zero_grad()
                 task_index = np.random.randint(len(self.ner_heads))
                 tokens, bert_batch_after_padding, data = self.ner_readers[task_index][i]
-                # print("Number of sentences in the batch : {}".format(len(tokens)))
                 data = [d.to(device) for d in data]
                 sent_lens, masks, tok_inds, ner_inds, \
                 bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
@@ -1774,19 +1796,44 @@ class BioMLT(nn.Module):
             self.bert_model.eval()
             for a in range(len(self.ner_heads)):
                 self.ner_heads[a].eval()
-            f1, p, r = self.eval_multiner(target_index)
-            # f1, p, r = 0, 0, 0
-            print("F1 {}".format(f1))
-            logging.info("F1 {}".format(f1))
-            results.append([f1, p, r])
-            if f1 > best_f1:
-                best_epoch = j
-                best_f1 = f1
-                self.save_all_model(model_save_name)
+
+            if hasattr(args,"target_index"):
+
+                print("Running evaluation only for {}".format(target_index))
+                f1, p, r = self.eval_multiner(target_index)
+                # f1, p, r = 0, 0, 0
+                print("F1 {}".format(f1))
+                logging.info("F1 {}".format(f1))
+                results.append([f1, p, r])
+                if f1 > best_f1:
+                    best_epoch = j
+                    best_f1 = f1
+                    self.save_all_model(model_save_name)
+            else:
+                # Running evaluation for all tasks in MTL
+                for i in range(len(self.ner_heads)):
+                    print("Running evaluation for all NER tasks")
+                    target_index = i
+                    f1, p, r = self.eval_multiner(target_index)
+                    # f1, p, r = 0, 0, 0
+                    print("F1 {}".format(f1))
+                    logging.info("F1 {}".format(f1))
+                    results.append([f1, p, r])
+                    if f1 > best_f1s[i]:
+                        best_epochs[i] = j
+                        best_f1s[i] = f1
+                        self.save_all_model(model_save_names[i])
         print("Average losses")
         print(avg_ner_losses)
-        result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
-        self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+        if hasattr(args, "target_index"):
+            result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
+            self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+        else:
+            for i in range(len(self.ner_heads)):
+                ner_type = ner_types[i]
+                best_epoch = best_epochs[i]
+                result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
+                self.write_ner_result(result_save_path, ner_type, results, best_epoch)
 
     def train_ner(self):
         eval_file = self.args.ner_dev_file
@@ -1828,7 +1875,7 @@ class BioMLT(nn.Module):
         else:
             total_steps = args.total_train_steps//shrink
             eval_interval = total_steps//epoch_num
-            print("Training will be done for {} epochs of total {} steps".format(total_steps,epoch_num))
+            print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
         step_size = total_steps / 20
         step_for_grad_intervals = [int(total_steps * s) for s in loss_grad_intervals]
