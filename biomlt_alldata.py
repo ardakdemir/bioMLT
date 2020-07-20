@@ -50,26 +50,29 @@ def to_list(tensor):
     return tensor.detach().cpu().tolist()
 
 
-def get_gradient(losses,index=-1):
-    return losses[index] - losses[index-1]
+def get_gradient(losses, index=-1):
+    return losses[index] - losses[index - 1]
 
-def plot_save_array(save_dir,file_name,dataset_name, y,x_axis=None):
+
+def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     file_path = os.path.join(save_dir, file_name)
-    plot_path = os.path.join(save_dir, dataset_name+"_lr_curve_plot.png")
-    x_vals = [str(x) for x in x_axis] if x_axis is not None else [str(i+1) for i in range(len(y))]
+    plot_path = os.path.join(save_dir, dataset_name + "_lr_curve_plot.png")
+    x_vals = [str(x) for x in x_axis] if x_axis is not None else [str(i + 1) for i in range(len(y))]
     if not os.path.exists(file_path):
         s = "DATASET\t{}\n".format("\t".join(x_vals))
     else:
         s = ""
     with open(file_path, "a") as o:
-        s += "{}\n".format("\t".join(y))
+        s += "{}\n".format("\t".join([str(y_) for y in y]))
         o.write(s)
     plt.figure()
-    plt.plot(x_vals,y)
+    plt.plot(x_vals, y)
     plt.title(dataset_name)
     plt.savefig(plot_path)
+
+
 def hugging_parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Working  on {}".format(device))
@@ -1798,7 +1801,7 @@ class BioMLT(nn.Module):
         len_data = len(self.ner_reader)
         shrink = 100
         eval_freq = 2
-        len_data = len_data //shrink
+        len_data = len_data // shrink
         eval_interval = len_data // eval_freq
         # eval_interval = 100
         print("Length of each epoch {}".format(len_data))
@@ -1806,7 +1809,7 @@ class BioMLT(nn.Module):
         print("Will train for {} epochs ".format(epoch_num))
         total_steps = (len_data * epoch_num)
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
-        step_for_grad_intervals = [int(total_steps*s) for s in loss_grad_intervals]
+        step_for_grad_intervals = [int(total_steps * s) for s in loss_grad_intervals]
         losses_for_learning_curve = []
         grads = []
         step = 0
@@ -1835,9 +1838,9 @@ class BioMLT(nn.Module):
                 cur_loss = loss.item()
                 ner_loss = ner_loss + cur_loss
                 total_loss = total_loss + cur_loss
-                losses_for_learning_curve.append(total_loss/step)
+                losses_for_learning_curve.append(total_loss / step)
                 if step in step_for_grad_intervals:
-                    grad = get_gradient(losses_for_learning_curve,index=-1)
+                    grad = get_gradient(losses_for_learning_curve, index=-1)
                     grads.append(grad)
             avg_ner_loss = ner_loss / eval_interval
 
@@ -1991,7 +1994,6 @@ def main():
         biomlt.train_ner()
     elif mode == "multiner":
         biomlt.train_multiner()
-
 
 
 if __name__ == "__main__":
