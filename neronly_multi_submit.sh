@@ -1,14 +1,11 @@
 /usr/local/bin/nosh
 output_dir=$1
-epoch_num=10
-total_train_steps=200
+epoch_num=5
+total_train_steps=2000
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_multi
 cd ~
-pwd
-
-
 ner_data_folder="biobert_data/datasets/NER"
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
