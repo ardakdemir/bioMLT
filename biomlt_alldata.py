@@ -172,7 +172,6 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--target_index",
-        default=0,
         type=int,
         required=False,
         help="The index of the target ner task (inside the eval files)",
