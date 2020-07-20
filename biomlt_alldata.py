@@ -65,7 +65,7 @@ def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
     else:
         s = ""
     with open(file_path, "a") as o:
-        s += "{}\n".format("\t".join([str(y_) for y in y]))
+        s += "{}\n".format("\t".join([str(y_) for y_ in y]))
         o.write(s)
     plt.figure()
     plt.plot(x_vals, y)
