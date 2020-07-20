@@ -13,14 +13,14 @@ target_train_file=""
 target=0
 for target_fd in $datasets
 do
-    folder_path=$ner_data_folder"/"target_fd
+    folder_path=$ner_data_folder"/"$target_fd
     if [ -d $folder_path ]
     echo "Iteration for "$folder_path
     then
         aux=0
         for aux_fd in $datasets
         do
-            aux_folder_path=$ner_data_folder"/"aux_file
+            aux_folder_path=$ner_data_folder"/"$aux_file
             if [ -d $aux_folder_path ]
             then
                 if [ $target -le $aux ]
