@@ -79,8 +79,8 @@ def get_training_params(args):
     :param args: Args from the argumet parser
     :return: number of epochs and eval intervals
     """
-    if hasattr(args, "total_train_steps"):
-        epoch_num = args.eval_count if hasattr(args, "eval_count") else 20
+    if args.total_train_steps != -1:
+        epoch_num = args.num_train_epochs
         eval_interval = args.total_train_steps // epoch_num
         return epoch_num, eval_interval
     else:
@@ -440,7 +440,7 @@ def hugging_parse_args():
     parser.add_argument(
         "--num_train_epochs", default=10, type=int, help="Total number of training epochs to perform."
     )
-    parser.add_argument("--total_train_steps", required=False, type=int,
+    parser.add_argument("--total_train_steps", default=-1, required=False, type=int,
                         help="Total number of training steps to perform.")
     parser.add_argument(
         "--max_steps",
@@ -1754,7 +1754,7 @@ class BioMLT(nn.Module):
         best_epochs = [-1 for i in range(len(self.ner_heads))]
         avg_ner_losses = []
         epoch_num = self.args.num_train_epochs
-        if not hasattr(self.args, "total_train_steps"):
+        if self.args.total_train_steps == -1:
             len_data = len(self.ner_readers[target_index])
             len_data = len_data // shrink
             eval_interval = len_data // eval_freq
@@ -1763,7 +1763,7 @@ class BioMLT(nn.Module):
             epoch_num = epoch_num * eval_freq
             print("Will train for {} epochs ".format(epoch_num))
         else:
-            total_steps = args.total_train_steps // shrink
+            total_steps = self.args.total_train_steps // shrink
             eval_interval = total_steps // epoch_num
             print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
 
@@ -1866,7 +1866,7 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         shrink = 1
         eval_freq = 2
-        if not hasattr(args, "total_train_steps"):
+        if args.total_train_steps == -1:
             len_data = len(self.ner_reader)
             len_data = len_data // shrink
             eval_interval = len_data // eval_freq
