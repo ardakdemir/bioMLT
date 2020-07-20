@@ -1736,7 +1736,7 @@ class BioMLT(nn.Module):
                 ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
                 model_save_name = "best_ner_model_{}".format(ner_type)
                 ner_types.append(ner_type)
-                model_save_names.apped(model_save_name)
+                model_save_names.append(model_save_name)
         self.load_multiner_data()
         self.init_multiner_models()
         device = self.args.device
