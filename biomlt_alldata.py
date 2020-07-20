@@ -51,7 +51,7 @@ def to_list(tensor):
 
 
 def get_gradient(losses, step_size):
-    return (losses[-1] - losses[int(max(0,len(losses)-step_size-1))]) / step_size
+    return (losses[-1] - losses[int(max(0, len(losses) - step_size - 1))]) / step_size
 
 
 def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
@@ -65,13 +65,28 @@ def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
     else:
         s = ""
     with open(file_path, "a") as o:
-        s += "{}\n".format("\t".join([str(y_) for y_ in y]))
+        s += "{}\t{}\n".format(dataset_name, "\t".join([str(y_) for y_ in y]))
         o.write(s)
     plt.figure()
     plt.plot([float(x) for x in x_vals], y)
     plt.title(dataset_name)
     plt.savefig(plot_path)
 
+
+def get_training_params(args):
+    """
+
+    :param args: Args from the argumet parser
+    :return: number of epochs and eval intervals
+    """
+    if hasattr(args, "total_train_steps"):
+        epoch_num = args.eval_count if hasattr(args, "eval_count") else 20
+        eval_interval = args.total_train_steps // epoch_num
+        return epoch_num, eval_interval
+    else:
+        epoch_num = 20
+        eval_interval = 1000
+        return epoch_num, eval_interval
 
 def hugging_parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -424,6 +439,8 @@ def hugging_parse_args():
     parser.add_argument(
         "--num_train_epochs", default=10, type=int, help="Total number of training epochs to perform."
     )
+    parser.add_argument("--total_train_steps", required=False, type=int,
+                        help="Total number of training steps to perform.")
     parser.add_argument(
         "--max_steps",
         default=-1,
@@ -1797,17 +1814,21 @@ class BioMLT(nn.Module):
         best_f1 = 0
         avg_ner_losses = []
         epoch_num = args.num_train_epochs
-        print("Total epochs over data {} ".format(epoch_num))
-        len_data = len(self.ner_reader)
         shrink = 1
         eval_freq = 2
-        len_data = len_data // shrink
-        eval_interval = len_data // eval_freq
-        # eval_interval = 100
-        print("Length of each epoch {}".format(len_data))
-        epoch_num = epoch_num * eval_freq
-        print("Will train for {} epochs ".format(epoch_num))
-        total_steps = (eval_interval * epoch_num)
+        if not hasattr(args,"total_train_steps"):
+            len_data = len(self.ner_reader)
+            len_data = len_data // shrink
+            eval_interval = len_data // eval_freq
+            print("Length of training {}".format(len_data))
+            print("Length of each epoch {}".format(eval_interval))
+            epoch_num = epoch_num * eval_freq
+            print("Will train for {} epochs ".format(epoch_num))
+            total_steps = (eval_interval * epoch_num)
+        else:
+            total_steps = args.total_train_steps//shrink
+            eval_interval = total_steps//epoch_num
+            print("Training will be done for {} epochs of total {} steps".format(total_steps,epoch_num))
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
         step_size = total_steps / 20
         step_for_grad_intervals = [int(total_steps * s) for s in loss_grad_intervals]
@@ -1877,7 +1898,7 @@ class BioMLT(nn.Module):
         plt.title("Loss curve")
         plt.plot(losses_for_learning_curve)
         plt.xlabel("Step index")
-        plt.savefig(os.path.join(save_dir,"loss_curve.png"))
+        plt.savefig(os.path.join(save_dir, "loss_curve.png"))
         plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
 
     def write_ner_result(self, result_save_path, ner_type, results, best_epoch):
