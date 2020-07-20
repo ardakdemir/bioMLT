@@ -88,6 +88,7 @@ def get_training_params(args):
         eval_interval = 1000
         return epoch_num, eval_interval
 
+
 def hugging_parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Working  on {}".format(device))
@@ -173,6 +174,7 @@ def hugging_parse_args():
     parser.add_argument(
         "--target_index",
         type=int,
+        default=-1,
         required=False,
         help="The index of the target ner task (inside the eval files)",
     )
@@ -1711,7 +1713,7 @@ class BioMLT(nn.Module):
         logging.info("{} {} ".format("Predictions", pred_tokens))
 
     def train_multiner(self):
-        if hasattr(self.args,"target_index"):
+        if self.args.target_index != -1:
             target_index = self.args.target_index
             eval_file = self.args.ner_test_files[target_index]
             ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
@@ -1719,7 +1721,8 @@ class BioMLT(nn.Module):
             ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
             ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
             model_save_name = "best_ner_model_{}".format(ner_type)
-            print("Running experiment with a specific target index : {} target data : {} ".format(target_index,ner_target_type))
+            print("Running experiment with a specific target index : {} target data : {} ".format(target_index,
+                                                                                                  ner_target_type))
         else:
             print("Running MTL without specific target NER task")
             ner_types = []
@@ -1796,7 +1799,7 @@ class BioMLT(nn.Module):
             for a in range(len(self.ner_heads)):
                 self.ner_heads[a].eval()
 
-            if hasattr(self.args,"target_index"):
+            if self.args.target_index != -1:
 
                 print("Running evaluation only for {}".format(target_index))
                 f1, p, r = self.eval_multiner(target_index)
@@ -1810,8 +1813,8 @@ class BioMLT(nn.Module):
                     self.save_all_model(model_save_name)
             else:
                 # Running evaluation for all tasks in MTL
+                print("Running evaluation for all NER tasks")
                 for i in range(len(self.ner_heads)):
-                    print("Running evaluation for all NER tasks")
                     target_index = i
                     f1, p, r = self.eval_multiner(target_index)
                     # f1, p, r = 0, 0, 0
@@ -1824,7 +1827,7 @@ class BioMLT(nn.Module):
                         self.save_all_model(model_save_names[i])
         print("Average losses")
         print(avg_ner_losses)
-        if hasattr(self.args, "target_index"):
+        if self.args.target_index != -1:
             result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
         else:
@@ -1863,7 +1866,7 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         shrink = 1
         eval_freq = 2
-        if not hasattr(args,"total_train_steps"):
+        if not hasattr(args, "total_train_steps"):
             len_data = len(self.ner_reader)
             len_data = len_data // shrink
             eval_interval = len_data // eval_freq
@@ -1873,8 +1876,8 @@ class BioMLT(nn.Module):
             print("Will train for {} epochs ".format(epoch_num))
             total_steps = (eval_interval * epoch_num)
         else:
-            total_steps = args.total_train_steps//shrink
-            eval_interval = total_steps//epoch_num
+            total_steps = args.total_train_steps // shrink
+            eval_interval = total_steps // epoch_num
             print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
         step_size = total_steps / 20
