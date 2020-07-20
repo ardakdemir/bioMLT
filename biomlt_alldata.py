@@ -1751,6 +1751,7 @@ class BioMLT(nn.Module):
         eval_freq = 2
         best_f1 = 0
         best_f1s = [0 for i in range(len(self.ner_heads))]
+        all_results = [[] for i in range(len(self.ner_heads))]
         best_epochs = [-1 for i in range(len(self.ner_heads))]
         avg_ner_losses = []
         epoch_num = self.args.num_train_epochs
@@ -1820,7 +1821,7 @@ class BioMLT(nn.Module):
                     # f1, p, r = 0, 0, 0
                     print("F1 {}".format(f1))
                     logging.info("F1 {}".format(f1))
-                    results.append([f1, p, r])
+                    all_results[i].append([f1, p, r])
                     if f1 > best_f1s[i]:
                         best_epochs[i] = j
                         best_f1s[i] = f1
@@ -1835,6 +1836,7 @@ class BioMLT(nn.Module):
             for i in range(len(self.ner_heads)):
                 ner_type = ner_types[i]
                 best_epoch = best_epochs[i]
+                results = all_results[i]
                 result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
                 self.write_ner_result(result_save_path, ner_type, results, best_epoch)
 
