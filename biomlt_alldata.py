@@ -51,7 +51,7 @@ def to_list(tensor):
 
 
 def get_gradient(losses, step_size):
-    return (losses[-1] - losses[max(0,len(losses-step_size-1))]) / step_size
+    return (losses[-1] - losses[max(0,len(losses)-step_size-1)]) / step_size
 
 
 def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
