@@ -1795,12 +1795,15 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        eval_interval = len_data // 200
+        shrink = 100
+        eval_freq = 2
+        len_data = len_data //shrink
+        eval_interval = len_data // eval_freq
         # eval_interval = 100
         print("Length of each epoch {}".format(len_data))
-        epoch_num = epoch_num * len_data // eval_interval
+        epoch_num = epoch_num * eval_freq
         print("Will train for {} epochs ".format(epoch_num))
-        total_steps = (len_data * epoch_num)/100
+        total_steps = (len_data * epoch_num)
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
         step_for_grad_intervals = [int(total_steps*s) for s in loss_grad_intervals]
         losses_for_learning_curve = []
