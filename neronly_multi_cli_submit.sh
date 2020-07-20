@@ -1,4 +1,3 @@
-/usr/local/bin/nosh
 output_dir=$1
 if [ -d $output_dir ]
 then
