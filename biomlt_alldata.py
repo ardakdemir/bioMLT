@@ -64,10 +64,11 @@ def plot_save_array(save_dir,file_name,dataset_name, y,x_axis=None):
     else:
         s = ""
     with open(file_path, "a") as o:
-        s += "{}\n".format("\t".join())
+        s += "{}\n".format("\t".join(y))
         o.write(s)
     plt.figure()
     plt.plot(x_vals,y)
+    plt.title(dataset_name)
     plt.savefig(plot_path)
 def hugging_parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
