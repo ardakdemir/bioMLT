@@ -68,7 +68,7 @@ def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
         s += "{}\n".format("\t".join([str(y_) for y_ in y]))
         o.write(s)
     plt.figure()
-    plt.plot(x_vals, y)
+    plt.plot([float(x) for x in x_vals], y)
     plt.title(dataset_name)
     plt.savefig(plot_path)
 
@@ -1872,6 +1872,10 @@ class BioMLT(nn.Module):
         save_dir = self.args.output_dir
         file_name = "ner_learning_curves"
         dataset_name = ner_type
+        print("Plotting the loss curve")
+        plt.figure()
+        plt.plot(losses_for_learning_curve)
+        plt.savefig(os.path.join(save_dir,"loss_curve.png"))
         plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
 
     def write_ner_result(self, result_save_path, ner_type, results, best_epoch):
