@@ -1799,7 +1799,7 @@ class BioMLT(nn.Module):
         epoch_num = args.num_train_epochs
         print("Total epochs over data {} ".format(epoch_num))
         len_data = len(self.ner_reader)
-        shrink = 100
+        shrink = 1
         eval_freq = 2
         len_data = len_data // shrink
         eval_interval = len_data // eval_freq
@@ -1874,7 +1874,9 @@ class BioMLT(nn.Module):
         dataset_name = ner_type
         print("Plotting the loss curve")
         plt.figure()
+        plt.title("Loss curve")
         plt.plot(losses_for_learning_curve)
+        plt.xlabel("Step index")
         plt.savefig(os.path.join(save_dir,"loss_curve.png"))
         plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
 
