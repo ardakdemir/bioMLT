@@ -1,7 +1,7 @@
 /usr/local/bin/nosh
 output_dir=$1
-epoch_num=5
-total_train_steps=10000
+epoch_num=10
+total_train_steps=20000
 if [ -d $output_dir ]
 then
   rm $output_dir

@@ -4,8 +4,8 @@ if [ -d $output_dir ]
 then
   rm $output_dir
 fi
-epoch_num=5
-total_train_steps=20000
+epoch_num=10
+total_train_steps=40000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_multi
