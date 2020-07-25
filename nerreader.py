@@ -37,11 +37,11 @@ def bert2token(my_tokens, bert_tokens, bert_ind=0):
     for ind in range(len(my_tokens)):
         my_token = my_tokens[ind]
         token = bert_tokens[bert_ind]
-        if token == UNK: #UNK token handler
+        if token == UNK:  # UNK token handler
             inds.append(ind)
             bert_ind = bert_ind + 1
             continue
-        while len(token_sum) != len(my_token) and bert_ind < len(bert_tokens) :
+        while len(token_sum) != len(my_token) and bert_ind < len(bert_tokens):
             token = bert_tokens[bert_ind]
             if token.startswith("##"):
                 token_sum += token[2:]
@@ -176,13 +176,26 @@ def pad_trunc(sent, max_len, pad_len, pad_ind):
         return sent
 
 
-class DataReader():
+def ner_document_reader(file_path, sent_len=None):
+    document = ""
+    with open(file_path, "r") as f:
+        f = f.read()
+        doc = f.split("\n\n")
+        if sent_len is not None:
+            doc = doc[:sent_len]
+        sents = [" ".join([token.split()[0] for token in sent.split("\n")]) for sent in doc if len(sent) > 1]
+        for sent in sents:
+            document += sent + "\n"
+    return document
+
+
+class DataReader:
 
     def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False):
         self.for_eval = for_eval
         self.file_path = file_path
         self.crf = crf  # Generate 2-d labels
-        if self.crf :
+        if self.crf:
             print("Generating 2-d labels")
         self.task_name = task_name
         self.batch_size = batch_size
