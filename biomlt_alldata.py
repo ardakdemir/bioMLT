@@ -632,19 +632,9 @@ class BioMLT(nn.Module):
         logging.info("Model loaded  from: %s" % load_path)
         loaded_params = torch.load(load_path, map_location=torch.device('cpu'))
         my_dict = self.state_dict()
-        print("Yes-no head weights before loading")
-        before = self.yesno_head.weight[:10]
-        print(before)
         pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict()}
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
-        print("Yes-no head weights after loading")
-        print(self.yesno_head.weight[:3])
-        # if self.args.mode in ["ner","joint_flat"]:
-        #    print("Trying to load ner vocab from {}".format(self.args.ner_vocab_path))
-        #    with open(self.args.ner_vocab_path,'r') as np:
-        #        ner_w2ind = json.load(np)
-        #        self.ner_label_vocab = Vocab(ner_w2ind)
 
     def save_all_model(self, save_path=None, weights=True):
         if self.args.model_save_name is None and save_path is None:
