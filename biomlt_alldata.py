@@ -625,9 +625,10 @@ class BioMLT(nn.Module):
 
     # Loads model with missing parameters or extra parameters!!!
     # Solves the previous issue we had for pyJNERDEP
-    def load_all_model(self, load_path):
+    def load_all_model(self, load_path=None):
         # self.jointmodel=JointModel(self.args)
-        load_path = self.args.load_model_path
+        if load_path is None:
+            load_path = self.args.load_model_path
         # save_path = os.path.join(self.args['save_dir'],self.args['save_name'])
         logging.info("Model loaded  from: %s" % load_path)
         loaded_params = torch.load(load_path, map_location=torch.device('cpu'))

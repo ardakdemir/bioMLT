@@ -19,7 +19,7 @@ do
     folder_path=$ner_data_folder"/"$file
     if [ -d $folder_path ]
     then
-        train_file=$folder_path"/ent_train_dev.tsv"
+        train_file=$folder_path"/ent_train.tsv"
         test_file=$folder_path"/ent_test.tsv"
         dev_file=$folder_path"/ent_devel.tsv"
         echo "Training developing and testing respectively on "
