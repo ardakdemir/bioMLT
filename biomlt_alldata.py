@@ -2124,7 +2124,7 @@ def write_nerresult_with_repeat(save_path, row_name, results):
     with open(save_path, "a") as o:
         mean_res = np.mean(results)
         max_res = max(results)
-        s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([res for res in results]), mean_res, max_res)
+        s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([str(round(res,3)) for res in results]), mean_res, max_res)
         o.write(s)
 
 
