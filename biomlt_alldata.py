@@ -33,6 +33,7 @@ from torch.nn import CrossEntropyLoss, MSELoss
 import datetime
 import logging
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 pretrained_bert_name = 'bert-base-cased'
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute)
@@ -108,7 +109,14 @@ def hugging_parse_args():
         "--only_lr_curve", default=False, action="store_true",
         help="If set, skips the evaluation, only for NER task"
     )
-
+    parser.add_argument(
+        "--patience", default=5, type=int,
+        help="Number of consecutive evaluations without improvement to stop the training"
+    )
+    parser.add_argument(
+        "--repeat", default=-1, type=int,
+        help="Number of times to repeat the training"
+    )
     parser.add_argument(
         "--version_2_with_negative",
         action="store_true",
@@ -1756,6 +1764,7 @@ class BioMLT(nn.Module):
                 model_save_name = "best_ner_model_{}".format(ner_type)
                 ner_types.append(ner_type)
                 model_save_names.append(model_save_name)
+        patience = 0
         self.load_multiner_data()
         self.init_multiner_models()
         device = self.args.device
@@ -1818,7 +1827,7 @@ class BioMLT(nn.Module):
             self.bert_model.eval()
             for a in range(len(self.ner_heads)):
                 self.ner_heads[a].eval()
-
+            patience = patience + 1
             if self.args.target_index != -1:
 
                 print("Running evaluation only for {}".format(target_index))
@@ -1828,6 +1837,7 @@ class BioMLT(nn.Module):
                 logging.info("F1 {}".format(f1))
                 results.append([f1, p, r])
                 if f1 > best_f1:
+                    patience = 0
                     best_epoch = j
                     best_f1 = f1
                     self.save_all_model(model_save_name)
@@ -1844,7 +1854,11 @@ class BioMLT(nn.Module):
                     if f1 > best_f1s[i]:
                         best_epochs[i] = j
                         best_f1s[i] = f1
+                        patience = 0
                         self.save_all_model(model_save_names[i])
+            if patience > self.args.patience:
+                print("Stopping training at patience : {}".format(patience))
+                break
         print("Average losses")
         print(avg_ner_losses)
         if self.args.target_index != -1:
@@ -1876,6 +1890,7 @@ class BioMLT(nn.Module):
     def train_ner(self):
         eval_file = self.args.ner_dev_file
         eval_file_name = os.path.split(eval_file)[1].split(".")[0]
+        patience = 0
         ner_type = os.path.split(eval_file)[0].split("/")[-1]
         model_save_name = "best_ner_model_on_{}".format(ner_type)
         self.load_ner_data(eval_file=eval_file)
@@ -1956,6 +1971,7 @@ class BioMLT(nn.Module):
             print("Evaluation for epoch {} ".format(j))
             self.bert_model.eval()
             self.ner_head.eval()
+            patience = patience + 1
             if not self.args.only_lr_curve:
                 f1, p, r = self.eval_ner()
                 # f1, p, r = 0, 0, 0
@@ -1965,9 +1981,13 @@ class BioMLT(nn.Module):
                 if f1 > best_f1:
                     best_epoch = j
                     best_f1 = f1
+                    patience = 0
                     self.save_all_model(model_save_name)
             else:
                 print("Skipping evaluation only running training for lr curve")
+            if not self.args.only_lr_curve and patience > self.args.patience:
+                print("Stopping training early with patience : {}".format(patience))
+                break
         print("Average losses")
         print(avg_ner_losses)
         print("Gradients of the loss curve")
@@ -1995,6 +2015,7 @@ class BioMLT(nn.Module):
         plt.savefig(os.path.join(save_dir, "loss_curve_{}.png".format(ner_type)))
         plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
         return test_result
+
     def write_ner_result(self, result_save_path, ner_type, results, best_epoch):
         logging.info("Writing  results for ner to {}".format(result_save_path))
         if not os.path.exists(result_save_path):
@@ -2104,11 +2125,27 @@ class BioMLT(nn.Module):
         return round(f1, 2), round(prec, 2), round(rec, 2)
 
 
+def write_nerresult_with_repeat(save_path, row_name, results):
+    logging.info("Writing  repeated results for ner to {}".format(save_path))
+    if not os.path.exists(save_path):
+        header = "DATASET\t{}\tMEAN\tMAX\n".format("\t".join(["Repeat_{}".format(i + 1) for i in range(len(results))]))
+        s = header
+    else:
+        s = ""
+    with open(save_path, "a") as o:
+        mean_res = np.mean(results)
+        max_res = max(results)
+        s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([res for res in results]), mean_res, max_res)
+        o.write(s)
+
+
 def main():
     biomlt = BioMLT()
     qa_types = ['yesno', 'list', 'factoid']
     mode = biomlt.args.mode
+
     predict = biomlt.args.predict
+    repeat = biomlt.args.repeat
     if mode == "qas":
         if predict:
             biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=True)
@@ -2124,11 +2161,46 @@ def main():
         else:
             biomlt.train_qas_ner()
     elif mode == "ner":
-        test_result = biomlt.train_ner()
-        print("Test result : {}".format(test_result))
+        results = []
+        test_save_path = os.path.join(biomlt.args.output_dir, "ner_test_results")
+
+        if repeat == -1:
+            test_result = biomlt.train_ner()
+            exp_name = list(test_result.keys()[0])
+            print("Test result : {}".format(test_result))
+            results.append(test_result[exp_name]["f1"])
+        else:
+            print("Will repeat training for {} times".format(repeat))
+            for i in range(repeat):
+                biomlt = BioMLT()
+                test_result = biomlt.train_ner()
+                exp_name = list(test_result.keys()[0])
+                print("Results for repeat {} : {} ".format(i + 1, test_result))
+                results.append(test_result[exp_name]["f1"])
+        write_nerresult_with_repeat(test_save_path, exp_name, results)
     elif mode == "multiner":
+        test_save_path = os.path.join(biomlt.args.output_dir, "ner_test_results")
+        results = defaultdict(list)
         test_result = biomlt.train_multiner()
         print("Test result : {}".format(test_result))
+        if repeat == -1:
+            test_result = biomlt.train_multiner()
+            for exp_name in test_result.keys():
+                print("Test result for {} : {}".format(exp_name, test_result))
+                results[exp_name].append(test_result[exp_name]["f1"])
+            for key, result in results.items():
+                write_nerresult_with_repeat(test_save_path, key, result)
+        else:
+            print("Will repeat training for {} times".format(repeat))
+            for i in range(repeat):
+                biomlt = BioMLT()
+                test_result = biomlt.train_multiner()
+                for exp_name in test_result.keys():
+                    print("Test result for repeat {} exp {}  : {}".format(i + 1, exp_name, test_result))
+                    results[exp_name].append(test_result[exp_name]["f1"])
+            for key, result in results.items():
+                write_nerresult_with_repeat(test_save_path, key, result)
+
 
 if __name__ == "__main__":
     main()
