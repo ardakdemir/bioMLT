@@ -1087,6 +1087,7 @@ class BioMLT(nn.Module):
         print("NER label vocab indexes from training set : {}".format(self.args.ner_label_vocab.w2ind))
         print("Reading NER eval data from: {}".format(self.args.ner_test_file))
         eval_file_path = self.args.ner_test_file if eval_file is None else eval_file
+        print("Reading NER dev data from: {}".format(self.args.ner_dev_file))
         self.eval_file = eval_file_path
         self.ner_eval_reader = DataReader(
             eval_file_path, "NER", tokenizer=self.bert_tokenizer,
@@ -1963,7 +1964,7 @@ class BioMLT(nn.Module):
             self.ner_head.eval()
             patience = patience + 1
             if not self.args.only_lr_curve:
-                f1, p, r = self.eval_ner()
+                f1, p, r = self.eval_ner(test=False)
                 # f1, p, r = 0, 0, 0
                 print("F1 {}".format(f1))
                 logging.info("F1 {}".format(f1))
