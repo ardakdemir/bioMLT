@@ -2155,7 +2155,7 @@ def main():
 
         if repeat == -1:
             test_result = biomlt.train_ner()
-            exp_name = list(test_result.keys()[0])
+            exp_name = list(test_result.keys())[0]
             print("Test result : {}".format(test_result))
             results.append(test_result[exp_name]["f1"])
         else:
