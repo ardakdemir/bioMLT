@@ -1988,7 +1988,7 @@ class BioMLT(nn.Module):
             self.load_all_model(os.path.join(self.args.output_dir, model_save_name))
             print("Loaded best model {}".format(model_save_name))
             f, p, r = self.eval_ner(test=True)
-            test_result["ner_type"] = {"f1": f,
+            test_result[ner_type] = {"f1": f,
                                        "pre": p,
                                        "rec": r}
             print("result on test file : {}".format(test_result))
