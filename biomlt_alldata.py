@@ -195,6 +195,14 @@ def hugging_parse_args():
         help="The list of test files for the ner task",
     )
     parser.add_argument(
+        "--ner_dev_files",
+        default=["a", "b"],
+        nargs="*",
+        type=str,
+        required=False,
+        help="The list of dev files for the ner task",
+    )
+    parser.add_argument(
         "--model_type", type=str, default='bert', required=False,
         help="The model architecture to be trained or fine-tuned.",
     )
@@ -1033,19 +1041,29 @@ class BioMLT(nn.Module):
         # now initializing Ner head here !!
         print("Reading NER data from {}".format(self.ner_path))
         self.ner_readers = []
+        self.ner_dev_readers = []
         self.ner_eval_readers = []
         train_files = self.args.ner_train_files
+        if self.args.ner_dev_files is not None:
+            dev_files = self.args.ner_dev_files
+        else:
+            dev_files = self.args.ner_test_files
         eval_files = self.args.ner_test_files
-        for train_file, eval_file in zip(train_files, eval_files):
+        for train_file, eval_file, dev_file in zip(train_files, eval_files, dev_files):
             ner_reader = DataReader(
                 train_file, "NER", tokenizer=self.bert_tokenizer,
                 batch_size=self.args.ner_batch_size, crf=self.args.crf)
-            ner_eval_reader = DataReader(
+            ner_dev_reader = DataReader(
+                dev_file, "NER", tokenizer=self.bert_tokenizer,
+                batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
+            ner_test_reader = DataReader(
                 eval_file, "NER", tokenizer=self.bert_tokenizer,
                 batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
-            ner_eval_reader.label_vocab = ner_reader.label_vocab
+            ner_dev_reader.label_vocab = ner_reader.label_vocab
+            ner_test_reader.label_vocab = ner_reader.label_vocab
             self.ner_readers.append(ner_reader)
-            self.ner_eval_readers.append(ner_eval_reader)
+            self.ner_dev_readers.append(ner_dev_reader)
+            self.ner_eval_readers.append(ner_test_reader)
 
     def init_multiner_models(self):
         # now initializing Ner head here !!
@@ -1068,18 +1086,19 @@ class BioMLT(nn.Module):
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
         print("NER label vocab indexes from training set : {}".format(self.args.ner_label_vocab.w2ind))
-        print("Reading NER eval data from {}".format(self.args.ner_dev_file))
-        eval_file_path = self.args.ner_dev_file if eval_file is None else eval_file
+        print("Reading NER eval data from: {}".format(self.args.ner_test_file))
+        eval_file_path = self.args.ner_test_file if eval_file is None else eval_file
         self.eval_file = eval_file_path
-        print("Will evaluate NER model on {}".format(eval_file_path))
         self.ner_eval_reader = DataReader(
             eval_file_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
-        print("NER label vocab indexes for evaluation set before assignment {} ".format(
-            self.ner_eval_reader.label_vocab.w2ind))
         self.ner_eval_reader.label_vocab = self.args.ner_label_vocab
-        print("NER label vocab indexes for evaluation set after assignment {} ".format(
-            self.ner_eval_reader.label_vocab.w2ind))
+        dev_file_path = self.args.ner_dev_file if self.args.ner_dev_file is not None else self.eval_file
+        self.dev_file = dev_file_path
+        self.ner_dev_reader = DataReader(
+            dev_file_path, "NER", tokenizer=self.bert_tokenizer,
+            batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
+        self.ner_dev_reader.label_vocab = self.args.ner_label_vocab
 
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
@@ -1803,7 +1822,7 @@ class BioMLT(nn.Module):
             if self.args.target_index != -1:
 
                 print("Running evaluation only for {}".format(target_index))
-                f1, p, r = self.eval_multiner(target_index)
+                f1, p, r = self.eval_multiner(target_index, test=False)
                 # f1, p, r = 0, 0, 0
                 print("F1 {}".format(f1))
                 logging.info("F1 {}".format(f1))
@@ -1817,7 +1836,7 @@ class BioMLT(nn.Module):
                 print("Running evaluation for all NER tasks")
                 for i in range(len(self.ner_heads)):
                     target_index = i
-                    f1, p, r = self.eval_multiner(target_index)
+                    f1, p, r = self.eval_multiner(target_index, test=False)
                     # f1, p, r = 0, 0, 0
                     print("F1 {}".format(f1))
                     logging.info("F1 {}".format(f1))
@@ -1831,14 +1850,28 @@ class BioMLT(nn.Module):
         if self.args.target_index != -1:
             result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+            self.load_all_model(os.path.join(self.args.output_dir, model_save_name))
+            print("Loaded best {} model: {}".format(ner_type, model_save_name))
+            test_f1, test_p, test_r = self.eval_multiner(target_index, test=True)
+            return {ner_type: {"f1": test_f1,
+                               "pre": test_p,
+                               "rec": test_r}}
         else:
             print("Saving results for all datasets")
+            test_results = {}
             for i in range(len(self.ner_heads)):
                 ner_type = ner_types[i]
                 best_epoch = best_epochs[i]
                 results = all_results[i]
                 result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
                 self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+                self.load_all_model(os.path.join(self.args.output_dir, model_save_names[i]))
+                print("Loaded best {} model: {}".format(ner_type, model_save_names[i]))
+                test_f1, test_p, test_r = self.eval_multiner(target_index, test=True)
+                test_results[ner_type] = {"f1": test_f1,
+                                          "pre": test_p,
+                                          "rec": test_r}
+            return test_results
 
     def train_ner(self):
         eval_file = self.args.ner_dev_file
@@ -1939,9 +1972,17 @@ class BioMLT(nn.Module):
         print(avg_ner_losses)
         print("Gradients of the loss curve")
         print(grads)
+        test_result = {}
         if not self.args.only_lr_curve:
             result_save_path = os.path.join(args.output_dir, args.ner_result_file)
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
+            self.load_all_model(os.path.join(self.args.output_dir, model_save_name))
+            print("Loaded best model")
+            f, p, r = self.eval_ner(test=True)
+            test_result["ner_type"] = {"f1": f,
+                                       "pre": p,
+                                       "rec": r}
+            print("result on test file : {}".format(test_result))
         save_dir = self.args.output_dir
         file_name = "ner_learning_curves"
         dataset_name = ner_type
@@ -1950,9 +1991,10 @@ class BioMLT(nn.Module):
         plt.title("Loss curve")
         plt.plot(losses_for_learning_curve)
         plt.xlabel("Step index")
-        plt.savefig(os.path.join(save_dir, "loss_curve.png"))
+        plt.ylabel("Average loss")
+        plt.savefig(os.path.join(save_dir, "loss_curve_{}.png".format(ner_type)))
         plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
-
+        return test_result
     def write_ner_result(self, result_save_path, ner_type, results, best_epoch):
         logging.info("Writing  results for ner to {}".format(result_save_path))
         if not os.path.exists(result_save_path):
@@ -1964,11 +2006,17 @@ class BioMLT(nn.Module):
             s += "{}\t{}\t{}\t{}\n".format(ner_type, p, r, f1)
             o.write(s)
 
-    def eval_multiner(self, target_index):
+    def eval_multiner(self, target_index, test=True):
         print("Starting evaluation for ner")
-        self.ner_eval_readers[
-            target_index].for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
-        dataset = self.ner_eval_readers[target_index]
+        if test:
+            self.ner_eval_readers[
+                target_index].for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+            dataset = self.ner_eval_readers[target_index]
+        else:
+            self.ner_dev_readers[
+                target_index].for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+            dataset = self.ner_dev_readers[target_index]
+
         all_sents = []
         all_lens = []
         all_preds = []
@@ -2005,10 +2053,15 @@ class BioMLT(nn.Module):
         logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
         return round(f1, 2), round(prec, 2), round(rec, 2)
 
-    def eval_ner(self):
+    def eval_ner(self, test=True):
         print("Starting evaluation for ner")
-        self.ner_eval_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
-        dataset = self.ner_eval_reader
+        # if test evaluate on test otherwise on dev
+        if test:
+            self.ner_eval_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+            dataset = self.ner_eval_reader
+        else:
+            self.ner_dev_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+            dataset = self.ner_dev_reader
         all_sents = []
         all_lens = []
         all_preds = []
@@ -2071,10 +2124,11 @@ def main():
         else:
             biomlt.train_qas_ner()
     elif mode == "ner":
-        biomlt.train_ner()
+        test_result = biomlt.train_ner()
+        print("Test result : {}".format(test_result))
     elif mode == "multiner":
-        biomlt.train_multiner()
-
+        test_result = biomlt.train_multiner()
+        print("Test result : {}".format(test_result))
 
 if __name__ == "__main__":
     main()

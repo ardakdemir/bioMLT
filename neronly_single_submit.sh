@@ -19,11 +19,13 @@ do
     if [ -d $folder_path ]
     then
         train_file=$folder_path"/ent_train_dev.tsv"
-        dev_file=$folder_path"/ent_test.tsv"
-        echo "Training and testing respectively on "
+        test_file=$folder_path"/ent_test.tsv"
+        dev_file=$folder_path"/ent_devel.tsv"
+        echo "Training developing and testing respectively on "
         echo $train_file
         echo $dev_file
-        singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode ner --output_dir $output_dir  --total_train_steps $total_train_steps --num_train_epochs $epoch_num --ner_train_file $train_file --ner_dev_file $dev_file --load_model
+        echo $test_file
+        singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode ner --output_dir $output_dir  --total_train_steps $total_train_steps --num_train_epochs $epoch_num --ner_train_file $train_file --ner_dev_file $dev_file --ner_test_file $test_file --load_model
     fi
 done
 

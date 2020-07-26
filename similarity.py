@@ -17,7 +17,7 @@ from sklearn.decomposition import LatentDirichletAllocation, NMF
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import defaultdict
 import matplotlib.pyplot as plt
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr,spearmanr
 
 cos_sim = lambda a, b: dot(a, b) / (norm(a) * norm(b))
 
@@ -820,9 +820,12 @@ def get_correlations(res_dict, sim_dict, separate=True):
             pearson, p_value = pearsonr(res, sim)
             correlation_stats[key] = {"pearson": pearson,
                                       "p_value": p_value}
-    pearson, p_value = pearsonr(ress, sims)
+    pearson, p_p_value = pearsonr(ress, sims)
+    spearman, s_p_value = spearmanr(ress, sims)
     correlation_stats["overall"] = {"pearson": pearson,
-                                    "p_value": p_value}
+                                    "pearson_p_value": p_value,
+                                    "spearman": spearman,
+                                    "spearman_p_value": s_p_value}
 
     return correlation_stats
 
