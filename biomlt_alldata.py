@@ -1888,12 +1888,11 @@ class BioMLT(nn.Module):
             return test_results
 
     def train_ner(self):
-        eval_file = self.args.ner_dev_file
-        eval_file_name = os.path.split(eval_file)[1].split(".")[0]
+        eval_file = self.args.ner_test_file
         patience = 0
         ner_type = os.path.split(eval_file)[0].split("/")[-1]
         model_save_name = "best_ner_model_on_{}".format(ner_type)
-        self.load_ner_data(eval_file=eval_file)
+        self.load_ner_data()
         # if self.args.load_model:
         #    self.ner_reader.label_vocab = self.ner_label_vocab
         #    self.args.ner_label_vocab = self.ner_label_vocab
