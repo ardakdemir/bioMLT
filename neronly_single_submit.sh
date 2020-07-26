@@ -2,6 +2,7 @@
 output_dir=$1
 epoch_num=10
 total_train_steps=20000
+repeat=5
 if [ -d $output_dir ]
 then
   rm $output_dir
@@ -25,7 +26,7 @@ do
         echo $train_file
         echo $dev_file
         echo $test_file
-        singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode ner --output_dir $output_dir  --total_train_steps $total_train_steps --num_train_epochs $epoch_num --ner_train_file $train_file --ner_dev_file $dev_file --ner_test_file $test_file --load_model
+        singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode ner --patience 3 --repeat 5 --output_dir $output_dir  --total_train_steps $total_train_steps --num_train_epochs $epoch_num --ner_train_file $train_file --ner_dev_file $dev_file --ner_test_file $test_file --load_model
     fi
 done
 
