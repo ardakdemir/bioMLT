@@ -1986,7 +1986,7 @@ class BioMLT(nn.Module):
             result_save_path = os.path.join(args.output_dir, args.ner_result_file)
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
             self.load_all_model(os.path.join(self.args.output_dir, model_save_name))
-            print("Loaded best model")
+            print("Loaded best model {}".format(model_save_name))
             f, p, r = self.eval_ner(test=True)
             test_result["ner_type"] = {"f1": f,
                                        "pre": p,
@@ -2163,7 +2163,7 @@ def main():
             for i in range(repeat):
                 biomlt = BioMLT()
                 test_result = biomlt.train_ner()
-                exp_name = list(test_result.keys()[0])
+                exp_name = list(test_result.keys())[0]
                 print("Results for repeat {} : {} ".format(i + 1, test_result))
                 results.append(test_result[exp_name]["f1"])
         write_nerresult_with_repeat(test_save_path, exp_name, results)
