@@ -2136,7 +2136,7 @@ class BioMLT(nn.Module):
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        eval_loss = eval_loss / len(i)
+        eval_loss = eval_loss / i
         print("NER Precision : {}  Recall : {}  F-1 : {}   eval loss: {}".format(prec, rec, f1, eval_loss))
         logging.info("NER Precision : {}  Recall : {}  F-1 : {} eval loss: {}".format(prec, rec, f1, eval_loss))
 
