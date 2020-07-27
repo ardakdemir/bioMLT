@@ -64,6 +64,7 @@ class NerModel(nn.Module):
     def forward(self, batch, labels=None, pred=False, loss_aver=True):
         out_logits = self.classifier(batch)
         batch_size = batch.shape[0]
+        shape = batch.shape
         if self.dropout and not pred:
             out_logits = self.dropout(out_logits)
         # print(out_logits.shape)
@@ -78,7 +79,7 @@ class NerModel(nn.Module):
                     loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
                 if loss_aver:
                     loss = loss / batch_size
-                    print(" Loss {} batch size {} ".format(loss.item(), batch_size))
+                    print(" Loss {} batch size {}  shape : {}".format(loss.item(), batch_size,shape))
                 return out_logits, loss.item()
             return out_logits
         if labels is not None:
