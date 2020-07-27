@@ -79,7 +79,6 @@ class NerModel(nn.Module):
                     loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
                 if loss_aver:
                     loss = loss / batch_size
-                    print(" Loss {} batch size {}  shape : {}".format(loss.item(), batch_size,shape))
                 return out_logits, loss.item()
             return out_logits
         if labels is not None:
@@ -91,7 +90,6 @@ class NerModel(nn.Module):
                 loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
             if loss_aver:
                 loss = loss / batch_size
-                print(" Loss {} batch size {} shape {}".format(loss.item(),batch_size,shape))
             return loss, out_logits
 
         return out_logits

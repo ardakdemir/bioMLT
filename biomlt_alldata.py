@@ -58,6 +58,8 @@ def get_gradient(losses, step_size):
 def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
+    if x_axis is not None:
+        x_axis = x_axis[:len(y)]
     file_path = os.path.join(save_dir, file_name)
     plot_path = os.path.join(save_dir, dataset_name + "_loss_curve_plot.png")
     x_vals = [str(x) for x in x_axis] if x_axis is not None else [str(i + 1) for i in range(len(y))]
