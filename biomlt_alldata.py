@@ -59,7 +59,7 @@ def plot_save_array(save_dir, file_name, dataset_name, y, x_axis=None):
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     file_path = os.path.join(save_dir, file_name)
-    plot_path = os.path.join(save_dir, dataset_name + "_lr_curve_plot.png")
+    plot_path = os.path.join(save_dir, dataset_name + "_loss_curve_plot.png")
     x_vals = [str(x) for x in x_axis] if x_axis is not None else [str(i + 1) for i in range(len(y))]
     if not os.path.exists(file_path):
         s = "DATASET\t{}\n".format("\t".join(x_vals))
@@ -106,7 +106,7 @@ def hugging_parse_args():
         help="Whether to use CRF for NER head"
     )
     parser.add_argument(
-        "--only_lr_curve", default=False, action="store_true",
+        "--only_loss_curve", default=False, action="store_true",
         help="If set, skips the evaluation, only for NER task"
     )
     parser.add_argument(
@@ -626,7 +626,6 @@ class BioMLT(nn.Module):
     # Loads model with missing parameters or extra parameters!!!
     # Solves the previous issue we had for pyJNERDEP
     def load_all_model(self, load_path=None):
-        # self.jointmodel=JointModel(self.args)
         if load_path is None:
             load_path = self.args.load_model_path
         # save_path = os.path.join(self.args['save_dir'],self.args['save_name'])
@@ -974,9 +973,10 @@ class BioMLT(nn.Module):
         bert_hiddens = self._get_bert_batch_hidden(bert_output, bert2toks)
         ner_head = self.ner_head if task_index is None else self.ner_heads[task_index]
         reader = self.ner_reader if task_index is None else self.ner_readers[task_index]
+        loss = -1
         if predict:
             all_preds = []
-            out_logits = ner_head(bert_hiddens, ner_inds, pred=predict)
+            out_logits, loss = ner_head(bert_hiddens, ner_inds, pred=predict)
             preds = []
             voc_size = len(reader.label_vocab)
             if self.args.crf:
@@ -1006,9 +1006,9 @@ class BioMLT(nn.Module):
                     n_n = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                    reader.label_vocab.unmap(n)))
                     all_ner_inds.append(n_n)
-                return all_preds, all_ner_inds
+                return all_preds, all_ner_inds, loss
             else:
-                return all_preds
+                return all_preds, loss
         # logging.info("NER output {} ".format(ner_outs.))
         else:
             ner_outs = ner_head(bert_hiddens, ner_inds)
@@ -1296,7 +1296,7 @@ class BioMLT(nn.Module):
             self.yesno_loss.eval()
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
             with torch.no_grad():
-                f1, p, r = self.eval_ner()
+                f1, p, r, loss = self.eval_ner()
                 ner_results.append([f1, p, r])
                 if f1 > best_ner_f1:
                     best_ner_f1 = f1
@@ -1774,6 +1774,8 @@ class BioMLT(nn.Module):
         all_results = [[] for i in range(len(self.ner_heads))]
         best_epochs = [-1 for i in range(len(self.ner_heads))]
         avg_ner_losses = []
+        test_losses = defaultdict(list)
+
         epoch_num = self.args.num_train_epochs
         if self.args.total_train_steps == -1:
             len_data = len(self.ner_readers[target_index])
@@ -1823,7 +1825,8 @@ class BioMLT(nn.Module):
             if self.args.target_index != -1:
 
                 print("Running evaluation only for {}".format(target_index))
-                f1, p, r = self.eval_multiner(target_index, test=False)
+                f1, p, r, eval_loss = self.eval_multiner(target_index, test=False)
+                test_losses[ner_type].append(eval_loss)
                 # f1, p, r = 0, 0, 0
                 print("F1 {}".format(f1))
                 logging.info("F1 {}".format(f1))
@@ -1838,8 +1841,9 @@ class BioMLT(nn.Module):
                 print("Running evaluation for all NER tasks")
                 for i in range(len(self.ner_heads)):
                     target_index = i
-                    f1, p, r = self.eval_multiner(target_index, test=False)
+                    f1, p, r, eval_loss = self.eval_multiner(target_index, test=False)
                     # f1, p, r = 0, 0, 0
+                    test_losses[ner_types[i]].append(eval_loss)
                     print("F1 {}".format(f1))
                     logging.info("F1 {}".format(f1))
                     all_results[i].append([f1, p, r])
@@ -1858,7 +1862,7 @@ class BioMLT(nn.Module):
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
             self.load_all_model(os.path.join(self.args.output_dir, model_save_name))
             print("Loaded best {} model: {}".format(ner_type, model_save_name))
-            test_f1, test_p, test_r = self.eval_multiner(target_index, test=True)
+            test_f1, test_p, test_r, test_loss = self.eval_multiner(target_index, test=True)
             return {ner_type: {"f1": test_f1,
                                "pre": test_p,
                                "rec": test_r}}
@@ -1873,7 +1877,7 @@ class BioMLT(nn.Module):
                 self.write_ner_result(result_save_path, ner_type, results, best_epoch)
                 self.load_all_model(os.path.join(self.args.output_dir, model_save_names[i]))
                 print("Loaded best {} model: {}".format(ner_type, model_save_names[i]))
-                test_f1, test_p, test_r = self.eval_multiner(target_index, test=True)
+                test_f1, test_p, test_r, test_loss = self.eval_multiner(target_index, test=True)
                 test_results[ner_type] = {"f1": test_f1,
                                           "pre": test_p,
                                           "rec": test_r}
@@ -1904,6 +1908,7 @@ class BioMLT(nn.Module):
         best_epoch = 0
         best_f1 = 0
         avg_ner_losses = []
+        test_losses = []
         epoch_num = args.num_train_epochs
         shrink = 1
         eval_freq = 2
@@ -1922,7 +1927,7 @@ class BioMLT(nn.Module):
             print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
         loss_grad_intervals = [0.10, 0.20, 0.30, 0.50, 0.70]
         step_size = total_steps / 20
-        step_for_grad_intervals = [int(total_steps * s) for s in loss_grad_intervals]
+        epoch_for_grad_intervals = [int(epoch_num * s) for s in loss_grad_intervals]
         losses_for_learning_curve = []
         grads = []
         step = 0
@@ -1952,20 +1957,27 @@ class BioMLT(nn.Module):
                 ner_loss = ner_loss + cur_loss
                 total_loss = total_loss + cur_loss
                 losses_for_learning_curve.append(total_loss / step)
-                if step in step_for_grad_intervals:
-                    grad = get_gradient(losses_for_learning_curve, step_size)
-                    grads.append(grad)
+
             avg_ner_loss = ner_loss / eval_interval
 
             print("Average ner loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
+            if j in epoch_for_grad_intervals:
+                if j == 0:
+                    continue
+                print("Calculating loss gradient for epoch : {}".format(j))
+                grad = get_gradient(avg_ner_losses, 1)
+                grads.append(grad)
+                print("Loss gradient: {}".format(grad))
+
             print("Evaluation for epoch {} ".format(j))
             self.bert_model.eval()
             self.ner_head.eval()
             patience = patience + 1
-            if not self.args.only_lr_curve:
-                f1, p, r = self.eval_ner(test=False)
+            if not self.args.only_loss_curve:
+                f1, p, r, test_loss = self.eval_ner(test=False)
                 # f1, p, r = 0, 0, 0
+                test_losses.append(test_loss)
                 print("F1 {}".format(f1))
                 logging.info("F1 {}".format(f1))
                 results.append([f1, p, r])
@@ -1976,23 +1988,25 @@ class BioMLT(nn.Module):
                     self.save_all_model(model_save_name)
             else:
                 print("Skipping evaluation only running training for lr curve")
-            if not self.args.only_lr_curve and patience > self.args.patience:
+            if not self.args.only_loss_curve and patience > self.args.patience:
                 print("Stopping training early with patience : {}".format(patience))
                 break
         print("Average losses")
         print(avg_ner_losses)
+        print("Test losses")
+        print(test_losses)
         print("Gradients of the loss curve")
         print(grads)
         test_result = {}
-        if not self.args.only_lr_curve:
+        if not self.args.only_loss_curve:
             result_save_path = os.path.join(args.output_dir, args.ner_result_file)
             self.write_ner_result(result_save_path, ner_type, results, best_epoch)
             self.load_all_model(os.path.join(self.args.output_dir, model_save_name))
             print("Loaded best model {}".format(model_save_name))
-            f, p, r = self.eval_ner(test=True)
+            f, p, r, loss = self.eval_ner(test=True)
             test_result[ner_type] = {"f1": f,
-                                       "pre": p,
-                                       "rec": r}
+                                     "pre": p,
+                                     "rec": r}
             print("result on test file : {}".format(test_result))
         save_dir = self.args.output_dir
         file_name = "ner_learning_curves"
@@ -2000,7 +2014,8 @@ class BioMLT(nn.Module):
         print("Plotting the loss curve")
         plt.figure()
         plt.title("Loss curve")
-        plt.plot(losses_for_learning_curve)
+        plt.plot(avg_ner_losses,label = "Train loss")
+        plt.plot(test_losses, label= "Test loss")
         plt.xlabel("Step index")
         plt.ylabel("Average loss")
         plt.savefig(os.path.join(save_dir, "loss_curve_{}.png".format(ner_type)))
@@ -2033,6 +2048,7 @@ class BioMLT(nn.Module):
         all_lens = []
         all_preds = []
         all_truths = []
+        eval_loss = 0
         for i, batch in enumerate(dataset):
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d in data]
@@ -2047,9 +2063,10 @@ class BioMLT(nn.Module):
                 logging.info(tokens)
                 print(tokens)
                 continue
-            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True, task_index=target_index)
+            preds, ner_inds, loss = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True,
+                                                 task_index=target_index)
             tokens_ = tokens[-1]
-
+            eval_loss = eval_loss + loss
             all_sents.extend(tokens)
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
@@ -2060,10 +2077,12 @@ class BioMLT(nn.Module):
         conll_file = os.path.join(self.args.output_dir, 'ner_out')
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
+        eval_loss = eval_loss/len(dataset)
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
-        logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
-        return round(f1, 2), round(prec, 2), round(rec, 2)
+        print("NER Precision : {}  Recall : {}  F-1 : {} eval loss : {} ".format(prec, rec, f1,eval_loss))
+        logging.info("NER Precision : {}  Recall : {}  F-1 : {}  eval loss : {} ".format(prec, rec, f1, eval_loss))
+        eval_loss = eval_loss/len(dataset)
+        return round(f1, 2), round(prec, 2), round(rec, 2), eval_loss
 
     def eval_ner(self, test=True):
         print("Starting evaluation for ner")
@@ -2078,7 +2097,10 @@ class BioMLT(nn.Module):
         all_lens = []
         all_preds = []
         all_truths = []
+        eval_loss = 0
         for i, batch in enumerate(dataset):
+            if i > 5 :
+                break
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d in data]
             sent_lens, masks, tok_inds, ner_inds, \
@@ -2094,8 +2116,9 @@ class BioMLT(nn.Module):
                 continue
             # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
             # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-            preds, ner_inds = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True)
+            preds, ner_inds, loss = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True)
             tokens_ = tokens[-1]
+            eval_loss = eval_loss + loss
             l = len(tokens_)
             # logging.info("NER INDS SHAPE {} ".format(ner_inds.shape))
             # logging.info("Predictions {} \n Truth {} ".format(preds[:l],ner_inds[:l]))
@@ -2111,9 +2134,11 @@ class BioMLT(nn.Module):
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        print("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
-        logging.info("NER Precision : {}  Recall : {}  F-1 : {}".format(prec, rec, f1))
-        return round(f1, 2), round(prec, 2), round(rec, 2)
+        eval_loss = eval_loss/len(dataset)
+        print("NER Precision : {}  Recall : {}  F-1 : {}   eval loss: {}".format(prec, rec, f1, eval_loss))
+        logging.info("NER Precision : {}  Recall : {}  F-1 : {} eval loss: {}".format(prec, rec, f1, eval_loss))
+
+        return round(f1, 2), round(prec, 2), round(rec, 2), eval_loss
 
 
 def write_nerresult_with_repeat(save_path, row_name, results):
@@ -2126,7 +2151,7 @@ def write_nerresult_with_repeat(save_path, row_name, results):
     with open(save_path, "a") as o:
         mean_res = np.mean(results)
         max_res = max(results)
-        s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([str(round(res,3)) for res in results]), mean_res, max_res)
+        s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([str(round(res, 3)) for res in results]), mean_res, max_res)
         o.write(s)
 
 

@@ -67,6 +67,14 @@ class NerModel(nn.Module):
         # print(out_logits.shape)
         # print(labels.shape)a
         if pred:
+            if labels is not None:
+                loss = -1
+                if self.args.crf:
+                    lengths = torch.sum((labels > self.num_labels), axis=1)
+                    loss = self.loss(out_logits, labels, lengths)
+                else:
+                    loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
+                return out_logits, loss
             return out_logits
         if labels is not None:
             ## view tehlikeli bir hareket!!!!
