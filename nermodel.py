@@ -74,7 +74,7 @@ class NerModel(nn.Module):
                     loss = self.loss(out_logits, labels, lengths)
                 else:
                     loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
-                return out_logits, loss
+                return out_logits, loss.item()
             return out_logits
         if labels is not None:
             ## view tehlikeli bir hareket!!!!
