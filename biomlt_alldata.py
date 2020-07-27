@@ -969,7 +969,7 @@ class BioMLT(nn.Module):
         # self.qas_head.optimizer.step()
         return qas_outputs
 
-    def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False, task_index=None):
+    def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False, task_index=None, loss_aver=True):
         bert_hiddens = self._get_bert_batch_hidden(bert_output, bert2toks)
         ner_head = self.ner_head if task_index is None else self.ner_heads[task_index]
         reader = self.ner_reader if task_index is None else self.ner_readers[task_index]
@@ -1006,6 +1006,7 @@ class BioMLT(nn.Module):
                     n_n = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                    reader.label_vocab.unmap(n)))
                     all_ner_inds.append(n_n)
+
                 return all_preds, all_ner_inds, loss
             else:
                 return all_preds, loss
@@ -1769,8 +1770,8 @@ class BioMLT(nn.Module):
         best_epoch = 0
         shrink = 1
         eval_freq = 2
-        best_f1 = 0
-        best_f1s = [0 for i in range(len(self.ner_heads))]
+        best_f1 = -1
+        best_f1s = [-1 for i in range(len(self.ner_heads))]
         all_results = [[] for i in range(len(self.ner_heads))]
         best_epochs = [-1 for i in range(len(self.ner_heads))]
         avg_ner_losses = []
@@ -1906,7 +1907,7 @@ class BioMLT(nn.Module):
         self.ner_head.train()
         results = []
         best_epoch = 0
-        best_f1 = 0
+        best_f1 = -1
         avg_ner_losses = []
         test_losses = []
         epoch_num = args.num_train_epochs
@@ -2014,9 +2015,10 @@ class BioMLT(nn.Module):
         print("Plotting the loss curve")
         plt.figure()
         plt.title("Loss curve")
-        plt.plot(avg_ner_losses,label = "Train loss")
-        plt.plot(test_losses, label= "Test loss")
-        plt.xlabel("Step index")
+        plt.plot(avg_ner_losses, label="Train loss")
+        plt.plot(test_losses, label="Test loss")
+        plt.legend()
+        plt.xlabel("Epoch")
         plt.ylabel("Average loss")
         plt.savefig(os.path.join(save_dir, "loss_curve_{}.png".format(ner_type)))
         plot_save_array(save_dir, file_name, dataset_name, grads, x_axis=loss_grad_intervals)
@@ -2077,11 +2079,11 @@ class BioMLT(nn.Module):
         conll_file = os.path.join(self.args.output_dir, 'ner_out')
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
-        eval_loss = eval_loss/len(dataset)
+        eval_loss = eval_loss / len(dataset)
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        print("NER Precision : {}  Recall : {}  F-1 : {} eval loss : {} ".format(prec, rec, f1,eval_loss))
+        print("NER Precision : {}  Recall : {}  F-1 : {} eval loss : {} ".format(prec, rec, f1, eval_loss))
         logging.info("NER Precision : {}  Recall : {}  F-1 : {}  eval loss : {} ".format(prec, rec, f1, eval_loss))
-        eval_loss = eval_loss/len(dataset)
+        eval_loss = eval_loss / len(dataset)
         return round(f1, 2), round(prec, 2), round(rec, 2), eval_loss
 
     def eval_ner(self, test=True):
@@ -2099,7 +2101,7 @@ class BioMLT(nn.Module):
         all_truths = []
         eval_loss = 0
         for i, batch in enumerate(dataset):
-            if i > 5 :
+            if i > 5:
                 break
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d in data]
@@ -2134,7 +2136,7 @@ class BioMLT(nn.Module):
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
-        eval_loss = eval_loss/len(dataset)
+        eval_loss = eval_loss / len(i)
         print("NER Precision : {}  Recall : {}  F-1 : {}   eval loss: {}".format(prec, rec, f1, eval_loss))
         logging.info("NER Precision : {}  Recall : {}  F-1 : {} eval loss: {}".format(prec, rec, f1, eval_loss))
 
