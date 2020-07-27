@@ -1963,7 +1963,7 @@ class BioMLT(nn.Module):
 
             avg_ner_loss = ner_loss / eval_interval
 
-            print("Average ner loss : {}".format(avg_ner_loss))
+            print("Average ner training loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
             if j in epoch_for_grad_intervals:
                 if j == 0:
@@ -1979,6 +1979,7 @@ class BioMLT(nn.Module):
             patience = patience + 1
             if not self.args.only_loss_curve:
                 f1, p, r, test_loss = self.eval_ner(test=False)
+                print("Average ner test loss : {}".format(test_loss))
                 # f1, p, r = 0, 0, 0
                 test_losses.append(test_loss)
                 print("F1 {}".format(f1))
