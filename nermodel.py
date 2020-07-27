@@ -15,26 +15,27 @@ class NerModel(nn.Module):
         super(NerModel, self).__init__()
         self.args = args
         self.input_dims = args.bert_output_dim
-        if not hasattr(self.args,"ner_label_dim"):
+        if not hasattr(self.args, "ner_label_dim"):
             self.label_dim = len(args.ner_label_vocab)
         else:
-           self.label_dim = self.args.ner_label_dim
-        self.ner_drop = 0.3 if not hasattr(self.args,"ner_drop") else self.args.ner_drop
+            self.label_dim = self.args.ner_label_dim
+        self.ner_drop = 0.3 if not hasattr(self.args, "ner_drop") else self.args.ner_drop
         self.num_labels = self.label_dim
         self.output_dim = self.label_dim * self.label_dim
         self.device = args.device
         if self.args.crf:
             logging.info("Using NER with CRF")
             self.classifier = CRF(self.input_dims, self.num_labels, self.device)
-            self.loss = CRFLoss(self.num_labels, device = self.device)
+            self.loss = CRFLoss(self.num_labels, device=self.device)
         else:
             self.classifier = nn.Linear(self.input_dims, self.output_dim)
-            self.loss = CrossEntropyLoss(ignore_index = PAD_IND)
+            self.loss = CrossEntropyLoss(ignore_index=PAD_IND)
         self.lr = args.ner_lr
         self.optimizer = optim.AdamW([{"params": self.classifier.parameters()}], \
                                      lr=self.lr, eps=1e-6)
 
         self.dropout = nn.Dropout(self.ner_drop)
+
     def _viterbi_decode(self, feats, sent_len):
         start_ind = START_IND
         end_ind = END_IND
@@ -60,7 +61,7 @@ class NerModel(nn.Module):
         return path, path_score.item()
 
     # add the attention masks to exclude cls and pad etc.
-    def forward(self, batch, labels=None, pred=False,loss_aver= True):
+    def forward(self, batch, labels=None, pred=False, loss_aver=True):
         out_logits = self.classifier(batch)
         batch_size = batch.shape[0]
         if self.dropout and not pred:

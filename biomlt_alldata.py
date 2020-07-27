@@ -2101,8 +2101,6 @@ class BioMLT(nn.Module):
         all_truths = []
         eval_loss = 0
         for i, batch in enumerate(dataset):
-            if i > 5:
-                break
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d in data]
             sent_lens, masks, tok_inds, ner_inds, \
