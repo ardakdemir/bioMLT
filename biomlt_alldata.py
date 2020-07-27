@@ -2095,7 +2095,7 @@ class BioMLT(nn.Module):
             self.ner_eval_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
             dataset = self.ner_eval_reader
         else:
-            self.ner_dev_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
+            self.ner_dev_reader.for_eval = False  ## This is necessary for not applying random sampling during evaluation!!!
             dataset = self.ner_dev_reader
         all_sents = []
         all_lens = []
