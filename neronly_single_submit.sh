@@ -2,7 +2,7 @@
 output_dir=$1
 epoch_num=10
 total_train_steps=20000
-repeat=5
+repeat=3
 if [ -d $output_dir ]
 then
   rm $output_dir
