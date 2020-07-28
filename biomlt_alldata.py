@@ -7,6 +7,7 @@ from transformers.data.metrics.squad_metrics import (
     # compute_predictions_logits,
     squad_evaluate,
 )
+import subprocess
 from squad_metrics import compute_predictions_logits
 import numpy as np
 from conll_eval import evaluate_conll_file
@@ -1839,6 +1840,13 @@ class BioMLT(nn.Module):
                     best_epoch = j
                     best_f1 = f1
                     self.save_all_model(model_save_name)
+                    out_path = os.path.join(self.args.output_dir, 'ner_out')
+                    best_output_save_path = os.path.join(self.args.output_dir,
+                                                         "best_predictions_{}.txt".format(ner_type))
+
+                    print("Saving best prediction output to : {}", format(best_output_save_path))
+                    cmd = "cp {} {}".format(out_path, best_output_save_path)
+                    subprocess.call(cmd, shell=True)
             else:
                 # Running evaluation for all tasks in MTL
                 print("Running evaluation for all NER tasks")
@@ -1855,6 +1863,13 @@ class BioMLT(nn.Module):
                         best_f1s[i] = f1
                         patience = 0
                         self.save_all_model(model_save_names[i])
+                        out_path = os.path.join(self.args.output_dir, 'ner_out')
+                        best_output_save_path = os.path.join(self.args.output_dir,
+                                                             "best_predictions_{}.txt".format(ner_types[i]))
+
+                        print("Saving best prediction output to : {}", format(best_output_save_path))
+                        cmd = "cp {} {}".format(out_path, best_output_save_path)
+                        subprocess.call(cmd, shell=True)
             if patience > self.args.patience:
                 print("Stopping training at patience : {}".format(patience))
                 break
@@ -1991,6 +2006,12 @@ class BioMLT(nn.Module):
                     best_f1 = f1
                     patience = 0
                     self.save_all_model(model_save_name)
+                    out_path = os.path.join(self.args.output_dir, 'ner_out')
+                    best_output_save_path = os.path.join(self.args.output_dir,"best_predictions_{}.txt".format(ner_type))
+
+                    print("Saving best prediction output to : {}",format(best_output_save_path))
+                    cmd = "cp {} {}".format(out_path,best_output_save_path)
+                    subprocess.call(cmd, shell=True)
             else:
                 print("Skipping evaluation only running training for lr curve")
             if not self.args.only_loss_curve and patience > self.args.patience:
