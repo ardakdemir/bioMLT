@@ -2049,6 +2049,18 @@ class BioMLT(nn.Module):
             test_result[ner_type] = {"f1": f,
                                      "pre": p,
                                      "rec": r}
+            out_path = os.path.join(self.args.output_dir, 'ner_out')
+            index = 0
+            best_output_save_path = os.path.join(self.args.output_dir,
+                                                 "predictions_{}_{}.txt".format(ner_type, index))
+            while os.path.exists(best_output_save_path):
+                index = index + 1
+                best_output_save_path = os.path.join(self.args.output_dir,
+                                                     "best_predictions_{}_{}.txt".format(ner_type,
+                                                                                         index))
+            print("Saving prediction output to : {}", format(best_output_save_path))
+            cmd = "cp {} {}".format(out_path, best_output_save_path)
+            subprocess.call(cmd, shell=True)
             print("result on test file : {}".format(test_result))
         save_dir = self.args.output_dir
         file_name = "ner_learning_curves"
@@ -2171,7 +2183,6 @@ class BioMLT(nn.Module):
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
         conll_file = os.path.join(self.args.output_dir, 'ner_out')
-        transition_file = os.path.join(self.args.output_dir, 'crf_transitions')
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
