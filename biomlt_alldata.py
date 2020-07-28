@@ -1849,7 +1849,7 @@ class BioMLT(nn.Module):
                         best_output_save_path = os.path.join(self.args.output_dir,
                                                              "best_predictions_{}_{}.txt".format(ner_type,
                                                                                                  index))
-                    print("Saving best prediction output to : {}", format(best_output_save_path))
+                    print("Saving best prediction output to : {}".format(best_output_save_path))
                     cmd = "cp {} {}".format(out_path, best_output_save_path)
                     subprocess.call(cmd, shell=True)
             else:
@@ -1877,7 +1877,7 @@ class BioMLT(nn.Module):
                             best_output_save_path = os.path.join(self.args.output_dir,
                                                                  "best_predictions_{}_{}.txt".format(ner_types[i],
                                                                                                      index))
-                        print("Saving best prediction output to : {}", format(best_output_save_path))
+                        print("Saving best prediction output to : {}".format(best_output_save_path))
                         cmd = "cp {} {}".format(out_path, best_output_save_path)
                         subprocess.call(cmd, shell=True)
             if patience > self.args.patience:
