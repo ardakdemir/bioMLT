@@ -1841,16 +1841,8 @@ class BioMLT(nn.Module):
                     best_f1 = f1
                     self.save_all_model(model_save_name)
                     out_path = os.path.join(self.args.output_dir, 'ner_out')
-                    index = 0
-                    best_output_save_path = os.path.join(self.args.output_dir,
-                                                         "best_predictions_{}_{}.txt".format(ner_type, index))
-                    while os.path.exists(best_output_save_path):
-                        index = index + 1
-                        best_output_save_path = os.path.join(self.args.output_dir,
-                                                             "best_predictions_{}_{}.txt".format(ner_type,
-                                                                                                 index))
-                    print("Saving best prediction output to : {}".format(best_output_save_path))
-                    cmd = "cp {} {}".format(out_path, best_output_save_path)
+                    save_path = os.path.join(self.args.output_dir, 'best_preds_on_dev')
+                    self.store_output_file(out_path, save_path, ner_type)
                     subprocess.call(cmd, shell=True)
             else:
                 # Running evaluation for all tasks in MTL
@@ -1868,18 +1860,10 @@ class BioMLT(nn.Module):
                         best_f1s[i] = f1
                         patience = 0
                         self.save_all_model(model_save_names[i])
+
                         out_path = os.path.join(self.args.output_dir, 'ner_out')
-                        index = 0
-                        best_output_save_path = os.path.join(self.args.output_dir,
-                                                             "best_predictions_{}_{}.txt".format(ner_types[i], index))
-                        while os.path.exists(best_output_save_path):
-                            index = index + 1
-                            best_output_save_path = os.path.join(self.args.output_dir,
-                                                                 "best_predictions_{}_{}.txt".format(ner_types[i],
-                                                                                                     index))
-                        print("Saving best prediction output to : {}".format(best_output_save_path))
-                        cmd = "cp {} {}".format(out_path, best_output_save_path)
-                        subprocess.call(cmd, shell=True)
+                        save_path = os.path.join(self.args.output_dir, 'best_preds_on_dev')
+                        self.store_output_file(out_path, save_path, ner_types[i])
             if patience > self.args.patience:
                 print("Stopping training at patience : {}".format(patience))
                 break
@@ -1894,6 +1878,9 @@ class BioMLT(nn.Module):
             return {ner_type: {"f1": test_f1,
                                "pre": test_p,
                                "rec": test_r}}
+            out_path = os.path.join(self.args.output_dir, 'ner_out')
+            save_path = os.path.join(self.args.output_dir, 'best_preds_on_test')
+            self.store_output_file(out_path, save_path, ner_type)
         else:
             print("Saving results for all datasets")
             test_results = {}
@@ -1909,6 +1896,9 @@ class BioMLT(nn.Module):
                 test_results[ner_type] = {"f1": test_f1,
                                           "pre": test_p,
                                           "rec": test_r}
+                out_path = os.path.join(self.args.output_dir, 'ner_out')
+                save_path = os.path.join(self.args.output_dir, 'best_preds_on_test')
+                self.store_output_file(out_path, save_path, ner_types[i])
             return test_results
 
     def train_ner(self):
@@ -2017,18 +2007,9 @@ class BioMLT(nn.Module):
                     patience = 0
                     self.save_all_model(model_save_name)
                     out_path = os.path.join(self.args.output_dir, 'ner_out')
-                    index = 0
-                    best_output_save_path = os.path.join(self.args.output_dir,
-                                                         "best_predictions_{}_{}.txt".format(ner_type, index))
-                    while os.path.exists(best_output_save_path):
-                        index = index + 1
-                        best_output_save_path = os.path.join(self.args.output_dir,
-                                                             "best_predictions_{}_{}.txt".format(ner_type,
-                                                                                                 index))
-                        print("best_output_save_path : {}".format(best_output_save_path))
-                    print("Saving best prediction output to : {}".format(best_output_save_path))
-                    cmd = "cp {} {}".format(out_path, best_output_save_path)
-                    subprocess.call(cmd, shell=True)
+                    save_name = os.path.join(self.args.output_dir, "preds_on_dev")
+                    self.store_output_file(out_path, save_name, ner_type)
+
             else:
                 print("Skipping evaluation only running training for lr curve")
             if not self.args.only_loss_curve and patience > self.args.patience:
@@ -2051,17 +2032,8 @@ class BioMLT(nn.Module):
                                      "pre": p,
                                      "rec": r}
             out_path = os.path.join(self.args.output_dir, 'ner_out')
-            index = 0
-            best_output_save_path = os.path.join(self.args.output_dir,
-                                                 "predictions_{}_{}.txt".format(ner_type, index))
-            while os.path.exists(best_output_save_path):
-                index = index + 1
-                best_output_save_path = os.path.join(self.args.output_dir,
-                                                     "predictions_{}_{}.txt".format(ner_type,
-                                                                                         index))
-            print("Saving prediction output to : {}", format(best_output_save_path))
-            cmd = "cp {} {}".format(out_path, best_output_save_path)
-            subprocess.call(cmd, shell=True)
+            save_name = os.path.join(self.args.output_dir, "preds_on_test")
+            self.store_output_file(out_path, save_name, ner_type)
             print("result on test file : {}".format(test_result))
         save_dir = self.args.output_dir
         file_name = "ner_learning_curves"
@@ -2193,6 +2165,16 @@ class BioMLT(nn.Module):
 
         return round(f1, 2), round(prec, 2), round(rec, 2), eval_loss
 
+    def store_output_file(self, output_file_path, store_name, exp_name):
+        if self.args.repeat != -1:
+            index = self.current_exp_ind
+            best_output_save_path = store_name + "_{}_{}.txt".format(exp_name, index)
+        else:
+            best_output_save_path = store_name + "_{}.txt".format(exp_name)
+        print("Saving prediction output to : {}", format(best_output_save_path))
+        cmd = "cp {} {}".format(output_file_path, best_output_save_path)
+        subprocess.call(cmd, shell=True)
+
 
 def write_nerresult_with_repeat(save_path, row_name, results):
     logging.info("Writing  repeated results for ner to {}".format(save_path))
@@ -2242,6 +2224,7 @@ def main():
             print("Will repeat training for {} times".format(repeat))
             for i in range(repeat):
                 biomlt = BioMLT()
+                biomlt.current_exp_ind = i
                 test_result = biomlt.train_ner()
                 exp_name = list(test_result.keys())[0]
                 print("Results for repeat {} : {} ".format(i + 1, test_result))
@@ -2263,6 +2246,7 @@ def main():
             print("Will repeat training for {} times".format(repeat))
             for i in range(repeat):
                 biomlt = BioMLT()
+                biomlt.current_exp_ind = i
                 test_result = biomlt.train_multiner()
                 for exp_name in test_result.keys():
                     print("Test result for repeat {} exp {}  : {}".format(i + 1, exp_name, test_result))
