@@ -2134,7 +2134,7 @@ class BioMLT(nn.Module):
             self.ner_eval_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
             dataset = self.ner_eval_reader
         else:
-            self.ner_dev_reader.for_eval = False  ## This is necessary for not applying random sampling during evaluation!!!
+            self.ner_dev_reader.for_eval = True  ## This is necessary for not applying random sampling during evaluation!!!
             dataset = self.ner_dev_reader
         all_sents = []
         all_lens = []
@@ -2146,7 +2146,6 @@ class BioMLT(nn.Module):
             data = [d.to(self.device) for d in data]
             sent_lens, masks, tok_inds, ner_inds, \
             bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
-
             try:
                 outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
             except:
@@ -2168,8 +2167,6 @@ class BioMLT(nn.Module):
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-            if i > 20:
-                break
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
