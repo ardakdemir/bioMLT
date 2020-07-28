@@ -1841,9 +1841,14 @@ class BioMLT(nn.Module):
                     best_f1 = f1
                     self.save_all_model(model_save_name)
                     out_path = os.path.join(self.args.output_dir, 'ner_out')
+                    index = 0
                     best_output_save_path = os.path.join(self.args.output_dir,
-                                                         "best_predictions_{}.txt".format(ner_type))
-
+                                                         "best_predictions_{}_{}.txt".format(ner_type, index))
+                    while os.path.exists(best_output_save_path):
+                        index = index + 1
+                        best_output_save_path = os.path.join(self.args.output_dir,
+                                                             "best_predictions_{}_{}.txt".format(ner_type,
+                                                                                                 index))
                     print("Saving best prediction output to : {}", format(best_output_save_path))
                     cmd = "cp {} {}".format(out_path, best_output_save_path)
                     subprocess.call(cmd, shell=True)
@@ -1864,9 +1869,14 @@ class BioMLT(nn.Module):
                         patience = 0
                         self.save_all_model(model_save_names[i])
                         out_path = os.path.join(self.args.output_dir, 'ner_out')
+                        index = 0
                         best_output_save_path = os.path.join(self.args.output_dir,
-                                                             "best_predictions_{}.txt".format(ner_types[i]))
-
+                                                             "best_predictions_{}_{}.txt".format(ner_types[i], index))
+                        while os.path.exists(best_output_save_path):
+                            index = index + 1
+                            best_output_save_path = os.path.join(self.args.output_dir,
+                                                                 "best_predictions_{}_{}.txt".format(ner_types[i],
+                                                                                                     index))
                         print("Saving best prediction output to : {}", format(best_output_save_path))
                         cmd = "cp {} {}".format(out_path, best_output_save_path)
                         subprocess.call(cmd, shell=True)
@@ -2007,10 +2017,16 @@ class BioMLT(nn.Module):
                     patience = 0
                     self.save_all_model(model_save_name)
                     out_path = os.path.join(self.args.output_dir, 'ner_out')
-                    best_output_save_path = os.path.join(self.args.output_dir,"best_predictions_{}.txt".format(ner_type))
-
-                    print("Saving best prediction output to : {}",format(best_output_save_path))
-                    cmd = "cp {} {}".format(out_path,best_output_save_path)
+                    index = 0
+                    best_output_save_path = os.path.join(self.args.output_dir,
+                                                         "best_predictions_{}_{}.txt".format(ner_type, index))
+                    while os.path.exists(best_output_save_path):
+                        index = index + 1
+                        best_output_save_path = os.path.join(self.args.output_dir,
+                                                             "best_predictions_{}_{}.txt".format(ner_type,
+                                                                                                 index))
+                    print("Saving best prediction output to : {}", format(best_output_save_path))
+                    cmd = "cp {} {}".format(out_path, best_output_save_path)
                     subprocess.call(cmd, shell=True)
             else:
                 print("Skipping evaluation only running training for lr curve")
@@ -2152,7 +2168,7 @@ class BioMLT(nn.Module):
             all_lens.extend(sent_lens)
             all_preds.extend(preds)
             all_truths.extend(ner_inds)
-            if i> 20:
+            if i > 20:
                 break
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens)
         orig_idx = dataset.orig_idx
