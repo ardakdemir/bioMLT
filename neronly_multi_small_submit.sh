@@ -10,7 +10,7 @@ total_train_steps=10000
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_multi_small
 cd ~
-ner_data_folder="biobert_data/datasets/NER"
+ner_data_folder="biobert_data/datasets/small_NER"
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
 target_train_file=""
