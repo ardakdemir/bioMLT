@@ -2171,7 +2171,7 @@ class BioMLT(nn.Module):
             best_output_save_path = store_name + "_{}_{}.txt".format(exp_name, index)
         else:
             best_output_save_path = store_name + "_{}.txt".format(exp_name)
-        print("Saving prediction output to : {}", format(best_output_save_path))
+        print("Saving prediction output to : {}".format(best_output_save_path))
         cmd = "cp {} {}".format(output_file_path, best_output_save_path)
         subprocess.call(cmd, shell=True)
 
