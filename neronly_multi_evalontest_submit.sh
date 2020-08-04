@@ -31,10 +31,10 @@ do
                 then
                   target_train_file=$folder_path"/ent_train_dev.tsv"
                   target_test_file=$folder_path"/ent_test.tsv"
-                  target_dev_file=$folder_path"/ent_devel.tsv"
+                  target_dev_file=$folder_path"/ent_test.tsv"
                   aux_train_file=$aux_folder_path"/ent_train_dev.tsv"
                   aux_test_file=$aux_folder_path"/ent_test.tsv"
-                  aux_dev_file=$aux_folder_path"/ent_devel.tsv"
+                  aux_dev_file=$aux_folder_path"/ent_test.tsv"
                   echo "Training and testing respectively on "
                   echo $target_train_file  $aux_train_file
                   echo $target_test_file $aux_test_file
