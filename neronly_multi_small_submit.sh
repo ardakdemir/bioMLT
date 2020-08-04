@@ -39,7 +39,7 @@ do
                   echo $target_train_file  $aux_train_file
                   echo $target_dev_file $aux_dev_file
                   echo $target_test_file $aux_test_file
-                  singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --mode multiner --total_train_steps $total_train_steps --output_dir $output_dir  --num_train_epochs $epoch_num --ner_train_files  $target_train_file  $aux_train_file --ner_dev_files $target_dev_file $aux_dev_file  --ner_test_files $target_test_file $aux_test_file  --load_model
+                  singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --crf --repeat 5 --mode multiner --total_train_steps $total_train_steps --output_dir $output_dir  --num_train_epochs $epoch_num --ner_train_files  $target_train_file  $aux_train_file --ner_dev_files $target_dev_file $aux_dev_file  --ner_test_files $target_test_file $aux_test_file  --load_model
                fi
             fi
 

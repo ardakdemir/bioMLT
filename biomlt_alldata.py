@@ -2232,8 +2232,6 @@ def main():
     elif mode == "multiner":
         test_save_path = os.path.join(biomlt.args.output_dir, "ner_test_results")
         results = defaultdict(list)
-        test_result = biomlt.train_multiner()
-        print("Test result : {}".format(test_result))
         if repeat == -1:
             test_result = biomlt.train_multiner()
             for exp_name in test_result.keys():
