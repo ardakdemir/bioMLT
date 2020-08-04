@@ -1843,7 +1843,6 @@ class BioMLT(nn.Module):
                     out_path = os.path.join(self.args.output_dir, 'ner_out')
                     save_path = os.path.join(self.args.output_dir, 'best_preds_on_dev')
                     self.store_output_file(out_path, save_path, ner_type)
-                    subprocess.call(cmd, shell=True)
             else:
                 # Running evaluation for all tasks in MTL
                 print("Running evaluation for all NER tasks")

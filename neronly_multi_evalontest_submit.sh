@@ -4,14 +4,14 @@ if [ -d $output_dir ]
 then
   rm $output_dir
 fi
-epoch_num=10
+epoch_num=15
 total_train_steps=40000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 #$ -N ner_only_multi
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
-datasets=$(ls ${ner_data_folder})
+datasets=$("JNLPA" "NCBI-disease" "linnaeus" "s800")
 # Fix the dataset for now
 target_train_file=""
 target=0

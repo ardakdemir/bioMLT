@@ -146,6 +146,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--mtl_results_file",
+        default="multiner_results_2107",
         type=str,
         required=False,
         help="The folder containing all datasets",
@@ -549,7 +550,7 @@ class Similarity(nn.Module):
         device = self.args.device
         dataset.for_eval = True
         dataset_vector = []
-        for i in range(1000):
+        for i in range(20):
             with torch.no_grad():
                 tokens, bert_batch_after_padding, data = dataset[i]
                 data = [d.to(device) for d in data]
