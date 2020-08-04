@@ -11,7 +11,7 @@ total_train_steps=40000
 #$ -N ner_only_multi
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
-datasets=("JNLPA" "NCBI-disease" "linnaeus" "s800")
+datasets=("JNLPBA" "NCBI-disease" "linnaeus" "s800")
 # Fix the dataset for now
 target_train_file=""
 target=0

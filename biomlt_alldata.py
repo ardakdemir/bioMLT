@@ -1887,6 +1887,7 @@ class BioMLT(nn.Module):
                 ner_type = ner_types[i]
                 best_epoch = best_epochs[i]
                 results = all_results[i]
+                target_index = i
                 result_save_path = os.path.join(self.args.output_dir, self.args.ner_result_file)
                 self.write_ner_result(result_save_path, ner_type, results, best_epoch)
                 self.load_all_model(os.path.join(self.args.output_dir, model_save_names[i]))
