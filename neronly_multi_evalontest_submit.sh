@@ -22,7 +22,7 @@ do
     echo "Iteration for "$folder_path
     then
         aux=0
-        for aux_fd in $datasets
+        for aux_fd in ${datasets[@]}
         do
             aux_folder_path=$ner_data_folder"/"$aux_fd
             if [ -d $aux_folder_path ]
