@@ -11,11 +11,11 @@ total_train_steps=40000
 #$ -N ner_only_multi
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
-datasets=$("JNLPA" "NCBI-disease" "linnaeus" "s800")
+datasets=("JNLPA" "NCBI-disease" "linnaeus" "s800")
 # Fix the dataset for now
 target_train_file=""
 target=0
-for target_fd in $datasets
+for target_fd in ${datasets[@]}
 do
     folder_path=$ner_data_folder"/"$target_fd
     if [ -d $folder_path ]
