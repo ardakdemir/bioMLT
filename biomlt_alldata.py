@@ -998,7 +998,7 @@ class BioMLT(nn.Module):
                 for pred in preds:
                     p = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                  reader.label_vocab.unmap(pred)))
-                all_preds.append(p)
+                    all_preds.append(p)
             all_ner_inds = []
             if ner_inds is not None:
                 if not self.args.crf:
