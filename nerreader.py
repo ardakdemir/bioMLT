@@ -261,14 +261,16 @@ class DataReader:
     def get_dataset(self):
         dataset = open(self.file_path, encoding='utf-8').readlines()
         new_dataset = []
+        first_line = dataset[0].split()
         sent = []
         cropped_long_sentence = 0
         label_counts = Counter()
-        root = [START_TAG, START_TAG]
+        root = [START_TAG for x in range(len(first_line))]
+        end_tags = [END_TAG for x in range(len(first_line))]
         for line in dataset:
             if len(line.strip()) == 0:
                 if len(sent) > 0:
-                    sent.append([END_TAG, END_TAG])
+                    sent.append(end_tags)
                     if len(sent) > 2 and len(sent) < 200:
                         new_dataset.append([root] + sent)
                     elif len(sent) > 200:
@@ -281,14 +283,14 @@ class DataReader:
                 sent.append(row)
                 label_counts.update([row[-1]])
         if len(sent) > 2 and len(sent) < 200:
-            sent.append([END_TAG, END_TAG])
+            sent.append(end_tags)
             new_dataset.append([root] + sent)
             # new_dataset.append(sent)
         print("Number of sentences : {} ".format(len(new_dataset)))
         print("Cropped long sentences for {}  : {} ".format(self.file_path, cropped_long_sentence))
         # print(new_dataset)
         new_dataset, orig_idx = sort_dataset(new_dataset, sort=True)
-
+        print("Label counts {}".format(label_counts))
         return new_dataset, orig_idx, label_counts
 
     def get_next_data(sent_inds, data_len=-1, feats=True, padding=False):
@@ -391,7 +393,10 @@ class DataReader:
         ner_inds = []
         tokens = []
         for x in batch:
-            toks, labels = zip(*x)  ##unzip the batch
+            data = list(zip(*x)) ##unzip the batch
+            toks,labels = data[0],data[-1]
+            print(toks)
+            print(labels)
             tokens.append(toks)
             # pos_inds.append(self.pos_vocab.map(poss))
             tok_inds.append(self.word_vocab.map(toks))

@@ -75,6 +75,12 @@ def hugging_parse_args():
     )
 
     parser.add_argument(
+        "--sim_type",
+        type=str,
+        help="Similarity type",
+    )
+
+    parser.add_argument(
         "--max_answer_length",
         default=30,
         type=int,
@@ -550,7 +556,7 @@ class Similarity(nn.Module):
         device = self.args.device
         dataset.for_eval = True
         dataset_vector = []
-        for i in range(20):
+        for i in range(100):
             with torch.no_grad():
                 tokens, bert_batch_after_padding, data = dataset[i]
                 data = [d.to(device) for d in data]
@@ -560,6 +566,11 @@ class Similarity(nn.Module):
                 bert_hiddens = self._get_bert_batch_hidden(outputs[-1], bert2toks)
                 cls_vector = bert_hiddens[0, 0, :]
                 dataset_vector.append(cls_vector)
+        print("In dataset sentence similarities")
+        sims = [cos_sim(dataset_vector[i],dataset_vector[j]) for i in range(len(dataset_vector)) for j in range(i+1,len(dataset_vector))]
+        max_sim = max(sims)
+        min_sim = min(sims)
+        print("{} {}".format(max_sim, min_sim))
         dataset_vector = torch.stack(dataset_vector)
         print("After stack shape : {}".format(dataset_vector.shape))
         dataset_vector = torch.mean(dataset_vector, 0)
@@ -736,7 +747,7 @@ def mtl_target_aux_table(file, dataset_names=None):
             dataset_names = list(set(aux_names).union(set(target_names)))
             print(dataset_names)
         dataset_inds = {d: i for i, d in enumerate(dataset_names)}
-        table = [["-" for _ in range(len(dataset_names))] for _ in range(len(dataset_names))]
+        table = [[0 for _ in range(len(dataset_names))] for _ in range(len(dataset_names))]
         for res in results:
             aux = res.split()[0].split("_")[1]
             target = res.split()[0].split("_")[-1]
@@ -794,8 +805,8 @@ def result_similarity_corr_plot(sim_dict, res_dict, sim_type=""):
         for i, res in enumerate(results):
 
             aux_name = res[0]
-            if aux_name == target:
-                continue
+            # if aux_name == target:
+            #     continue
             plotted_res.append(res[1])
             plt.title("{} similarity results for {} dataset".format(sim_type, target))
             plt.scatter(similarity_dict[aux_name], res[1], marker=aux_shapes[aux_name], color=target_colors[target],
@@ -832,8 +843,7 @@ def get_correlations(res_dict, sim_dict, separate=True):
 
 
 def get_similarity_result_correlation(similarity):
-    similarity = Similarity()
-    sim_type = "bert"
+    sim_type = "bert" if similarity.args.sim_type is None else similarity.args.sim_type
     if sim_type == "topic":
         sims, dataset_names = get_nmf_based_similarities(similarity)
     elif sim_type == "vocab":
@@ -843,10 +853,10 @@ def get_similarity_result_correlation(similarity):
 
     mtl_results_file = similarity.args.mtl_results_file
     mtl_table, _ = mtl_target_aux_table(mtl_results_file, dataset_names)
-    results = [[float(r) for r in res] for res in mtl_table]
-    print(results)
-    res_dict = prepare_result_dict(results, dataset_names)
     sim_dict = prepare_similarity_dict(sims, dataset_names)
+    results = [[float(r) for r in res] for res in mtl_table]
+    print("Keys: {} ".format(sim_dict.keys()))
+    res_dict = prepare_result_dict(results, dataset_names)
     result_similarity_corr_plot(sim_dict, res_dict, sim_type=sim_type)
     correlation_stats = get_correlations(res_dict, sim_dict)
     print(correlation_stats)
