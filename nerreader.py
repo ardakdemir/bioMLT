@@ -395,8 +395,6 @@ class DataReader:
         for x in batch:
             data = list(zip(*x)) ##unzip the batch
             toks,labels = data[0],data[-1]
-            print(toks)
-            print(labels)
             tokens.append(toks)
             # pos_inds.append(self.pos_vocab.map(poss))
             tok_inds.append(self.word_vocab.map(toks))
