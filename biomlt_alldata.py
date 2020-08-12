@@ -1739,9 +1739,9 @@ class BioMLT(nn.Module):
         if self.args.target_index != -1:
             target_index = self.args.target_index
             eval_file = self.args.ner_test_files[target_index]
-            ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
+            ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1].replace("_","-") for i, aux_eval_file in
                              enumerate(self.args.ner_test_files) if i != target_index]
-            ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
+            ner_target_type = os.path.split(eval_file)[0].split("/")[-1].replace("_","-")
             ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
             model_save_name = "best_ner_model_{}".format(ner_type)
             print("Running experiment with a specific target index : {} target data : {} ".format(target_index,
@@ -1753,9 +1753,9 @@ class BioMLT(nn.Module):
             for i in range(len(self.args.ner_train_files)):
                 target_index = i
                 eval_file = self.args.ner_test_files[target_index]
-                ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1] for i, aux_eval_file in
+                ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1].replace("_","-") for i, aux_eval_file in
                                  enumerate(self.args.ner_test_files) if i != target_index]
-                ner_target_type = os.path.split(eval_file)[0].split("/")[-1]
+                ner_target_type = os.path.split(eval_file)[0].split("/")[-1].replace("_","-")
                 ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
                 model_save_name = "best_ner_model_{}".format(ner_type)
                 ner_types.append(ner_type)

@@ -67,12 +67,6 @@ def hugging_parse_args():
         default=True,
         help="If true, the SQuAD examples contain some that do not have an answer.",
     )
-    parser.add_argument(
-        "--null_score_diff_threshold",
-        type=float,
-        default=0.0,
-        help="If null_score - best_non_null is greater than the threshold predict null.",
-    )
 
     parser.add_argument(
         "--sim_type",
@@ -80,34 +74,6 @@ def hugging_parse_args():
         help="Similarity type",
     )
 
-    parser.add_argument(
-        "--max_answer_length",
-        default=30,
-        type=int,
-        help="The maximum length of an answer that can be generated. This is needed because the start "
-             "and end predictions are not conditioned on one another.",
-    )
-    parser.add_argument(
-        "--config_file",
-        default='biomlt_config',
-        type=str,
-        required=False,
-        help="Configuration file for the biomlt model.",
-    )
-    parser.add_argument(
-        "--pred_path",
-        default=None,
-        type=str,
-        required=False,
-        help="The output path for storing nbest predictions. Used for evaluating with the bioasq scripts",
-    )
-    parser.add_argument(
-        "--nbest_path",
-        default=None,
-        type=str,
-        required=False,
-        help="The output path for storing nbest predictions. Used for evaluating with the bioasq scripts",
-    )
     parser.add_argument(
         "--ner_result_file",
         default='ner_results',
@@ -737,7 +703,8 @@ def get_shared_vocab_similarities(similarity):
     return vocab_sims, dataset_names
 
 
-def mtl_target_aux_table(file, dataset_names=None):
+def mtl_target_aux_table(file, dataset_names=None,type="Mean"):
+    print("Getting {} scores".format(type))
     with open(file, "r") as f:
         results = f.read().split("\n")[1:][:-1]
         fields = ["data", "pre", "rec", "f-1"]
@@ -753,7 +720,11 @@ def mtl_target_aux_table(file, dataset_names=None):
             target = res.split()[0].split("_")[-1]
             if target not in dataset_names or aux not in dataset_names:
                 continue
-            f1 = res.split()[-1]
+            if type == "Mean":
+
+                f1 = res.split()[-2]
+            elif type == "Max":
+                f1 = res.split()[-1]
             table[dataset_inds[target]][dataset_inds[aux]] = f1
     return table, dataset_names
 
@@ -855,11 +826,10 @@ def get_similarity_result_correlation(similarity):
     mtl_table, _ = mtl_target_aux_table(mtl_results_file, dataset_names)
     sim_dict = prepare_similarity_dict(sims, dataset_names)
     results = [[float(r) for r in res] for res in mtl_table]
-    print("Keys: {} ".format(sim_dict.keys()))
     res_dict = prepare_result_dict(results, dataset_names)
     result_similarity_corr_plot(sim_dict, res_dict, sim_type=sim_type)
     correlation_stats = get_correlations(res_dict, sim_dict)
-    print(correlation_stats)
+    print(correlation_stats["BC2GM"])
 
 
 def main():
