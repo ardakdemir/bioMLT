@@ -1,7 +1,7 @@
 from transformers import *
 
 import numpy as np
-
+from dcg_metrics import ndcg_score
 import torch
 import random
 import os
@@ -15,9 +15,9 @@ from numpy import dot
 from numpy.linalg import norm
 from sklearn.decomposition import LatentDirichletAllocation, NMF
 from sklearn.feature_extraction.text import TfidfVectorizer
-from collections import defaultdict
+from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
-from scipy.stats import pearsonr,spearmanr
+from scipy.stats import pearsonr, spearmanr
 
 cos_sim = lambda a, b: dot(a, b) / (norm(a) * norm(b))
 
@@ -310,10 +310,10 @@ def hugging_parse_args():
         "--mlm", action="store_true", help="Train with masked-language modeling loss instead of language modeling."
     )
     parser.add_argument(
-        "--lda_topic_num", type=int, default=15, help="Number of topics for lda"
+        "--lda_topic_num", type=int, default=5, help="Number of topics for lda"
     )
     parser.add_argument(
-        "--tfidf_dim", type=int, default=5000, help="Number of topics for lda"
+        "--tfidf_dim", type=int, default=4000, help="Number of tfidf dim"
     )
 
     parser.add_argument(
@@ -418,6 +418,8 @@ class Similarity(nn.Module):
     def __init__(self):
         super(Similarity, self).__init__()
         self.args = hugging_parse_args()
+        self.train_file_name = "ent_train.tsv"
+        self.test_file_name = "ent_test.tsv"
         if not os.path.isdir(self.args.output_dir):
             os.makedirs(self.args.output_dir)
         self.device = self.args.device
@@ -510,6 +512,41 @@ class Similarity(nn.Module):
         # logging.info("Squad squeezed sent shape {}".format(sent_hidden.shape))
         return torch.stack(batch_my_hiddens), torch.tensor(batch_lens)
 
+    def get_entities(self):
+        data_folder = self.args.data_folder
+        train_file_list = self.args.ner_train_files
+        test_file_list = self.args.ner_test_files
+        train_file_name = self.train_file_name
+        test_file_name = self.test_file_name
+        all_train_entities = {}
+        all_test_entities = {}
+        if data_folder is None and (train_file_list is None or test_file_list is None):
+            print("At least data_folder or train_file_list/test_file_list must be defined")
+        if data_folder is not None:
+            datasets = os.listdir(data_folder)
+            for d in datasets:
+                folder = os.path.join(data_folder, d)
+                if not os.path.isdir(folder) or train_file_name not in os.listdir(folder):
+                    continue
+                entity_type = d
+                test_data_path = "{}/{}".format(folder, test_file_name)
+                test_entities = get_entities_from_tsv_dataset(test_data_path)
+                train_data_path = "{}/{}".format(folder, train_file_name)
+                train_entities = get_entities_from_tsv_dataset(train_data_path)
+                all_train_entities[entity_type] = train_entities
+                all_test_entities[entity_type] = test_entities
+        else:
+            for tr, ts in zip(train_file_list, test_file_list):
+                entity_type = os.path.split(os.path.split(tr)[0])[-1]
+                test_data_path = ts
+                test_entities = get_entities_from_tsv_dataset(test_data_path)
+                train_data_path = tr
+                train_entities = get_entities_from_tsv_dataset(train_data_path)
+                all_train_entities[entity_type] = train_entities
+                all_test_entities[entity_type] = test_entities
+        self.all_train_entities = all_train_entities
+        self.all_test_entities = all_test_entities
+
     def get_all_dataset_bertvectors(self):
         self.dataset_bert_vectors = [self.get_dataset_bertvector(d) for d in self.ner_readers]
 
@@ -533,7 +570,8 @@ class Similarity(nn.Module):
                 cls_vector = bert_hiddens[0, 0, :]
                 dataset_vector.append(cls_vector)
         print("In dataset sentence similarities")
-        sims = [cos_sim(dataset_vector[i],dataset_vector[j]) for i in range(len(dataset_vector)) for j in range(i+1,len(dataset_vector))]
+        sims = [cos_sim(dataset_vector[i], dataset_vector[j]) for i in range(len(dataset_vector)) for j in
+                range(i + 1, len(dataset_vector))]
         max_sim = max(sims)
         min_sim = min(sims)
         print("{} {}".format(max_sim, min_sim))
@@ -575,9 +613,12 @@ class Similarity(nn.Module):
         if self.args.data_folder is not None:
             print("Getting training files from data folder")
             root = self.args.data_folder
+            # train_files = [os.path.join(root, x, train_file_name) for x in os.listdir(root) if
+            #                os.path.isdir(os.path.join(root, x)) and os.path.exists(
+            #                    os.path.join(root, x, train_file_name)) and x != "BC5CDR-disease"]
             train_files = [os.path.join(root, x, train_file_name) for x in os.listdir(root) if
                            os.path.isdir(os.path.join(root, x)) and os.path.exists(
-                               os.path.join(root, x, train_file_name)) and x != "BC5CDR-disease"]
+                               os.path.join(root, x, train_file_name))]
             print("Train files : {}".format(train_files))
             self.args.ner_train_files = train_files
         else:
@@ -597,6 +638,35 @@ class Similarity(nn.Module):
 
     def get_dataset_names(self):
         return [os.path.split(os.path.split(f)[0])[-1] for f in self.args.ner_train_files]
+
+
+def get_entities_from_tsv_dataset(file_path, tag_type="BIO"):
+    sentences = open(file_path).read().split("\n\n")[:-1]
+    entities = defaultdict(Counter)
+    if tag_type == "BIO":
+        for sent in sentences:
+            prev_tag = "O"
+            curr_entity = ""
+            for token in sent.split("\n"):
+                word = token.split()[0]
+                label = token.split()[-1]
+                if label != "O":
+                    if label[0] == "I":
+                        curr_entity = curr_entity + " " + word
+                    elif label[0] == "B":
+                        if prev_tag != "O":
+                            if len(curr_entity) > 0:
+                                entities[prev_tag][curr_entity] += 1
+                        prev_tag = label[2:]
+                        curr_entity = word
+                else:
+                    if prev_tag != "O":
+                        entities[prev_tag][curr_entity] += 1
+                    prev_tag = "O"
+                    curr_entity = ""
+            if len(curr_entity) > 0 and prev_tag != "O":
+                entities[prev_tag][curr_entity] += 1
+    return entities
 
 
 def get_dist(vec_1, vec_2):
@@ -626,10 +696,8 @@ def prepare_similarity_dict(similarities, datasets):
     sim_dict = defaultdict(dict)
     for i, sims in enumerate(similarities):
         for j, sim in enumerate(sims):
-            if j < i:
-                continue
             sim_dict[datasets[i]][datasets[j]] = sim
-            sim_dict[datasets[j]][datasets[i]] = sim
+            # sim_dict[datasets[j]][datasets[i]] = sim
     return sim_dict
 
 
@@ -671,6 +739,15 @@ def get_vocab_similarity(v_1, v_2):
     return 2 * inter_len / (voc_1_len + voc_2_len)
 
 
+def get_vocab_occurence_similarity(v_1, v_2):
+    voc_1 = set(v_1.w2ind.keys())
+    voc_2 = set(v_2.w2ind.keys())
+    inter = voc_1.intersection(voc_2)
+    inter_len = len(inter)
+    voc_1_len = len(voc_1)
+    return inter_len / voc_1_len
+
+
 def get_all_vocab_similarities(datareaders):
     """
 
@@ -680,13 +757,62 @@ def get_all_vocab_similarities(datareaders):
     vocab_sims = [[0 for _ in range(len(datareaders))] for _ in range(len(datareaders))]
     for i, data1 in enumerate(datareaders):
         vocab_1 = data1.word_vocab
-        for j in range(i, len(datareaders)):
+        for j in range(len(datareaders)):
             data2 = datareaders[j]
             vocab_2 = data2.word_vocab
-            vocab_sim = get_vocab_similarity(vocab_1, vocab_2)
+            vocab_sim = get_vocab_occurence_similarity(vocab_1, vocab_2)
             vocab_sims[i][j] = vocab_sim
-            vocab_sims[j][i] = vocab_sim
+            # vocab_sims[j][i] = vocab_sim
     return vocab_sims
+
+
+def get_diff_ratio(entity_set_1, entity_set_2, same_tag=True):
+    """
+        Currently only counting the occurrence and non-occurrence
+        Used for finding the entity-level (not word-level) rate of OOVs
+        If same_tag, only checks the inclusion under the same tag. Used for datasets with different label sets
+    """
+    total = 0
+    diff = 0
+    not_found_entities = set()
+    found_entities = set()
+    for entity in entity_set_1.keys():
+        for word in entity_set_1[entity]:
+            if same_tag:
+                if word not in entity_set_2[entity]:
+                    diff += entity_set_1[entity][word]
+                    not_found_entities.add(word)
+                else:
+                    found_entities.add(word)
+            else:
+                if not any([word in entity_set_2[ent] for ent in entity_set_2.keys()]):
+                    diff += entity_set_1[entity][word]
+                    not_found_entities.add(word)
+                else:
+                    found_entities.add(word)
+            total += entity_set_1[entity][word]
+    return diff / total, list(not_found_entities), list(found_entities)
+
+
+def get_all_cooccur_similarities(train_entities, test_entities):
+    """
+
+    :param datareaders: A list of DataReader objects
+    :return: the ratio of shared vocabularies
+    """
+    datasets = list(train_entities.keys())
+    train_cooccurences = [[0 for i in range(len(datasets))] for j in range(len(datasets))]
+    for i, key in enumerate(datasets):
+
+        for j, aux in enumerate(datasets):
+            if key == aux:
+                continue
+            ratio, not_found, found_ents = get_diff_ratio(test_entities[key], train_entities[aux],
+                                                          same_tag=False)
+            ratio, len(not_found), len(found_ents)
+            train_cooccurences[i][j] = 1 - ratio
+
+    return train_cooccurences, datasets
 
 
 def get_shared_vocab_similarities(similarity):
@@ -703,7 +829,21 @@ def get_shared_vocab_similarities(similarity):
     return vocab_sims, dataset_names
 
 
-def mtl_target_aux_table(file, dataset_names=None,type="Mean"):
+def get_cooccur_entity_based_similarities(similarity):
+    """
+
+    :param similarity:  Similarity object
+    :return:
+    """
+    if not hasattr(similarity, "all_train_entities"):
+        similarity.get_entities()
+
+    coocur_sims, dataset_names = get_all_cooccur_similarities(similarity.all_train_entities,
+                                                              similarity.all_test_entities)
+    return coocur_sims, dataset_names
+
+
+def mtl_target_aux_table(file, dataset_names=None, type="Mean"):
     print("Getting {} scores".format(type))
     with open(file, "r") as f:
         results = f.read().split("\n")[1:][:-1]
@@ -721,7 +861,6 @@ def mtl_target_aux_table(file, dataset_names=None,type="Mean"):
             if target not in dataset_names or aux not in dataset_names:
                 continue
             if type == "Mean":
-
                 f1 = res.split()[-2]
             elif type == "Max":
                 f1 = res.split()[-1]
@@ -753,40 +892,44 @@ def get_all_cos_similarities(vecs):
     return sims
 
 
-def result_similarity_corr_plot(sim_dict, res_dict, sim_type=""):
+def result_similarity_corr_plot(sim_dict, res_dict, sim_type="", target_tasks=None):
     """
 
     :param sim_dict: dict of dicts for similarities
     :param res_dict: dict of dicts for results
     :return: Draw a plot and also get correlation coefficients like pearson etc.
     """
-    shapes = ['p', 'x', 'h', '*', 's', 'o', '1', '2']
-    colors = ['r', 'b', 'y', 'g', 'k', 'c', 'm', '#008000']
+    shapes = ['p', 'x', 'h', '*', 's', 'o', '1', '2', '3', 'o', '1', '2', '3']
+    colors = ['r', 'b', 'y', 'g', 'k', 'c', 'm', '#008000', '#009000', 'c', 'm', '#008000', '#009000']
+
     for target in sim_dict.keys():
+        if target_tasks is not None:
+            if not target in target_tasks:
+                continue
         plt.figure()
         result_dict = res_dict[target]
-        print("{} similarities for {} : {}".format(sim_type.title(), target, sim_dict[target]))
-        print("Results for {} : {}".format(target, res_dict[target]))
-
         aux_shapes = {key: shape for key, shape in zip(list(result_dict.keys()), shapes)}
         target_colors = {key: color for key, color in zip(list(result_dict.keys()), colors)}
         results = sorted(result_dict.items(), key=lambda i: i[1])
         similarity_dict = sim_dict[target]
         plotted_res = []
         for i, res in enumerate(results):
-
             aux_name = res[0]
             # if aux_name == target:
             #     continue
             plotted_res.append(res[1])
+            x = similarity_dict[aux_name]
+            mark = aux_shapes[aux_name]
+            c = target_colors[target]
             plt.title("{} similarity results for {} dataset".format(sim_type, target))
-            plt.scatter(similarity_dict[aux_name], res[1], marker=aux_shapes[aux_name], color=target_colors[target],
+            plt.scatter(x, res[1], marker=mark, color=c,
                         label=aux_name)
             plt.legend(title="Aux. task", loc='upper center', bbox_to_anchor=(0.5, 1.0),
                        ncol=3)
         width = max(plotted_res) - min(plotted_res)
         plt.yticks(plotted_res + [max(plotted_res) + width / 2])
         plt.savefig("res_{}_sim_corrplot_target_{}.png".format(sim_type, target))
+        plt.close()
 
 
 def get_correlations(res_dict, sim_dict, separate=True):
@@ -814,6 +957,7 @@ def get_correlations(res_dict, sim_dict, separate=True):
 
 
 def get_similarity_result_correlation(similarity):
+    target_tasks = ["BC2GM", "BC4CHEMD"]
     sim_type = "bert" if similarity.args.sim_type is None else similarity.args.sim_type
     if sim_type == "topic":
         sims, dataset_names = get_nmf_based_similarities(similarity)
@@ -827,14 +971,151 @@ def get_similarity_result_correlation(similarity):
     sim_dict = prepare_similarity_dict(sims, dataset_names)
     results = [[float(r) for r in res] for res in mtl_table]
     res_dict = prepare_result_dict(results, dataset_names)
-    result_similarity_corr_plot(sim_dict, res_dict, sim_type=sim_type)
+    result_similarity_corr_plot(sim_dict, res_dict, sim_type=sim_type, target_tasks=target_tasks)
     correlation_stats = get_correlations(res_dict, sim_dict)
     print(correlation_stats["BC2GM"])
 
 
+def get_best_aux(res_dict, target_tasks=None):
+    best_aux_dict = {}
+    if target_tasks is None:
+        target_tasks = list(res_dict.keys())
+    for target in target_tasks:
+        best_val = 0
+        for key, value in res_dict[target].items():
+            if value > best_val and target != key:
+                best_aux_dict[target] = key
+                best_val = value
+    return best_aux_dict
+
+
+def get_best_aux_by_sim(sim_dict, target_tasks=None):
+    best_aux_dict = {}
+    if target_tasks is None:
+        target_tasks = list(sim_dict.keys())
+    for target in target_tasks:
+        best_val = 0
+        for key, value in sim_dict[target].items():
+            if value >= best_val and target != key:
+                best_aux_dict[target] = key
+                best_val = value
+    return best_aux_dict
+
+
+def get_rank_in_score(score_dict, aux_task, target_task):
+    sims = score_dict[target_task]
+    my_score = score_dict[target_task][aux_task]
+    rank = sum([1 if my_score <= sim and task != target_task else 0 for task, sim in sims.items()])
+    return rank
+
+
+def get_rank_in_sim(sim_dict, aux_task, target_task):
+    sims = sim_dict[target_task]
+    my_score = sim_dict[target_task][aux_task]
+    rank = sum([1 if my_score <= sim and task != target_task else 0 for task, sim in sims.items()])
+    return rank
+
+
+def get_similarity_wrapper(similarity, sim_type):
+    if sim_type == "topic":
+        sims, dataset_names = get_nmf_based_similarities(similarity)
+    elif sim_type == "vocab":
+        sims, dataset_names = get_shared_vocab_similarities(similarity)
+    elif sim_type == "bert":
+        sims, dataset_names = get_bert_based_similarities(similarity)
+    elif sim_type == "cooccur":
+        sims, dataset_names = get_cooccur_entity_based_similarities(similarity)
+    else:
+        print("Undefined sim type : {}".format(sim_type))
+        return {}
+    sim_dict = prepare_similarity_dict(sims, dataset_names)
+    if sim_type == "cooccur":
+        print(sim_dict)
+    return sim_dict
+
+
+def get_all_sims_dict(similarity):
+    sim_types = ["topic", "vocab", "cooccur"]
+    all_sims_dict = {}
+    for sim_type in sim_types:
+        sim_dict = get_similarity_wrapper(similarity, sim_type)
+        all_sims_dict[sim_type] = sim_dict
+    return all_sims_dict
+
+
+def get_result_dict_wrapper(mtl_results_file):
+    mtl_table, datasets = mtl_target_aux_table(mtl_results_file)
+    results = [[float(r) for r in res] for res in mtl_table]
+    res_dict = prepare_result_dict(results, datasets)
+    return res_dict
+
+
+def get_ndcg_score(res_dict, target, sim_dict, sim_type):
+    aux_list = [x for x in list(res_dict[target].keys()) if x != target]
+    relevances = [res_dict[target][aux] for aux in aux_list]
+    scores = [sim_dict[sim_type][target][aux] / 100 for aux in aux_list]
+    my_score = ndcg_score(relevances, scores)
+    print("NDCG Score of {} for {} is {}".format(sim_type, target, my_score))
+    return my_score
+
+
+def compare_similarity_methods(similarity):
+    target_tasks = ["BC2GM", "BC4CHEMD", "JNLPBA", "BC5CDR-chem","s800","linnaeus"]
+    target_tasks = None
+    sims_dict = get_all_sims_dict(similarity)
+    mtl_results_file = similarity.args.mtl_results_file
+    res_dict = get_result_dict_wrapper(mtl_results_file)
+    best_datasets = get_best_aux(res_dict)
+    # best_datasets_by_sim = get_best_aux(sim_dict)
+    best_dataset_ranks = defaultdict(list)
+    best_aux_pred_ranks = defaultdict(list)
+    ndcg_scores = defaultdict(list)
+    best_aux_dict_by_sim = {sim_type: get_best_aux_by_sim(sim_dict) for sim_type,sim_dict in sims_dict.items()}
+    if target_tasks is None:
+        target_tasks = [d for d in best_datasets]
+    for target_task in target_tasks:
+        best_aux = best_datasets[target_task]
+        print("Best aux for {} is {} ".format(target_task, best_aux))
+        for sim_type, sim_dict in sims_dict.items():
+            best_auxs = best_aux_dict_by_sim[sim_type]
+            print(sim_type,best_auxs)
+            best_aux_by_sim = best_auxs[target_task]
+            print("Best aux according to {} for {} : {}".format(sim_type,target_task,best_aux_by_sim))
+            rank_of_best_aux_in_sim = get_rank_in_score(res_dict,best_aux_by_sim,target_task)
+            my_rank = get_rank_in_sim(sim_dict, best_aux, target_task)
+            print("Bert rank according to {} for {}: {}".format(sim_type, best_aux, my_rank))
+            best_dataset_ranks[sim_type].append(my_rank)
+            nd_score = get_ndcg_score(res_dict, target_task, sims_dict, sim_type)
+            ndcg_scores[sim_type].append(nd_score)
+            best_aux_pred_ranks[sim_type].append(rank_of_best_aux_in_sim)
+    # for sim_type, sim_dict in sims_dict.items():
+    #     print(sim_type)
+    #     result_similarity_corr_plot(sim_dict, res_dict, sim_type=sim_type, target_tasks=target_tasks)
+    best_dataset_ranks = {x: np.mean(s) for x, s in best_dataset_ranks.items()}
+    best_aux_pred_ranks = {x: np.mean(s) for x, s in best_aux_pred_ranks.items()}
+    ndcg_scores = {x: np.mean(s) for x, s in ndcg_scores.items()}
+    print("Average NDCG scores")
+    pretty_print_dict(ndcg_scores)
+    print("Average rank of best auxiliary task according to similarity measure")
+    pretty_print_dict(best_dataset_ranks)
+    print("Average rank of best auxiliary predictions")
+    pretty_print_dict(best_aux_pred_ranks)
+
+def pretty_print_dict(dictionary):
+    for k,v in dictionary.items():
+        print("{}\t{}".format(k,round(v,3)))
+
 def main():
     similarity = Similarity()
-    get_similarity_result_correlation(similarity)
+    # get_similarity_result_correlation(similarity)
+    compare_similarity_methods(similarity)
+    # sims, datasets = get_cooccur_entity_based_similarities(similarity)
+    # sims, datasets = get_shared_vocab_similarities(similarity)
+    # sim_dict = prepare_similarity_dict(sims, datasets)
+    # print(sim_dict)
+    # topic_sims, topic_dataset_names = get_nmf_based_similarities(similarity)
+    # vocab_sims, vocab_dataset_names = get_shared_vocab_similarities(similarity)
+    # bert_sims, bert_dataset_names = get_bert_based_similarities(similarity)
 
 
 if __name__ == "__main__":
