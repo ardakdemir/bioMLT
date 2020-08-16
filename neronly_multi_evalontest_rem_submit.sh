@@ -12,7 +12,7 @@ total_train_steps=40000
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
 # datasets=("BC5CDR-disease" "JNLPBA" "NCBI-disease" "linnaeus" "s800")
-datasets=("s800")
+datasets=("NCBI-disease")
 # Fix the dataset for now
 target_train_file=""
 target=0

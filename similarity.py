@@ -1035,7 +1035,7 @@ def get_similarity_wrapper(similarity, sim_type):
 
 
 def get_all_sims_dict(similarity):
-    sim_types = ["topic", "vocab", "cooccur"]
+    sim_types = ["topic", "vocab", "cooccur","bert"]
     all_sims_dict = {}
     for sim_type in sim_types:
         sim_dict = get_similarity_wrapper(similarity, sim_type)

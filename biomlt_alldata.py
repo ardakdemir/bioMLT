@@ -1859,7 +1859,6 @@ class BioMLT(nn.Module):
                         best_f1s[i] = f1
                         patience = 0
                         self.save_all_model(model_save_names[i])
-
                         out_path = os.path.join(self.args.output_dir, 'ner_out')
                         save_path = os.path.join(self.args.output_dir, 'best_preds_on_dev')
                         self.store_output_file(out_path, save_path, ner_types[i])
@@ -1893,9 +1892,15 @@ class BioMLT(nn.Module):
                 self.load_all_model(os.path.join(self.args.output_dir, model_save_names[i]))
                 print("Loaded best {} model: {}".format(ner_type, model_save_names[i]))
                 test_f1, test_p, test_r, test_loss = self.eval_multiner(target_index, test=True)
-                test_results[ner_type] = {"f1": test_f1,
-                                          "pre": test_p,
-                                          "rec": test_r}
+                if ner_type in test_results:
+                    if test_f1 > test_results[ner_type]["f1"]:
+                        test_results[ner_type] = {"f1": test_f1,
+                                                  "pre": test_p,
+                                                  "rec": test_r}
+                else:
+                    test_results[ner_type] = {"f1": test_f1,
+                                              "pre": test_p,
+                                              "rec": test_r}
                 out_path = os.path.join(self.args.output_dir, 'ner_out')
                 save_path = os.path.join(self.args.output_dir, 'best_preds_on_test')
                 self.store_output_file(out_path, save_path, ner_types[i])
