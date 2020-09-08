@@ -1,6 +1,6 @@
 /usr/local/bin/nosh
 output_dir=$1
-epoch_num=5
+epoch_num=20
 total_train_steps=2000
 repeat=5
 if [ -d $output_dir ]
