@@ -8,7 +8,7 @@ epoch_num=5
 total_train_steps=4000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
-#$ -N ner_only_multi_small
+#$ -N ner_only_multi_small_specific
 cd ~
 ner_data_folder="biobert_data/datasets/small_NER"
 # datasets=("BC5CDR-disease" "JNLPBA" "NCBI-disease" "linnaeus" "s800")

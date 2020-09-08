@@ -1034,13 +1034,36 @@ def get_similarity_wrapper(similarity, sim_type):
     return sim_dict
 
 
+def combine_sims(sim1, sim2):
+    combined = defaultdict(dict)
+    key_list = list(sim1.keys())
+    for key in key_list:
+        for key2 in key_list:
+            if key == key2:
+                continue
+            aver = (sim1[key][key2] + sim2[key][key2]) / 2
+            print("Keys {} {} sim {} sim {} combined {}".format(key, key2, sim1[key][key2], sim2[key][key2], aver))
+            combined[key][key2] = aver
+    return combined
+
+
 def get_all_sims_dict(similarity):
     sim_types = ["topic", "vocab", "cooccur","bert"]
+    combined_all_sims_dict = {}
     all_sims_dict = {}
     for sim_type in sim_types:
         sim_dict = get_similarity_wrapper(similarity, sim_type)
         all_sims_dict[sim_type] = sim_dict
-    return all_sims_dict
+        combined_all_sims_dict[sim_type] = sim_dict
+    for i, sim in enumerate(sim_types):
+        for j, sim2 in enumerate(sim_types):
+            if i >= j:
+                continue
+            name = "{}_{}".format(sim, sim2)
+            print(name)
+            combined_all_sims_dict[name] = combine_sims(all_sims_dict[sim], all_sims_dict[sim2])
+
+    return combined_all_sims_dict
 
 
 def get_result_dict_wrapper(mtl_results_file):
@@ -1060,7 +1083,7 @@ def get_ndcg_score(res_dict, target, sim_dict, sim_type):
 
 
 def compare_similarity_methods(similarity):
-    target_tasks = ["BC2GM", "BC4CHEMD", "JNLPBA", "BC5CDR-chem","s800","linnaeus"]
+    target_tasks = ["BC2GM", "BC4CHEMD", "JNLPBA", "BC5CDR-chem", "s800", "linnaeus"]
     target_tasks = None
     sims_dict = get_all_sims_dict(similarity)
     mtl_results_file = similarity.args.mtl_results_file
@@ -1070,7 +1093,7 @@ def compare_similarity_methods(similarity):
     best_dataset_ranks = defaultdict(list)
     best_aux_pred_ranks = defaultdict(list)
     ndcg_scores = defaultdict(list)
-    best_aux_dict_by_sim = {sim_type: get_best_aux_by_sim(sim_dict) for sim_type,sim_dict in sims_dict.items()}
+    best_aux_dict_by_sim = {sim_type: get_best_aux_by_sim(sim_dict) for sim_type, sim_dict in sims_dict.items()}
     if target_tasks is None:
         target_tasks = [d for d in best_datasets]
     for target_task in target_tasks:
@@ -1078,10 +1101,10 @@ def compare_similarity_methods(similarity):
         print("Best aux for {} is {} ".format(target_task, best_aux))
         for sim_type, sim_dict in sims_dict.items():
             best_auxs = best_aux_dict_by_sim[sim_type]
-            print(sim_type,best_auxs)
+            print(sim_type, best_auxs)
             best_aux_by_sim = best_auxs[target_task]
-            print("Best aux according to {} for {} : {}".format(sim_type,target_task,best_aux_by_sim))
-            rank_of_best_aux_in_sim = get_rank_in_score(res_dict,best_aux_by_sim,target_task)
+            print("Best aux according to {} for {} : {}".format(sim_type, target_task, best_aux_by_sim))
+            rank_of_best_aux_in_sim = get_rank_in_score(res_dict, best_aux_by_sim, target_task)
             my_rank = get_rank_in_sim(sim_dict, best_aux, target_task)
             print("Bert rank according to {} for {}: {}".format(sim_type, best_aux, my_rank))
             best_dataset_ranks[sim_type].append(my_rank)
@@ -1094,6 +1117,8 @@ def compare_similarity_methods(similarity):
     best_dataset_ranks = {x: np.mean(s) for x, s in best_dataset_ranks.items()}
     best_aux_pred_ranks = {x: np.mean(s) for x, s in best_aux_pred_ranks.items()}
     ndcg_scores = {x: np.mean(s) for x, s in ndcg_scores.items()}
+    print("All NDCG Scores")
+    print(ndcg_scores)
     print("Average NDCG scores")
     pretty_print_dict(ndcg_scores)
     print("Average rank of best auxiliary task according to similarity measure")
@@ -1101,9 +1126,11 @@ def compare_similarity_methods(similarity):
     print("Average rank of best auxiliary predictions")
     pretty_print_dict(best_aux_pred_ranks)
 
+
 def pretty_print_dict(dictionary):
-    for k,v in dictionary.items():
-        print("{}\t{}".format(k,round(v,3)))
+    for k, v in dictionary.items():
+        print("{}\t{}".format(k, round(v, 3)))
+
 
 def main():
     similarity = Similarity()
