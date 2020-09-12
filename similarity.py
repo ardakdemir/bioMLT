@@ -1083,9 +1083,10 @@ def get_ndcg_score(res_dict, target, sim_dict, sim_type):
 
 
 def compare_similarity_methods(similarity):
-    target_tasks = ["BC2GM", "BC4CHEMD", "JNLPBA", "BC5CDR-chem", "s800", "linnaeus"]
+    # target_tasks = ["BC2GM", "BC4CHEMD", "JNLPBA", "BC5CDR-chem", "s800", "linnaeus","BC5CDR-disease","NCBI-disease","conll-eng"]
     target_tasks = None
     sims_dict = get_all_sims_dict(similarity)
+    print("Sims dict {}".format(sims_dict))
     mtl_results_file = similarity.args.mtl_results_file
     res_dict = get_result_dict_wrapper(mtl_results_file)
     best_datasets = get_best_aux(res_dict)
@@ -1119,12 +1120,25 @@ def compare_similarity_methods(similarity):
     ndcg_scores = {x: np.mean(s) for x, s in ndcg_scores.items()}
     print("All NDCG Scores")
     print(ndcg_scores)
+
     print("Average NDCG scores")
     pretty_print_dict(ndcg_scores)
+    print_latex_dict(["NDCG Scores"], ndcg_scores)
+
     print("Average rank of best auxiliary task according to similarity measure")
     pretty_print_dict(best_dataset_ranks)
+    print_latex_dict(["Average rank of best auxiliary"], best_dataset_ranks)
+
     print("Average rank of best auxiliary predictions")
     pretty_print_dict(best_aux_pred_ranks)
+    print_latex_dict(["Average rank of best auxiliary predictions"], best_aux_pred_ranks)
+
+    combined_dicts = combine_dicts([ndcg_scores, best_dataset_ranks, best_aux_pred_ranks])
+    print_latex_dict(["NDCG Scores", "Best auxiliary dataset rank","Rank of best auxiliary prediction"],combined_dicts)
+
+
+def combine_dicts(dicts):
+    return {x: [my_dict[x] for my_dict in dicts] for x in dicts[0].keys()}
 
 
 def pretty_print_dict(dictionary):
@@ -1132,9 +1146,27 @@ def pretty_print_dict(dictionary):
         print("{}\t{}".format(k, round(v, 3)))
 
 
+def print_latex_dict(col_headers, dictionary):
+    key = list(dictionary.keys())[0]
+    row_num = 1 if type(dictionary[key]) != list else len(dictionary[key])
+    # first_line = "\{c\| {} \}\\hline\n".format("".join(["c" for c in range(row_num)]))
+    header = "&" + "&".join([h.replace("_","-") for h in col_headers]) + "\\\\\\hline\n"
+    rows = ""
+    for key in dictionary:
+        if type(dictionary[key]) == list:
+            row = key + "&" + "&".join([str(round(x, 3)) if type(x) != str else x for x in dictionary[key]]) + "\\\\\n"
+        else:
+            x = dictionary[key]
+            row = key + "&" + str(str(round(x, 3)) if type(x) != str else x) + "\\\\\n"
+        rows = rows + row
+    table = header + rows
+    print(table)
+
+
 def main():
     similarity = Similarity()
     # get_similarity_result_correlation(similarity)
+    # print_latex_dict(["NDCG Score"],{"BC2GM":10,"ARDA":20})
     compare_similarity_methods(similarity)
     # sims, datasets = get_cooccur_entity_based_similarities(similarity)
     # sims, datasets = get_shared_vocab_similarities(similarity)

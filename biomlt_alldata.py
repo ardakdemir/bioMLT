@@ -121,24 +121,12 @@ def hugging_parse_args():
         help="Number of times to repeat the training"
     )
     parser.add_argument(
-        "--version_2_with_negative",
-        action="store_true",
-        default=True,
-        help="If true, the SQuAD examples contain some that do not have an answer.",
+        "--all", default=False, action="store_true",
+        help="Whether to train on all datasets"
     )
     parser.add_argument(
-        "--null_score_diff_threshold",
-        type=float,
-        default=0.0,
-        help="If null_score - best_non_null is greater than the threshold predict null.",
-    )
-
-    parser.add_argument(
-        "--max_answer_length",
-        default=30,
-        type=int,
-        help="The maximum length of an answer that can be generated. This is needed because the start "
-             "and end predictions are not conditioned on one another.",
+        "--dataset_root_folder", default="biobert_data/datasets/NER",
+        help="Root for all datasets "
     )
     parser.add_argument(
         "--config_file",
@@ -2180,6 +2168,14 @@ class BioMLT(nn.Module):
         cmd = "cp {} {}".format(output_file_path, best_output_save_path)
         subprocess.call(cmd, shell=True)
 
+    def get_dataset_names(self):
+        if self.args.all:
+            print("Running mtl on all datasets at once")
+            root_folder = self.args.dataset_root_folder
+            dataset_names = [x for x in os.listdir(root_folder) if "conll" not in x]
+            self.args.ner_train_files = [os.path.join(root_folder,x,"ent_train.tsv") for x in dataset_names]
+            self.args.ner_test_files = [os.path.join(root_folder, x, "ent_test.tsv") for x in dataset_names]
+            self.args.ner_dev_files = [os.path.join(root_folder, x, "ent_devel.tsv") for x in dataset_names]
 
 def write_nerresult_with_repeat(save_path, row_name, results):
     logging.info("Writing  repeated results for ner to {}".format(save_path))
@@ -2238,6 +2234,7 @@ def main():
     elif mode == "multiner":
         test_save_path = os.path.join(biomlt.args.output_dir, "ner_test_results")
         results = defaultdict(list)
+        biomlt.get_dataset_names()
         if repeat == -1:
             test_result = biomlt.train_multiner()
             for exp_name in test_result.keys():
