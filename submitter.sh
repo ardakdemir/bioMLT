@@ -26,7 +26,7 @@ do
             then
                 if [ $target -le $aux ]
                 then
-                  qsub -N $pref_name"_target_"$target_fd"_aux_"$aux_fd neronly_mtl_single_submit.sh $output_dir $target_fd $aux_fd
+                  qsub -N $pref_name"_target_"$target_fd"_aux_"$aux_fd bioMLT/neronly_mtl_single_submit.sh $output_dir $target_fd $aux_fd
                fi
             fi
 
