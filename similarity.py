@@ -1048,7 +1048,7 @@ def combine_sims(sim1, sim2):
 
 
 def get_all_sims_dict(similarity):
-    sim_types = ["topic", "vocab", "cooccur","bert"]
+    sim_types = ["topic", "vocab", "cooccur"]
     combined_all_sims_dict = {}
     all_sims_dict = {}
     for sim_type in sim_types:
@@ -1086,7 +1086,6 @@ def compare_similarity_methods(similarity):
     # target_tasks = ["BC2GM", "BC4CHEMD", "JNLPBA", "BC5CDR-chem", "s800", "linnaeus","BC5CDR-disease","NCBI-disease","conll-eng"]
     target_tasks = None
     sims_dict = get_all_sims_dict(similarity)
-    print("Sims dict {}".format(sims_dict))
     mtl_results_file = similarity.args.mtl_results_file
     res_dict = get_result_dict_wrapper(mtl_results_file)
     best_datasets = get_best_aux(res_dict)

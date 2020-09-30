@@ -8,7 +8,7 @@ epoch_num=10
 total_train_steps=320000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
-#$ -N ner_only_multi
+#$ -N ner_only_multi_allatonce
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
 datasets=$(ls ${ner_data_folder})
