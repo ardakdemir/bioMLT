@@ -5,10 +5,10 @@ then
   rm $output_dir
 fi
 epoch_num=20
-total_train_steps=1000
+total_train_steps=50000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
-#$ -N ner_only_multi_3009
+#$ -N ner_only_multi_0110
 cd ~
 ner_data_folder="biobert_data/datasets/NER"
 datasets=$(ls ${ner_data_folder})
