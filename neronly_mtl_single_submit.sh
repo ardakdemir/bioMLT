@@ -2,8 +2,8 @@
 output_dir=$1
 target_dataset=$2
 aux_dataset=$3
-epoch_num=20
-total_train_steps=1000
+epoch_num=10
+total_train_steps=40000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 cd ~
