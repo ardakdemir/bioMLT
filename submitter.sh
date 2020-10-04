@@ -8,7 +8,7 @@ fi
 
 pref_name="cli_multitasks_0110"
 
-ner_data_folder="biobert_data/datasets/NER"
+ner_data_folder="/home/aakdemir/biobert_data/datasets/NER"
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
 target=0
