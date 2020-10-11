@@ -1,12 +1,11 @@
 #!/bin/bash
 
 output_dir=$1
+pref_name=$2
 if [ -d $output_dir ]
 then
   rm $output_dir
 fi
-
-pref_name="cli_multitasks_0110"
 
 ner_data_folder="/home/aakdemir/biobert_data/datasets/NER"
 datasets=$(ls ${ner_data_folder})
