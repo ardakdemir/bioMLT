@@ -594,7 +594,8 @@ class BioMLT(nn.Module):
              'weight_decay_rate': 0.0}
         ]
 
-        if self.args.mode not in ["ner", "multi_ner"]:
+        if self.args.mode not in ["ner"]:
+            print("Initializing question answering components...")
             self.yesno_head = nn.Linear(self.bert_out_dim, 2)
             self.yesno_soft = nn.Softmax(dim=1)
             self.yesno_loss = CrossEntropyLoss()
