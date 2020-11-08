@@ -178,12 +178,13 @@ def pad_trunc(sent, max_len, pad_len, pad_ind):
 
 def ner_document_reader(file_path, sent_len=None):
     document = ""
+    print("Readdinng {}".format(file_path) )
     with open(file_path, "r") as f:
         f = f.read()
         doc = f.split("\n\n")
         if sent_len is not None:
             doc = doc[:sent_len]
-        sents = [" ".join([token.split()[0] for token in sent.split("\n")]) for sent in doc if len(sent) > 1]
+        sents = [" ".join([token.split()[0] for token in sent.split("\n")[:-1]]) for sent in doc if len(sent) > 1]
         for sent in sents:
             document += sent + "\n"
     return document

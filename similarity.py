@@ -557,9 +557,9 @@ class Similarity(nn.Module):
         :return: A vector representing the document?
         """
         device = self.args.device
-        dataset.for_eval = True
+        dataset.for_eval = False
         dataset_vector = []
-        for i in range(100):
+        for i in range(500):
             with torch.no_grad():
                 tokens, bert_batch_after_padding, data = dataset[i]
                 data = [d.to(device) for d in data]
@@ -852,6 +852,7 @@ def mtl_target_aux_table(file, dataset_names=None, type="Mean"):
         target_names = [res.split()[0].split("_")[-1] for res in results]
         if dataset_names is None:
             dataset_names = list(set(aux_names).union(set(target_names)))
+            print("Dataset names")
             print(dataset_names)
         dataset_inds = {d: i for i, d in enumerate(dataset_names)}
         table = [[0 for _ in range(len(dataset_names))] for _ in range(len(dataset_names))]
@@ -1042,13 +1043,13 @@ def combine_sims(sim1, sim2):
             if key == key2:
                 continue
             aver = (sim1[key][key2] + sim2[key][key2]) / 2
-            print("Keys {} {} sim {} sim {} combined {}".format(key, key2, sim1[key][key2], sim2[key][key2], aver))
+            # print("Keys {} {} sim {} sim {} combined {}".format(key, key2, sim1[key][key2], sim2[key][key2], aver))
             combined[key][key2] = aver
     return combined
 
 
 def get_all_sims_dict(similarity):
-    sim_types = ["topic", "vocab", "cooccur"]
+    sim_types = ["topic", "vocab", "cooccur","bert"]
     combined_all_sims_dict = {}
     all_sims_dict = {}
     for sim_type in sim_types:
@@ -1167,7 +1168,7 @@ def main():
     # get_similarity_result_correlation(similarity)
     # print_latex_dict(["NDCG Score"],{"BC2GM":10,"ARDA":20})
     compare_similarity_methods(similarity)
-    # sims, datasets = get_cooccur_entity_based_similarities(similarity)
+    # sims, datasetner_document_readers = get_cooccur_entity_based_similarities(similarity)
     # sims, datasets = get_shared_vocab_similarities(similarity)
     # sim_dict = prepare_similarity_dict(sims, datasets)
     # print(sim_dict)

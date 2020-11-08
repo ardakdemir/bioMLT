@@ -701,6 +701,8 @@ class BioMLT(nn.Module):
         hidden_dim = hiddens[-1].shape[2]
         pad_vector = torch.tensor([0.0 for i in range(hidden_dim)]).to(device)
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]), 0)
+        print("Means shape: {}".format(meanss.shape))
+
         batch_my_hiddens = []
         batch_lens = []
         for means, bert2tok in zip(meanss, bert2toks):
@@ -1030,7 +1032,7 @@ class BioMLT(nn.Module):
 
     def load_multiner_data(self):
         # now initializing Ner head here !!
-        print("Reading NER data from {}".format(self.ner_path))
+        # print("Reading NER data from {}".format(self.ner_path))
         self.ner_readers = []
         self.ner_dev_readers = []
         self.ner_eval_readers = []
@@ -1098,9 +1100,12 @@ class BioMLT(nn.Module):
         eval_file_name = self.eval_file.split("/")[-1].split(".")[0]
         ner_model_save_name = "best_ner_{}_model".format(eval_file_name)
         self.ner_head = NerModel(self.args)
+        print("Ner model: {}".format(self.ner_head))
         # type = "yesno" if self.args.squad_yes_no else "factoid"
         # print("Type {}".format(type))
-        qa_types = ["yesno", "list", "factoid"]
+        # qa_types = ["yesno", "list", "factoid"]
+        qa_types = ["yesno", "factoid"]
+
         device = self.args.device
         # device = "cpu"
         args = hugging_parse_args()
@@ -1134,11 +1139,6 @@ class BioMLT(nn.Module):
         optimizer_grouped_parameters = [{"params": self.qas_head.parameters(), "weight_decay": 0.0}]
         # self.bert_squad_optimizer =AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
 
-        ## Scheduler for sub-components
-        # scheduler = get_linear_schedule_with_warmup(
-        # self.bert_squad_optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_totals)
-        tr_loss, logging_loss = 0.0, 0.0
-        steps_trained_in_current_epoch = 0
         epochs_trained = 0
         best_result = 0
         best_ner_f1 = 0
@@ -1204,52 +1204,62 @@ class BioMLT(nn.Module):
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
+                print("Batch shape: {}".format(batch[0].shape))
                 # logging.info("Input ids shape : {}".format(batch[0].shape))
                 # bert2toks = batch[-1]
                 outputs = self.bert_model(**bert_inputs)
-                # bert_outs_for_ner , lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1],batch[-1],device=device)
-                # print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
-                # ner_outs = self.ner_head(bert_outs_for_ner)
+                bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], batch[-1],
+                                                                                   device=device)
+                print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
+                ner_outs = self.ner_head(bert_outs_for_ner)
+
                 # ner_outs_2= self.get_ner(outputs[-1], bert2toks)
-                # ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs,batch[-1])
-                # logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
+                ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs,batch[-1])
+                logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
+
+                #
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 # logging.info("Bert out shape {}".format(bert_out.shape))
                 qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
                 qas_loss = qas_outputs[0]
+
                 # empty gradients
                 # self.bert_optimizer.zero_grad()
                 # self.qas_head.optimizer.zero_grad()
                 # self.ner_head.optimizer.zero_grad()
 
-                # get batches for each task to GPU/CPU
-                tokens, bert_batch_after_padding, data = self.ner_reader[step]
+                qas_loss = 0
 
-                data = [d.to(device) for d in data]
-                sent_lens, masks, tok_inds, ner_inds, \
-                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
-                batch = tuple(t.to(device) for t in batch)
-                # logging.info(self.bert_tokenizer.convert_ids_to_tokens(batch[0][0].detach().numpy()))
-                bert_inputs = {
-                    "input_ids": batch[0],
-                    "attention_mask": batch[1],
-                    "token_type_ids": batch[2],
-                }
-                # logging.info("Number of sentences in the ner batch : {}".format(len(tokens)))
-                # logging.info("Number of sentences in the dep batch : {}".format(batch[0].shape[0]))
+                # get batches for each task to GPU/CPU for NER
+                # tokens, bert_batch_after_padding, data = self.ner_reader[step]
+                #
+                # data = [d.to(device) for d in data]
+                # sent_lens, masks, tok_inds, ner_inds, \
+                # bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+                #
+                # print("Ner tokens: {}".format(tokens))
+                # print("Bert batch tokens: {}".format(bert_batch_after_padding))
+                # print("B2ts: {}".format(bert2toks))
 
                 # ner output
-                outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
+                # outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
                 # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
                 # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-                ner_loss, ner_out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
+                # ner_loss, ner_out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
+                ner_loss = torch.tensor([0])
+
                 # logging.info("NER out shape : {}".format(ner_out_logits.shape))
 
                 # for hierarchical setting
-                # bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], batch[-1],device=device)
+                # bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], batch[-1],
+                #                                                                    device=device)
                 # ner_outs = self.ner_head(bert_outs_for_ner)
                 # ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs, batch[-1])
 
+                #
+                # print("Ner outs")
+                # print(ner_outs.shape)
+                # print("Ner out for qas : {}".format(ner_outs_for_qas.shape))
                 # qas output
                 # logging.info("QAS out shape : {}".format(qas_outputs[1].shape))
                 # qas_outputs = self.qas_head(**squad_inputs)
@@ -1727,9 +1737,9 @@ class BioMLT(nn.Module):
         if self.args.target_index != -1:
             target_index = self.args.target_index
             eval_file = self.args.ner_test_files[target_index]
-            ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1].replace("_","-") for i, aux_eval_file in
+            ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1].replace("_", "-") for i, aux_eval_file in
                              enumerate(self.args.ner_test_files) if i != target_index]
-            ner_target_type = os.path.split(eval_file)[0].split("/")[-1].replace("_","-")
+            ner_target_type = os.path.split(eval_file)[0].split("/")[-1].replace("_", "-")
             ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
             model_save_name = "best_ner_model_{}".format(ner_type)
             print("Running experiment with a specific target index : {} target data : {} ".format(target_index,
@@ -1741,9 +1751,10 @@ class BioMLT(nn.Module):
             for i in range(len(self.args.ner_train_files)):
                 target_index = i
                 eval_file = self.args.ner_test_files[target_index]
-                ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1].replace("_","-") for i, aux_eval_file in
+                ner_aux_types = [os.path.split(aux_eval_file)[0].split("/")[-1].replace("_", "-") for i, aux_eval_file
+                                 in
                                  enumerate(self.args.ner_test_files) if i != target_index]
-                ner_target_type = os.path.split(eval_file)[0].split("/")[-1].replace("_","-")
+                ner_target_type = os.path.split(eval_file)[0].split("/")[-1].replace("_", "-")
                 ner_type = "aux_{}_target_{}".format("_".join(ner_aux_types), ner_target_type)
                 model_save_name = "best_ner_model_{}".format(ner_type)
                 ner_types.append(ner_type)
@@ -2173,9 +2184,10 @@ class BioMLT(nn.Module):
             print("Running mtl on all datasets at once")
             root_folder = self.args.dataset_root_folder
             dataset_names = [x for x in os.listdir(root_folder) if "conll" not in x]
-            self.args.ner_train_files = [os.path.join(root_folder,x,"ent_train.tsv") for x in dataset_names]
+            self.args.ner_train_files = [os.path.join(root_folder, x, "ent_train.tsv") for x in dataset_names]
             self.args.ner_test_files = [os.path.join(root_folder, x, "ent_test.tsv") for x in dataset_names]
             self.args.ner_dev_files = [os.path.join(root_folder, x, "ent_devel.tsv") for x in dataset_names]
+
 
 def write_nerresult_with_repeat(save_path, row_name, results):
     logging.info("Writing  repeated results for ner to {}".format(save_path))
@@ -2193,7 +2205,7 @@ def write_nerresult_with_repeat(save_path, row_name, results):
 
 def main():
     biomlt = BioMLT()
-    qa_types = ['yesno', 'list', 'factoid']
+    qa_types = ['factoid']
     mode = biomlt.args.mode
 
     predict = biomlt.args.predict
