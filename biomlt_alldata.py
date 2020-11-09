@@ -795,6 +795,7 @@ class BioMLT(nn.Module):
         torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
 
     def evaluate_qas(self, ind, only_preds=False, types=['factoid', 'list', 'yesno']):
+
         device = self.args.device
         self.device = device
         args = self.args
@@ -916,7 +917,8 @@ class BioMLT(nn.Module):
             print("example answer:: ")
             print(examples[0].answers)
             k = list(predictions.keys())[0]
-            if type == "list":
+            print(type)
+            if type != "yes":
                 print("Special preparation for list questions")
                 predictions = {k:predictions[k][0] for k in predictions.keys()}
             print("Example pred: ")
@@ -933,6 +935,11 @@ class BioMLT(nn.Module):
             totals[type] = total
         if only_preds:
             return nbests, preds
+
+        qas_save_path = os.path.join(self.args.output_dir, "qas_training_results.txt")
+        with open(qas_save_path,"a") as o:
+            for t in types:
+                s = " "
         return f1s, exacts, totals
 
     def predict_qas(self, batch):
