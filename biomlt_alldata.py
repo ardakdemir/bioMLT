@@ -217,9 +217,24 @@ def hugging_parse_args():
     parser.add_argument(
         "--verbose_logging",
         action="store_true",
-        default=True,
+        default=False,
         help="If true, all of the warnings related to data processing will be printed. "
              "A number of warnings are expected for a normal SQuAD evaluation.",
+    )
+
+    parser.add_argument(
+        "--version_2_with_negative",
+        action="store_true",
+        default=False,
+        help="If true, all of the warnings related to data processing will be printed. "
+             "A number of warnings are expected for a normal SQuAD evaluation.",
+    )
+
+    parser.add_argument(
+        "--null_score_diff_threshold",
+        default=0.50,
+        type=float,
+        help="Null score diff to predict null value"
     )
 
     # Other parameters
@@ -561,6 +576,7 @@ class BioMLT(nn.Module):
     def __init__(self):
         super(BioMLT, self).__init__()
         self.args = hugging_parse_args()
+        self.args.max_answer_length = self.args.max_seq_length
         if not os.path.isdir(self.args.output_dir):
             os.makedirs(self.args.output_dir)
         self.device = self.args.device
