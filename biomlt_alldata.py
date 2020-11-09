@@ -911,8 +911,14 @@ class BioMLT(nn.Module):
                 preds[type] = output_prediction_file
                 continue
                 # return output_nbest_file, output_prediction_file
+
+            # Print examples...
             print("example answer:: ")
             print(examples[0].answers)
+            k = list(predictions.keys())[0]
+            print("Example pred: ")
+            print(predictions[k])
+
             results = squad_evaluate(examples, predictions)
             f1 = results['f1']
             exact = results['exact']
