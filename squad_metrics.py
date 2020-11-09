@@ -90,7 +90,7 @@ def get_raw_scores(examples, preds):
         prediction = preds[qas_id]
         exact_scores[qas_id] = max(compute_exact(a, prediction) for a in gold_answers)
         f1_scores[qas_id] = max(compute_f1(a, prediction) for a in gold_answers)
-
+    print("Raw scores: F1: {}  Exact: {}".format(f1_scores,exact_scores))
     return exact_scores, f1_scores
 
 

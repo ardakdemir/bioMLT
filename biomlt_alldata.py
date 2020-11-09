@@ -5,10 +5,10 @@ from transformers.data.processors.squad import SquadResult
 from transformers.data.metrics.squad_metrics import (
     compute_predictions_log_probs,
     # compute_predictions_logits,
-    squad_evaluate,
+    #squad_evaluate,
 )
 import subprocess
-from squad_metrics import compute_predictions_logits
+from squad_metrics import compute_predictions_logits,squad_evaluate
 import numpy as np
 from conll_eval import evaluate_conll_file
 from vocab import Vocab
@@ -587,7 +587,7 @@ class BioMLT(nn.Module):
         if not os.path.isdir(self.args.output_dir):
             os.makedirs(self.args.output_dir)
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
-        
+
         if  os.path.exists(qas_save_path):
             with open(qas_save_path,"w") as o:
                 o.write("")
@@ -841,7 +841,7 @@ class BioMLT(nn.Module):
             logger.info("  Num examples = %d", len(qas_eval_dataset))
             logger.info("  Batch size = %d", args.eval_batch_size)
             all_results = []
-            for batch in tqdm(eval_dataloader, desc="Evaluating"):
+            for batch in tqdm(eval_dataloader, desc="Evaluating {}".format(type)):
 
                 batch = tuple(t.to(self.device) for t in batch)
                 # print("Batch shape  {}".format(batch[0].shape))
@@ -931,7 +931,7 @@ class BioMLT(nn.Module):
             print(examples[0].answers)
             k = list(predictions.keys())[0]
             print(type)
-            if type != "yes":
+            if type in ["factoid","list"]:
                 print("Special preparation for list questions")
                 predictions = {k:predictions[k][0] for k in predictions.keys()}
             print("Example pred: ")
