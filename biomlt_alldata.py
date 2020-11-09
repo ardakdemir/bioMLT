@@ -1517,6 +1517,7 @@ class BioMLT(nn.Module):
                 if steps_per_epoch != -1:
                     if step >= steps_per_epoch:
                         print("Stopping epoch at {} steps.".format(step))
+                        break
                 rand = np.random.rand()
                 # print("rand val : {} ".format(rand))
                 if rand < yes_rat:
