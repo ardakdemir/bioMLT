@@ -916,6 +916,9 @@ class BioMLT(nn.Module):
             print("example answer:: ")
             print(examples[0].answers)
             k = list(predictions.keys())[0]
+            if type == "list":
+                print("Special preparation for list questions")
+                predictions = {k:predictions[k][0] for k in predictions.keys()}
             print("Example pred: ")
             print(predictions[k])
 
