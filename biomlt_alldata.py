@@ -113,6 +113,10 @@ def hugging_parse_args():
         help="Whether to initialize the ner head or not."
     )
     parser.add_argument(
+        "--ner_label_dim", default=10, type=int,
+        help="Output dimension of ner head"
+    )
+    parser.add_argument(
         "--only_loss_curve", default=False, action="store_true",
         help="If set, skips the evaluation, only for NER task"
     )
