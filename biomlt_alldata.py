@@ -668,6 +668,9 @@ class BioMLT(nn.Module):
         logging.info("Model loaded  from: %s" % load_path)
         loaded_params = torch.load(load_path, map_location=torch.device('cpu'))
         my_dict = self.state_dict()
+        print("Printing all parameters")
+        for k,v in loaded_params.items():
+            print("{}".format(k))
         pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict()}
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
@@ -685,6 +688,9 @@ class BioMLT(nn.Module):
             os.makedirs(save_dir)
         if weights:
             logging.info("Saving biomlt model to {}".format(save_name))
+            print("Saved parameter names")
+            for k in self.state_dict():
+                print(k)
             torch.save(self.state_dict(), save_name)
         config_path = os.path.join(self.args.output_dir, self.args.config_file)
         arg = copy.deepcopy(self.args)
