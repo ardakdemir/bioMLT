@@ -109,6 +109,10 @@ def hugging_parse_args():
         help="Whether to use CRF for NER head"
     )
     parser.add_argument(
+        "--init_ner_head", default=False, action="store_true",
+        help="Whether to initialize the ner head or not."
+    )
+    parser.add_argument(
         "--only_loss_curve", default=False, action="store_true",
         help="If set, skips the evaluation, only for NER task"
     )
@@ -606,6 +610,13 @@ class BioMLT(nn.Module):
 
             self.qas_head = QasModel(self.args)
 
+        if self.args.init_ner_head:
+            print("Initializing the sequence labelling head")
+            logging.info("Initializing the sequence labelling head")
+            if not hasattr(self.args, "ner_label_dim"):
+                self.args.ner_label_dim = 10
+            self.ner_head = NerModel(self.args)
+
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                                     lr=2e-5)
         self.bert_scheduler = get_linear_schedule_with_warmup(
@@ -1100,7 +1111,8 @@ class BioMLT(nn.Module):
         self.load_ner_data()
         eval_file_name = self.eval_file.split("/")[-1].split(".")[0]
         ner_model_save_name = "best_ner_{}_model".format(eval_file_name)
-        self.ner_head = NerModel(self.args)
+        if not hasattr(self,"ner_head"):
+            self.ner_head = NerModel(self.args)
         print("Ner model: {}".format(self.ner_head))
         # type = "yesno" if self.args.squad_yes_no else "factoid"
         # print("Type {}".format(type))
@@ -1545,12 +1557,13 @@ class BioMLT(nn.Module):
                     logging.info("Saving checkpoint to {}".format(checkpoint_name))
                     self.save_all_model(checkpoint_name)
                     logging.info("Average loss after {} steps : {}".format(step + 1, total_loss / (step + 1)))
+
             print("Total loss {} for epoch {} ".format(total_loss, epoch))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
             f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types)
             # yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
-            if self.args.squad_yes_no:
-                print("Yes results {} {} {} ".format(f1, exact, total))
+
+
 
             print("Sum of all f1s {} ".format(sum(f1s.values())))
             print("Sum of best results {} ".format(sum(best_results.values())))
