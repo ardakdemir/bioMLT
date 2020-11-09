@@ -1115,7 +1115,7 @@ class BioMLT(nn.Module):
         self.load_ner_data()
         eval_file_name = self.eval_file.split("/")[-1].split(".")[0]
         ner_model_save_name = "best_ner_{}_model".format(eval_file_name)
-        if not hasattr(self,"ner_head"):
+        if not hasattr(self, "ner_head"):
             self.ner_head = NerModel(self.args)
         print("Ner model: {}".format(self.ner_head))
         # type = "yesno" if self.args.squad_yes_no else "factoid"
@@ -1231,7 +1231,7 @@ class BioMLT(nn.Module):
                 ner_outs = self.ner_head(bert_outs_for_ner)
 
                 # ner_outs_2= self.get_ner(outputs[-1], bert2toks)
-                ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs,batch[-1])
+                ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs, batch[-1])
                 logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
 
                 #
@@ -1466,8 +1466,7 @@ class BioMLT(nn.Module):
         # train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
-        t_totals = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
-        no_decay = ["bias", "LayerNorm.weight"]
+
         optimizer_grouped_parameters = [{"params": self.qas_head.parameters(), "weight_decay": 0.0}]
         # self.bert_squad_optimizer =AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
 
@@ -1479,6 +1478,14 @@ class BioMLT(nn.Module):
         epochs_trained = 0
         best_result = 0
         best_sum = 0
+
+        epoch_num = int(self.args.num_train_epochs)
+        total_steps = self.args.total_train_steps
+        steps_per_epoch = -1
+        if self.args.total_train_steps != -1:
+            steps_per_epoch = total_steps // epoch_num
+            print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
+
         best_results = {q: 0 for q in qa_types}
         train_iterator = trange(
             epochs_trained, int(args.num_train_epochs), desc="Epoch")
@@ -1493,7 +1500,7 @@ class BioMLT(nn.Module):
         print("Concat size {} yesno size {}".format(len(train_dataset), len(yesno_train_dataset)))
         for epoch, _ in enumerate(train_iterator):
             total_loss = 0
-            epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            epoch_iterator = tqdm(train_dataloader, desc="Factoid Iteration")
             yesno_epoch_iterator = tqdm(yesno_dataloader, desc="yesno - Iteration")
             self.bert_model.train()
             self.qas_head.train()
@@ -1507,6 +1514,9 @@ class BioMLT(nn.Module):
             for step, (batch_1, batch_2) in enumerate(zip(epoch_iterator, yesno_epoch_iterator)):
                 if step >= step_len:
                     break
+                if steps_per_epoch != -1:
+                    if step >= steps_per_epoch:
+                        print("Stopping epoch at {} steps.".format(step))
                 rand = np.random.rand()
                 # print("rand val : {} ".format(rand))
                 if rand < yes_rat:
@@ -1566,8 +1576,6 @@ class BioMLT(nn.Module):
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
             f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types)
             # yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
-
-
 
             print("Sum of all f1s {} ".format(sum(f1s.values())))
             print("Sum of best results {} ".format(sum(best_results.values())))
