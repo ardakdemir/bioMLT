@@ -1451,7 +1451,9 @@ class BioMLT(nn.Module):
         self.eval_ner()
 
     def train_qas(self):
-        qa_types = ["yesno", "list", "factoid"]
+
+        # yes-no and factoid for now?
+        qa_types = ["yesno", "factoid", "list"]
         device = self.args.device
         print("My device {}".format(device))
         args = hugging_parse_args()
