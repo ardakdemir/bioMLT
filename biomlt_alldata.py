@@ -169,7 +169,14 @@ def hugging_parse_args():
         default='qas_results',
         type=str,
         required=False,
-        help="The output directory where the model predictions and checkpoints will be written.",
+        help="The output file where the model predictions will be written.",
+    )
+    parser.add_argument(
+        "--qas_train_result_file",
+        default='qas_train_results.txt',
+        type=str,
+        required=False,
+        help="The output file where the model predictions on training set will be written.",
     )
     parser.add_argument(
         "--output_dir",
@@ -579,6 +586,12 @@ class BioMLT(nn.Module):
         self.args.max_answer_length = self.args.max_seq_length
         if not os.path.isdir(self.args.output_dir):
             os.makedirs(self.args.output_dir)
+        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
+        
+        if  os.path.exists(qas_save_path):
+            with open(qas_save_path,"w") as o:
+                o.write("")
+
         self.device = self.args.device
         # try:
         if self.args.biobert_model_path is not None and not self.args.init_bert:
@@ -936,10 +949,15 @@ class BioMLT(nn.Module):
         if only_preds:
             return nbests, preds
 
-        qas_save_path = os.path.join(self.args.output_dir, "qas_training_results.txt")
+        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
+        if not os.path.exists(qas_save_path):
+            with open(qas_save_path, "w") as o:
+                o.write("{}\t{}\t{}\n".format("TYPE","F1","EXACT"))
+
         with open(qas_save_path,"a") as o:
             for t in types:
-                s = " "
+                s = "{}\t{}\t{}\n".format(t,f1s[t],exacts[t])
+                o.write(s)
         return f1s, exacts, totals
 
     def predict_qas(self, batch):
