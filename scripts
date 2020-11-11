@@ -41,7 +41,7 @@ python biomlt_alldata.py --load_model_path key_models/mybiobert_finetunedsquad -
 
 
 ## Train qas model with a ner head (without joint learning)
-python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_steps 100  --crf --output_dir out1111_qasonly_1  --max_seq_length 256 --batch_size 12 --load_model
+python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_steps 100  --output_dir qasonly_1111_full_test8b --max_seq_length 256 --batch_size 12 --load_model
 
 
 ## Train qas starting with ner model with a ner head of course!
