@@ -1158,7 +1158,7 @@ class BioMLT(nn.Module):
 
     def load_ner_data(self, eval_file=None):
         # now initializing Ner head here !!
-        print("Reading NER data from {}".format(self.ner_path))
+        self.ner_path = self.args.ner_train_file
         self.ner_reader = DataReader(
             self.ner_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, crf=self.args.crf)
@@ -1166,6 +1166,8 @@ class BioMLT(nn.Module):
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
         print("NER label vocab indexes from training set : {}".format(self.args.ner_label_vocab.w2ind))
+
+        # Eval
         print("Reading NER eval data from: {}".format(self.args.ner_test_file))
         eval_file_path = self.args.ner_test_file if eval_file is None else eval_file
         print("Reading NER dev data from: {}".format(self.args.ner_dev_file))
@@ -1174,6 +1176,8 @@ class BioMLT(nn.Module):
             eval_file_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
         self.ner_eval_reader.label_vocab = self.args.ner_label_vocab
+
+        # Dev
         dev_file_path = self.args.ner_dev_file if self.args.ner_dev_file is not None else self.eval_file
         self.dev_file = dev_file_path
         self.ner_dev_reader = DataReader(
