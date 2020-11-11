@@ -902,7 +902,7 @@ class BioMLT(nn.Module):
                 }
                 with torch.no_grad():
                     # outputs = self.bert_model(**bert_inputs)
-                    qas_input = get_qas_input( bert_inputs, batch)
+                    qas_input = self.get_qas_input( bert_inputs, batch)
                     # squad_inputs["bert_outputs"] = outputs[-1][-2]
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
