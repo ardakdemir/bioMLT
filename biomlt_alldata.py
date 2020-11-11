@@ -690,13 +690,14 @@ class BioMLT(nn.Module):
         logging.info("Model loaded  from: %s" % load_path)
         loaded_params = torch.load(load_path, map_location=torch.device('cpu'))
         my_dict = self.state_dict()
-        pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict()}
-        print("My params")
-        for my_params in self.state_dict():
-            print(my_params)
-        print("Loaded params")
-        for loaded in loaded_params:
-            print(loaded)
+        pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict() and self.state_dict()[k].size() == v.size() }
+        # print("My params")
+        # for my_params in self.state_dict():
+        #     print(self.state_dict()[my_params].size())
+        #
+        # print("Loaded params")
+        # for loaded in loaded_params:
+        #     print(loaded)
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
         print("Ner head after load")
