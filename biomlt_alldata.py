@@ -649,7 +649,7 @@ class BioMLT(nn.Module):
         if self.args.init_ner_head:
             print("Initializing the sequence labelling head...")
             logging.info("Initializing the sequence labelling head...")
-            vocab_path = self.args.ner_label_vocab_path
+            vocab_path = self.args.load_ner_label_vocab_path
             label_vocab = {}
             with open(vocab_path,"r") as r:
                 label_vocab = json.load(r)
@@ -718,7 +718,7 @@ class BioMLT(nn.Module):
         arg = copy.deepcopy(self.args)
         del arg.device
         if hasattr(arg, "ner_label_vocab"):
-            vocab_save_path = save_path+"_vocab"
+            vocab_save_path = os.path.join(self.args.output_dir,save_path+"_vocab")
             print("Saving ner vocab to {} ".format(vocab_save_path))
             with open(vocab_save_path, "w") as np:
                 json.dump(arg.ner_label_vocab.w2ind, np)
