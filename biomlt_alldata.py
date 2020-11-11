@@ -1163,6 +1163,7 @@ class BioMLT(nn.Module):
             self.ner_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, crf=self.args.crf)
         self.args.ner_label_vocab = self.ner_reader.label_vocab
+        self.args.ner_label_dim = len( self.args.ner_label_vocab )
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
         print("NER label vocab indexes from training set : {}".format(self.args.ner_label_vocab.w2ind))
