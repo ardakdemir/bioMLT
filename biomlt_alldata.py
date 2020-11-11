@@ -2075,6 +2075,7 @@ class BioMLT(nn.Module):
                 outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
                 # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
                 # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
+
                 loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
                 loss.backward()
                 self.ner_head.optimizer.step()
