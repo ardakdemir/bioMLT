@@ -1526,6 +1526,15 @@ class BioMLT(nn.Module):
         #                                              yes_no =self.args.squad_yes_no,type='yesno')
         type = "yesno" if self.args.squad_yes_no else "factoid"
         print("Type {}".format(type))
+
+        if hasattr(self,"ner_head"):
+            print("Ner head transition weights")
+            if self.args.crf:
+                weights = self.ner_head.classifier.transition
+                print("Transition weights: {}".format(weights))
+            else:
+                weights = self.ner_head.classifier.weight
+                print("Transition weights: {}".format(weights))
         if self.args.only_squad:
             type = "squad"
         if self.args.qa_type is not None:
