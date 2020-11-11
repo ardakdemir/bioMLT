@@ -93,7 +93,6 @@ class CRFLoss(nn.Module):
         ## forward score : initialize from start tag
         forward_scores = torch.zeros(batch_size, self.tagset_size).to(self.device)
 
-        print("Forward scores shape: {} scores shape: {}".format(forward_scores.shape,scores.shape))
         # forward_scores[:batch_size] = self._log_sum_exp(scores[:, 0, :, :], dim=2)
         ## burada  hangisi  dogru emin   degilim index1-> index2 or  opposite?
         ## i think  opposite  is correct

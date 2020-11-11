@@ -64,7 +64,6 @@ class NerModel(nn.Module):
     # add the attention masks to exclude cls and pad etc.
     def forward(self, batch, labels=None, pred=False, loss_aver=True):
         out_logits = self.classifier(batch)
-        print("Out logits shape of ner classifier: {}".format(out_logits.shape))
         batch_size = batch.shape[0]
         shape = batch.shape
         if self.dropout and not pred:
