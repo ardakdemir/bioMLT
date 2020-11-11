@@ -719,8 +719,6 @@ class BioMLT(nn.Module):
             print("Saved parameter names")
             for k in self.state_dict():
                 print(k)
-            for k in self.ner_head.state_dict():
-                print(k)
             torch.save(self.state_dict(), save_name)
             if hasattr(self, "ner_heads"):
                 for i, head in enumerate(self.ner_heads):

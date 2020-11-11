@@ -41,7 +41,7 @@ python biomlt_alldata.py --load_model_path key_models/mybiobert_finetunedsquad -
 
 
 ## Train qas model with a ner head (without joint learning)
-python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_steps -1  --crf --init_ner_head --model_save_name qasmodel0911  --output_dir out0911_full_1  --max_seq_length 256 --batch_size 12 --load_model
+python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_steps 100  --crf --output_dir out1111_qasonly_1  --max_seq_length 256 --batch_size 12 --load_model
 
 
 ## Train qas starting with ner model with a ner head of course!
@@ -54,4 +54,6 @@ python bioMLT/biomlt_alldata.py --mode ner --crf --ner_train_file biobert_data/d
 
 
 ## Qas with ner head input
-python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 2 --total_train_steps 100  --crf --init_ner_head --model_save_name qasmodel1111  --output_dir out1111_loadnerhead  --max_seq_length 256 --batch_size 12 --load_model_path neronly1111_deneme_2/best_ner_model_on_BC2GM --load_ner_label_vocab_path best_ner_model_on_BC2GM_vocab
+## This code gives the embedding of label predictions of ner to qas component
+
+python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 2 --total_train_steps 100  --crf --init_ner_head --model_save_name qasmodel1111  --output_dir out1111_loadnerhead  --max_seq_length 256 --batch_size 12 --load_model_path neronly1111_deneme_2/best_ner_model_on_BC2GM --load_ner_label_vocab_path best_ner_model_on_BC2GM_vocab --qas_with_ner
