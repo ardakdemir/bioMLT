@@ -781,7 +781,6 @@ class BioMLT(nn.Module):
         hidden_dim = hiddens[-1].shape[2]
         pad_vector = torch.tensor([0.0 for i in range(hidden_dim)]).to(device)
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]), 0)
-        print("Means shape: {}".format(meanss.shape))
 
         batch_my_hiddens = []
         batch_lens = []
