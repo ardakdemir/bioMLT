@@ -1651,6 +1651,8 @@ class BioMLT(nn.Module):
         self.yesno_loss.to(device)
         if hasattr(self,"ner_head"):
             self.ner_head.to(device)
+        if hasattr(self, "ner_label_embedding"):
+            self.ner_label_embedding.to(device)
         # self.ner_head.to(device)
         print("weights before training !!")
         print(self.qas_head.qa_outputs.weight[-10:])
