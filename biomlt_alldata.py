@@ -1096,7 +1096,7 @@ class BioMLT(nn.Module):
                 #
                 #     all_preds.append(pred)
             all_preds = torch.tensor(preds,dtype=torch.long)
-            all_preds.to(self.args.device)
+            all_preds = all_preds.to(self.args.device)
 
             print("All preds: {}".format(all_preds.shape))
             all_embeddings = self.ner_label_embedding(all_preds)
