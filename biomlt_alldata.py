@@ -114,7 +114,7 @@ def hugging_parse_args():
         help="Whether to initialize the ner head or not."
     )
     parser.add_argument(
-        "--ner_label_dim", default=10, type=int,
+        "--ner_label_dim", default=-1, type=int,
         help="Output dimension of ner head"
     )
     parser.add_argument(
@@ -535,6 +535,8 @@ def hugging_parse_args():
                         help='development file for ner')
     parser.add_argument('--ner_test_file', type=str, default='ner_data/all_entities_test.tsv', help='test file for ner')
     parser.add_argument('--ner_vocab_path', type=str, default='ner_vocab', help='training file for ner')
+    parser.add_argument('--load_ner_vocab_path', type=str, default='ner_vocab', help='vocab for ner')
+    parser.add_argument('--load_ner_label_vocab_path', type=str, default='ner_label_vocab', help='label vocab for ner')
 
     parser.add_argument('--ner_lr', type=float, default=0.0015, help='Learning rate for ner lstm')
     parser.add_argument("--qas_lr", default=5e-6, type=float, help="The initial learning rate for Qas.")
@@ -647,8 +649,13 @@ class BioMLT(nn.Module):
         if self.args.init_ner_head:
             print("Initializing the sequence labelling head...")
             logging.info("Initializing the sequence labelling head...")
-            if not hasattr(self.args, "ner_label_dim"):
-                self.args.ner_label_dim = 10
+            vocab_path = self.args.ner_label_vocab_path
+            label_vocab = {}
+            with open(vocab_path,"r") as r:
+                label_vocab = json.load(r)
+            print("Label vocabulary: {}".format(label_vocab))
+            label_dim = len(label_vocab)
+            self.args.ner_label_dim = label_dim
             self.ner_head = NerModel(self.args)
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
@@ -711,12 +718,9 @@ class BioMLT(nn.Module):
         arg = copy.deepcopy(self.args)
         del arg.device
         if hasattr(arg, "ner_label_vocab"):
-            if self.args.ner_vocab_path is not None:
-                save_path = self.args.ner_vocab_path
-            else:
-                save_path = "{}_ner_vocab.json".format(exp_prefix)
-            print("Saving ner vocab to {} ".format(save_path))
-            with open(save_path, "w") as np:
+            vocab_save_path = save_path+"_vocab"
+            print("Saving ner vocab to {} ".format(vocab_save_path))
+            with open(vocab_save_path, "w") as np:
                 json.dump(arg.ner_label_vocab.w2ind, np)
             del arg.ner_label_vocab
         arg = vars(arg)
@@ -1158,6 +1162,9 @@ class BioMLT(nn.Module):
 
     def load_ner_data(self, eval_file=None):
         # now initializing Ner head here !!
+        train_dataset_name  = os.path.split(self.args.ner_train_file)[-2]
+        print("Dataset name for NER: {}".format(train_dataset_name))
+        self.train_dataset_name = train_dataset_name
         self.ner_path = self.args.ner_train_file
         self.ner_reader = DataReader(
             self.ner_path, "NER", tokenizer=self.bert_tokenizer,
@@ -2015,6 +2022,7 @@ class BioMLT(nn.Module):
         patience = 0
         ner_type = os.path.split(eval_file)[0].split("/")[-1]
         model_save_name = "best_ner_model_on_{}".format(ner_type)
+
         self.load_ner_data()
         # if self.args.load_model:
         #    self.ner_reader.label_vocab = self.ner_label_vocab

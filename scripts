@@ -45,7 +45,7 @@ python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_
 
 
 ## Train qas starting with ner model with a ner head of course!
-python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_steps -1  --crf --init_ner_head --model_save_name qasmodel0911  --output_dir out0911_full_1  --max_seq_length 256 --batch_size 12 --load_model_path neronly_stls_0811_folder/best_ner_model_aux__target_BC2GM
+python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 2 --total_train_steps 100  --crf --init_ner_head --model_save_name qasmodel1111  --output_dir out1111_loadnerhead  --max_seq_length 256 --batch_size 12 --load_model_path neronly1111_deneme/best_ner_model_on_BC2GM
 
 
 ## Train ner only model with qas head initialized
