@@ -14,6 +14,6 @@ target=0
 for target_fd in $datasets
 do
     folder_path=$ner_data_folder"/"$target_fd
-    qsub -N $pref_name"_target_"$target_fd /home/aakdemir/bioMLT/neronly_mtl_singledataset_submit.sh $output_dir $target_fd
+    qsub -N $pref_name"_target_"$target_fd /home/aakdemir/bioMLT/neronly_mtl_stl_submit.sh $output_dir $target_fd
 done
 
