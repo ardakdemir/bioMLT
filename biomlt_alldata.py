@@ -1096,20 +1096,20 @@ class BioMLT(nn.Module):
             all_preds = torch.tensor(preds, dtype=torch.long)
             all_preds = all_preds.to(self.args.device)
 
-            print("All preds: {}".format(all_preds.shape))
+            # print("All preds: {}".format(all_preds.shape))
             all_embeddings = self.ner_label_embedding(all_preds)
-            print("Embeddings shape: {}".format(all_embeddings.shape))
+            # print("Embeddings shape: {}".format(all_embeddings.shape))
             ner_outs_for_qas = self._get_token_to_bert_predictions(all_embeddings, bert2toks)
-            logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
-            print("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
-            logging.info("Bert out shape {}".format(bert_out.shape))
-            print("Bert out shape {}".format(bert_out.shape))
+            # logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
+            # print("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
+            # logging.info("Bert out shape {}".format(bert_out.shape))
+            # print("Bert out shape {}".format(bert_out.shape))
             inp = torch.cat((bert_out, ner_outs_for_qas), dim=2)
-            print("Input shape {}".format(inp.shape))
+            # print("Input shape {}".format(inp.shape))
             return inp
             # qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
         else:
-            print("Returning bert output only. Input shape {}".format(bert_out.shape))
+            # print("Returning bert output only. Input shape {}".format(bert_out.shape))
             return bert_out
 
     def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False, task_index=None, loss_aver=True):
