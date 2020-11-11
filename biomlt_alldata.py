@@ -970,15 +970,13 @@ class BioMLT(nn.Module):
                 # return output_nbest_file, output_prediction_file
 
             # Print examples...
-            print("example answer:: ")
-            print(examples[0].answers)
+            # print("example answer:: ")
+            # print(examples[0].answers)
             k = list(predictions.keys())[0]
-            print(type)
             if type in ["factoid", "list"]:
-                print("Special preparation for list questions")
                 predictions = {k: predictions[k][0] for k in predictions.keys()}
-            print("Example pred: ")
-            print(predictions[k])
+            # print("Example pred: ")
+            # print(predictions[k])
 
             results = squad_evaluate(examples, predictions)
             f1 = results['f1']
