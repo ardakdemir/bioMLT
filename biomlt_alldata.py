@@ -1528,7 +1528,7 @@ class BioMLT(nn.Module):
             if not for_pred:
                 qas_train_datasets["yesno"] = squad_load_and_cache_examples(args,
                                                                             self.bert_tokenizer,
-                                                                            output_examples=True,
+
                                                                             yes_no=True,
                                                                             type='yesno', skip_list=skip_list)
 
@@ -1540,10 +1540,8 @@ class BioMLT(nn.Module):
             print("Will try to skip {} examples".format(len(skip_list)))
 
             if not for_pred:
-                qas_train_datasets["list"], examples, features = squad_load_and_cache_examples(args,
-                                                                                               self.bert_tokenizer,
-                                                                                               output_examples=True,
-                                                                                               yes_no=False,
+                qas_train_datasets["list"]= squad_load_and_cache_examples(args,
+                                                                                               self.bert_tokenizer,                                                                                               yes_no=False,
                                                                                                type='list',
                                                                                                skip_list=skip_list)
 
@@ -1554,10 +1552,9 @@ class BioMLT(nn.Module):
             skip_list = [example.qas_id for example in qas_eval_examples['factoid']]
             print("Will try to skip {} examples".format(len(skip_list)))
             if not for_pred:
-                qas_train_datasets["factoid"], examples, features = squad_load_and_cache_examples(args,
+                qas_train_datasets["factoid"]= squad_load_and_cache_examples(args,
                                                                                                   self.bert_tokenizer,
                                                                                                   yes_no=False,
-                                                                                                  output_examples=True,
                                                                                                   type='factoid',
                                                                                                   skip_list=skip_list)
 
