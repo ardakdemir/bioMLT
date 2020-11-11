@@ -1610,8 +1610,7 @@ class BioMLT(nn.Module):
         args = hugging_parse_args()
         args.train_batch_size = self.args.batch_size
         self.load_qas_data(args, qa_types=qa_types)
-        self.remove_overlaps()
-        return
+
         print("Is yes no ? {}".format(self.args.squad_yes_no))
         # train_dataset = squad_load_and_cache_examples(args,
         #                                              self.bert_tokenizer,
