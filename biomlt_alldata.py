@@ -25,7 +25,6 @@ from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tok
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler, ConcatDataset
 from tqdm import tqdm, trange
 from torch.nn.utils.rnn import pad_sequence
-from torchsummary import summary
 import tokenization
 from utils import *
 from nerreader import DataReader
@@ -2306,6 +2305,9 @@ def write_nerresult_with_repeat(save_path, row_name, results):
 
 def checkSavedModel():
     biomlt = BioMLT()
+    biomlt.ner_heads = [10,20]
+    x = hasattr(biomlt,"ner_heads")
+    print("Has ner heads: {}".format(x))
     my_state_dict = copy.deepcopy(biomlt.state_dict())
 
 

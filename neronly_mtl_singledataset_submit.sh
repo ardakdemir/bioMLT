@@ -1,8 +1,8 @@
 /usr/local/bin/nosh
 output_dir=$1
 target_dataset=$2
-epoch_num=2
-total_train_steps=10000
+epoch_num=1
+total_train_steps=100
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 cd ~
