@@ -36,6 +36,7 @@ class NerModel(nn.Module):
 
         self.dropout = nn.Dropout(self.ner_drop)
 
+
     def _viterbi_decode(self, feats, sent_len):
         start_ind = START_IND
         end_ind = END_IND

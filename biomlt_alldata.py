@@ -5,10 +5,10 @@ from transformers.data.processors.squad import SquadResult
 from transformers.data.metrics.squad_metrics import (
     compute_predictions_log_probs,
     # compute_predictions_logits,
-    #squad_evaluate,
+    # squad_evaluate,
 )
 import subprocess
-from squad_metrics import compute_predictions_logits,squad_evaluate
+from squad_metrics import compute_predictions_logits, squad_evaluate
 import numpy as np
 from conll_eval import evaluate_conll_file
 from vocab import Vocab
@@ -16,6 +16,7 @@ import json
 import copy
 import torch
 import random
+
 import os
 import torch.nn as nn
 import torch.optim as optim
@@ -24,6 +25,7 @@ from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tok
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler, ConcatDataset
 from tqdm import tqdm, trange
 from torch.nn.utils.rnn import pad_sequence
+from torchsummary import summary
 import tokenization
 from utils import *
 from nerreader import DataReader
@@ -417,7 +419,7 @@ def hugging_parse_args():
         "--model_save_name", default=None, type=str, help="Model name to save"
     )
     parser.add_argument(
-        "--mode", default="qas", choices=['qas', 'multiner', 'joint_flat', 'ner', 'qas_ner'],
+        "--mode", default="qas", choices=["check_load", 'qas', 'multiner', 'joint_flat', 'ner', 'qas_ner'],
         help="Determine in which mode to use the Multi-tasking framework"
     )
     parser.add_argument(
@@ -588,8 +590,8 @@ class BioMLT(nn.Module):
             os.makedirs(self.args.output_dir)
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
 
-        if  os.path.exists(qas_save_path):
-            with open(qas_save_path,"w") as o:
+        if os.path.exists(qas_save_path):
+            with open(qas_save_path, "w") as o:
                 o.write("")
 
         self.device = self.args.device
@@ -644,8 +646,8 @@ class BioMLT(nn.Module):
             self.qas_head = QasModel(self.args)
 
         if self.args.init_ner_head:
-            print("Initializing the sequence labelling head")
-            logging.info("Initializing the sequence labelling head")
+            print("Initializing the sequence labelling head...")
+            logging.info("Initializing the sequence labelling head...")
             if not hasattr(self.args, "ner_label_dim"):
                 self.args.ner_label_dim = 10
             self.ner_head = NerModel(self.args)
@@ -668,12 +670,18 @@ class BioMLT(nn.Module):
         logging.info("Model loaded  from: %s" % load_path)
         loaded_params = torch.load(load_path, map_location=torch.device('cpu'))
         my_dict = self.state_dict()
-        print("Printing all parameters")
-        for k,v in loaded_params.items():
-            print("{}".format(k))
         pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict()}
+        print("My params")
+        for my_params in self.state_dict():
+            print(my_params)
+        print("Loaded params")
+        for loaded in loaded_params:
+            print(loaded)
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
+        print("Ner head after load")
+        for param in list(self.ner_head.parameters()):
+            print(param)
 
     def save_all_model(self, save_path=None, weights=True):
         if self.args.model_save_name is None and save_path is None:
@@ -691,7 +699,15 @@ class BioMLT(nn.Module):
             print("Saved parameter names")
             for k in self.state_dict():
                 print(k)
+            for k in self.ner_head.state_dict():
+                print(k)
             torch.save(self.state_dict(), save_name)
+            if hasattr(self, "ner_heads"):
+                for i, head in enumerate(self.ner_heads):
+                    ner_save_path = os.path.join(self.args.output_dir, "ner_head_{}_{}".format(i, save_path))
+                    print("Saving {} to {}".format(head, ner_save_path))
+                    torch.save(head, ner_save_path)
+
         config_path = os.path.join(self.args.output_dir, self.args.config_file)
         arg = copy.deepcopy(self.args)
         del arg.device
@@ -937,9 +953,9 @@ class BioMLT(nn.Module):
             print(examples[0].answers)
             k = list(predictions.keys())[0]
             print(type)
-            if type in ["factoid","list"]:
+            if type in ["factoid", "list"]:
                 print("Special preparation for list questions")
-                predictions = {k:predictions[k][0] for k in predictions.keys()}
+                predictions = {k: predictions[k][0] for k in predictions.keys()}
             print("Example pred: ")
             print(predictions[k])
 
@@ -958,11 +974,11 @@ class BioMLT(nn.Module):
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
         if not os.path.exists(qas_save_path):
             with open(qas_save_path, "w") as o:
-                o.write("{}\t{}\t{}\n".format("TYPE","F1","EXACT"))
+                o.write("{}\t{}\t{}\n".format("TYPE", "F1", "EXACT"))
 
-        with open(qas_save_path,"a") as o:
+        with open(qas_save_path, "a") as o:
             for t in types:
-                s = "{}\t{}\t{}\n".format(t,f1s[t],exacts[t])
+                s = "{}\t{}\t{}\n".format(t, f1s[t], exacts[t])
                 o.write(s)
         return f1s, exacts, totals
 
@@ -2288,6 +2304,11 @@ def write_nerresult_with_repeat(save_path, row_name, results):
         o.write(s)
 
 
+def checkSavedModel():
+    biomlt = BioMLT()
+    my_state_dict = copy.deepcopy(biomlt.state_dict())
+
+
 def main():
     biomlt = BioMLT()
     qa_types = ['factoid']
@@ -2303,6 +2324,8 @@ def main():
         else:
             print("Running train_qas")
             biomlt.train_qas()
+    elif mode == "check_load":
+        checkSavedModel()
     elif mode == "joint_flat":
         if predict:
             biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=True)

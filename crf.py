@@ -10,7 +10,7 @@ class CRF(nn.Module):
     Conditional Random Field.
     """
 
-    def __init__(self, hidden_dim, tagset_size,device):
+    def __init__(self, hidden_dim, tagset_size, device):
         """
         :param hidden_dim: size of word RNN/BLSTM's output
         :param tagset_size: number of tags
@@ -18,7 +18,7 @@ class CRF(nn.Module):
         super(CRF, self).__init__()
         self.tagset_size = tagset_size
         self.emission = nn.Linear(hidden_dim, self.tagset_size)
-        self.transition = nn.Parameter(torch.randn(self.tagset_size, self.tagset_size))
+        self.transition = nn.Parameter(torch.randn(self.tagset_size, self.tagset_size), requires_grad=True)
         self.transition.data.zero_()
         self.transition.data[START_IND, :] = torch.tensor(-10000)
         self.transition.data[:, END_IND] = torch.tensor(-10000)
@@ -80,7 +80,7 @@ class CRFLoss(nn.Module):
         lengths = lengths
         targets = targets[:, 1:]
         scores = scores[:, 1:]
-        lengths = torch.tensor([l-1 for l in lengths])
+        lengths = torch.tensor([l - 1 for l in lengths])
         targets = targets.unsqueeze(2)
 
         batch_size = scores.size()[0]
@@ -95,7 +95,7 @@ class CRFLoss(nn.Module):
         # forward_scores[:batch_size] = self._log_sum_exp(scores[:, 0, :, :], dim=2)
         ## burada  hangisi  dogru emin   degilim index1-> index2 or  opposite?
         ## i think  opposite  is correct
-        forward_scores[:batch_size] = scores[:,0,:,START_IND]
+        forward_scores[:batch_size] = scores[:, 0, :, START_IND]
         ## forward score unsqueeze 2ydi 1 yaptim cunku ilk index next tag olarak
         ## kurguluyorum
         for i in range(1, scores.size()[1]):
