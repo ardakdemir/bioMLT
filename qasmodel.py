@@ -18,7 +18,7 @@ class QasModel(nn.Module):
     def __init__(self,args):
         super(QasModel,self).__init__()
         self.args = args
-        self.input_dims = self.args.bert_output_dim
+        self.input_dims = self.args.qas_input_dim
         #self.label_voc = args['ner_label_vocab']
         self.output_dim = self.args.qas_out_dim
         ## now I am calculating one-dimensional labels so taking the square of the label vocab

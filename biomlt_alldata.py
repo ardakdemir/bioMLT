@@ -118,6 +118,10 @@ def hugging_parse_args():
         help="Output dimension of ner head"
     )
     parser.add_argument(
+        "--ner_latent_dim", default=36, type=int,
+        help="Output dimension of ner latent module"
+    )
+    parser.add_argument(
         "--only_loss_curve", default=False, action="store_true",
         help="If set, skips the evaluation, only for NER task"
     )
@@ -413,7 +417,12 @@ def hugging_parse_args():
         action="store_false",
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
-
+    parser.add_argument(
+        "--qas_with_ner",
+        default=False,
+        action="store_true",
+        help="If true inputs the output of ner head to the qas component...",
+    )
     parser.add_argument(
         "--model_save_name", default=None, type=str, help="Model name to save"
     )
@@ -617,8 +626,9 @@ class BioMLT(nn.Module):
         self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
         self.args.bert_output_dim = self.bert_out_dim
+        self.args.qas_input_dim = self.bert_out_dim if not self.args.qas_with_ner else self.bert_out_dim + self.args.ner_latent_dim
         print("BERT output dim {}".format(self.bert_out_dim))
-
+        print("QAS input dim: {}".format(self.args.qas_input_dim))
         self.ner_path = self.args.ner_train_file
 
         # self.ner_reader = DataReader(self.ner_path, "NER",tokenizer=self.bert_tokenizer,batch_size = 30)
@@ -636,7 +646,7 @@ class BioMLT(nn.Module):
 
         if self.args.mode not in ["ner"]:
             print("Initializing question answering components...")
-            self.yesno_head = nn.Linear(self.bert_out_dim, 2)
+            self.yesno_head = nn.Linear(self.args.qas_input_dim , 2)
             self.yesno_soft = nn.Softmax(dim=1)
             self.yesno_loss = CrossEntropyLoss()
             self.yesno_lr = self.args.qas_lr
@@ -651,12 +661,16 @@ class BioMLT(nn.Module):
             logging.info("Initializing the sequence labelling head...")
             vocab_path = self.args.load_ner_label_vocab_path
             label_vocab = {}
-            with open(vocab_path,"r") as r:
+            with open(vocab_path, "r") as r:
                 label_vocab = json.load(r)
+            self.ner_vocab = Vocab(label_vocab)
             print("Label vocabulary: {}".format(label_vocab))
             label_dim = len(label_vocab)
             self.args.ner_label_dim = label_dim
             self.ner_head = NerModel(self.args)
+            if self.args.qas_with_ner:
+                print("Initializing ner latent representation getter")
+                self.ner_label_embedding = nn.Embedding(label_dim,self.args.ner_latent_dim)
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                                     lr=2e-5)
@@ -718,7 +732,7 @@ class BioMLT(nn.Module):
         arg = copy.deepcopy(self.args)
         del arg.device
         if hasattr(arg, "ner_label_vocab"):
-            vocab_save_path = os.path.join(self.args.output_dir,save_path+"_vocab")
+            vocab_save_path = os.path.join(self.args.output_dir, save_path + "_vocab")
             print("Saving ner vocab to {} ".format(vocab_save_path))
             with open(vocab_save_path, "w") as np:
                 json.dump(arg.ner_label_vocab.w2ind, np)
@@ -827,6 +841,7 @@ class BioMLT(nn.Module):
         model_to_save = self.bert_model
         model_to_save.save_pretrained(out_dir)
         self.bert_tokenizer.save_pretrained(out_dir)
+
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(out_dir, "training_args.bin"))
         torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
@@ -840,11 +855,16 @@ class BioMLT(nn.Module):
         self.bert_model.to(device)
         self.qas_head.to(device)
         self.yesno_head.to(device)
+        if hasattr(self, "ner_head"):
+            self.ner_head.to(device)
+
         f1s, totals, exacts = {}, {}, {}
         nbests, preds = {}, {}
         self.bert_model.eval()
         self.qas_head.eval()
         self.yesno_head.eval()
+        if hasattr(self, "ner_head"):
+            self.ner_head.eval()
         if self.args.model_save_name is None:
             prefix = gettime() + "_" + str(ind)
         else:
@@ -1053,6 +1073,47 @@ class BioMLT(nn.Module):
         # self.qas_head.optimizer.step()
         return qas_outputs
 
+    def get_qas_input(self, bert_inputs, batch):
+        bert2toks = batch[-1]
+        outputs = self.bert_model(**bert_inputs)
+        bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+        if self.args.qas_with_ner:
+            bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], bert2toks,
+                                                                               device=self.args.device)
+            # print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
+            ner_outs = self.ner_head(bert_outs_for_ner)
+            preds = []
+            voc_size = len(self.ner_vocab)
+            if self.args.crf:
+                sent_len = ner_outs.shape[1]
+                for i in range(ner_outs.shape[0]):
+                    pred, score = self.ner_head._viterbi_decode(ner_outs[i, :], sent_len)
+                    preds.append(pred)
+
+                # for pred in preds:
+                #     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
+                #                     reader.label_vocab.unmap(pred)))
+                #
+                #     all_preds.append(pred)
+            all_preds = torch.tensor(preds,dtype=torch.long)
+            all_preds.to(self.args.device)
+
+            print("All preds: {}".format(all_preds.shape))
+            all_embeddings = self.ner_label_embedding(all_preds)
+            print("Embeddings shape: {}".format(all_embeddings.shape))
+            ner_outs_for_qas = self._get_token_to_bert_predictions(all_embeddings, bert2toks)
+            logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
+            print("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
+            logging.info("Bert out shape {}".format(bert_out.shape))
+            print("Bert out shape {}".format(bert_out.shape))
+            inp = torch.cat((bert_out, ner_outs_for_qas), dim=2)
+            print("Input shape {}".format(inp.shape))
+            return inp
+            # qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
+        else:
+            print("Returning bert output only. Input shape {}".format(bert_out.shape))
+            return bert_out
+
     def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False, task_index=None, loss_aver=True):
         bert_hiddens = self._get_bert_batch_hidden(bert_output, bert2toks)
         ner_head = self.ner_head if task_index is None else self.ner_heads[task_index]
@@ -1162,7 +1223,7 @@ class BioMLT(nn.Module):
 
     def load_ner_data(self, eval_file=None):
         # now initializing Ner head here !!
-        train_dataset_name  = os.path.split(self.args.ner_train_file)[-2]
+        train_dataset_name = os.path.split(self.args.ner_train_file)[-2]
         print("Dataset name for NER: {}".format(train_dataset_name))
         self.train_dataset_name = train_dataset_name
         self.ner_path = self.args.ner_train_file
@@ -1170,7 +1231,7 @@ class BioMLT(nn.Module):
             self.ner_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, crf=self.args.crf)
         self.args.ner_label_vocab = self.ner_reader.label_vocab
-        self.args.ner_label_dim = len( self.args.ner_label_vocab )
+        self.args.ner_label_dim = len(self.args.ner_label_vocab)
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
         print("NER label vocab indexes from training set : {}".format(self.args.ner_label_vocab.w2ind))
@@ -1527,14 +1588,14 @@ class BioMLT(nn.Module):
         type = "yesno" if self.args.squad_yes_no else "factoid"
         print("Type {}".format(type))
 
-        if hasattr(self,"ner_head"):
-            print("Ner head transition weights")
+        if hasattr(self, "ner_head"):
+            print("Ner head transition weights to make sure they are loaded properly...")
             if self.args.crf:
                 weights = self.ner_head.classifier.transition
-                print("Transition weights: {}".format(weights))
             else:
                 weights = self.ner_head.classifier.weight
-                print("Transition weights: {}".format(weights))
+            print("Transition weights shape: {} value: {}".format(weights.shape, weights))
+
         if self.args.only_squad:
             type = "squad"
         if self.args.qa_type is not None:
@@ -1588,6 +1649,8 @@ class BioMLT(nn.Module):
         self.qas_head.to(device)
         self.yesno_head.to(device)
         self.yesno_loss.to(device)
+        if hasattr(self,"ner_head"):
+            self.ner_head.to(device)
         # self.ner_head.to(device)
         print("weights before training !!")
         print(self.qas_head.qa_outputs.weight[-10:])
@@ -1600,6 +1663,9 @@ class BioMLT(nn.Module):
             self.qas_head.train()
             self.yesno_head.train()
             self.yesno_loss.train()
+            if hasattr(self, "ner_head"):
+                self.ner_head.train()
+
             yes_size = len(yesno_train_dataset)
             fact_size = len(train_dataset)
             yes_rat = yes_size / (yes_size + fact_size)
@@ -1627,6 +1693,9 @@ class BioMLT(nn.Module):
                 self.bert_optimizer.zero_grad()
                 self.qas_head.optimizer.zero_grad()
                 self.yesno_optimizer.zero_grad()
+                if hasattr(self, "ner_head"):
+                    self.ner_head.optimizer.zero_grad()
+
                 # batch = train_dataset[0]
                 # batch = tuple(t.unsqueeze(0) for t in batch)
                 # logging.info(batch[-1])
@@ -1639,23 +1708,28 @@ class BioMLT(nn.Module):
                 }
                 print("Question type {}".format(type))
                 # logging.info("Input ids shape : {}".format(batch[0].shape))
-                # bert2toks = batch[-1]
-                outputs = self.bert_model(**bert_inputs)
+                # outputs = self.bert_model(**bert_inputs)
+
+                qas_input = self.get_qas_input(bert_inputs, batch)
                 # bert_outs_for_ner , lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1],batch[-1],device=device)
                 # print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
                 # ner_outs = self.ner_head(bert_outs_for_ner)
                 # ner_outs_2= self.get_ner(outputs[-1], bert2toks)
                 # ner_outs_for_qas = self._get_token_to_bert_predictions(ner_outs,batch[-1])
                 # logging.info("NER OUTS FOR QAS {}".format(ner_outs_for_qas.shape))
-                bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+                # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 # logging.info("Bert out shape {}".format(bert_out.shape))
-                qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
+
+                qas_outputs = self.get_qas(qas_input, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
 
                 loss = qas_outputs[0]
                 loss.backward()
                 self.bert_optimizer.step()
                 self.qas_head.optimizer.step()
                 self.yesno_optimizer.step()
+                if hasattr(self, "ner_head"):
+                    self.ner_head.optimizer.step()
+
                 total_loss += loss.item()
                 if step % 100 == 99:
                     print("Loss {} ".format(loss.item()))
@@ -2328,8 +2402,8 @@ def write_nerresult_with_repeat(save_path, row_name, results):
 
 def checkSavedModel():
     biomlt = BioMLT()
-    biomlt.ner_heads = [10,20]
-    x = hasattr(biomlt,"ner_heads")
+    biomlt.ner_heads = [10, 20]
+    x = hasattr(biomlt, "ner_heads")
     print("Has ner heads: {}".format(x))
     my_state_dict = copy.deepcopy(biomlt.state_dict())
 
