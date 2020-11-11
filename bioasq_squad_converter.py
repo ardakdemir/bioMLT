@@ -40,7 +40,7 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
                    "context": context}
             if type == "train":
                 if q_type =="yesno":
-                    qas["qas"][0]["answers"] = "yes"
+                    qas["qas"][0]["answers"] = exact_answer
                     all_questions[q_type].append(qas)
                 elif q_type=="factoid":
                     answers = exact_answer
