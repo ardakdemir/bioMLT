@@ -901,12 +901,13 @@ class BioMLT(nn.Module):
                     "token_type_ids": batch[2],
                 }
                 with torch.no_grad():
-                    outputs = self.bert_model(**bert_inputs)
+                    # outputs = self.bert_model(**bert_inputs)
+                    qas_input = get_qas_input( bert_inputs, batch)
                     # squad_inputs["bert_outputs"] = outputs[-1][-2]
 
-                    bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+                    # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                     # logging.info("Bert out shape {}".format(bert_out.shape))
-                    qas_out = self.get_qas(bert_out,
+                    qas_out = self.get_qas(qas_input,
                                            batch,
                                            eval=True,
                                            is_yes_no=self.args.squad_yes_no, type=type)
