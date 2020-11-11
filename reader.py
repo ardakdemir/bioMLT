@@ -409,7 +409,14 @@ def squad_bert2tokens(berttoks, tokenizer):
     return ids
 
 
-def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False, yes_no=False, type="factoid"):
+def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False, yes_no=False, type="factoid",
+                                  skip_list=[]):
+    """
+
+    Skip examples occurring in training examples!!
+    :param skip_list: list of question ids inside training
+    :return:
+    """
     print("YES NO MU {} ".format(yes_no))
     if type == "yesno":
         args.squad_train_file = args.squad_train_yesno_file
@@ -483,10 +490,19 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
                                                         filename=args.squad_train_file,
                                                         )
         print("Generated {} examples ".format(len(examples)))
-
+        if evaluate:
+            for example in examples[:10]:
+                print("Example: {}".format(example.qas_id))
         ## Burada datayi kucultmusuz
         if example_size > 0:
             examples = examples[:example_size]
+
+        # Skip list
+        print("{} examples before skip".format(len(examples)))
+        examples = list(filter(lambda x: x.qas_id not in skip_list,examples))
+        print("{} examples after skip".format(len(examples)))
+
+        # get squad examples
         features, dataset = my_squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,

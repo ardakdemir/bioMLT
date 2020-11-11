@@ -320,7 +320,7 @@ def hugging_parse_args():
 
     parser.add_argument(
         "--squad_predict_factoid_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-factoid-6b-snippet.json",
+        default="biobert_data/Task8BGoldenEnriched/8B_squadformat_factoid_all.json",
         type=str,
         help="the input evaluation file. if a data dir is specified, will look for the file there"
              + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -335,7 +335,7 @@ def hugging_parse_args():
 
     parser.add_argument(
         "--squad_predict_yesno_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-yesno-6b-snippet.json",
+        default="biobert_data/Task8BGoldenEnriched/8B_squadformat_yesno_all.json",
         type=str,
         help="the input evaluation file. if a data dir is specified, will look for the file there"
              + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -350,7 +350,7 @@ def hugging_parse_args():
 
     parser.add_argument(
         "--squad_predict_list_file",
-        default="biobert_data/BioASQ-6b/train/Snippet-as-is/BioASQ-train-list-6b-snippet.json",
+        default="biobert_data/Task8BGoldenEnriched/8B_squadformat_list_all.json",
         type=str,
         help="the input evaluation file. if a data dir is specified, will look for the file there"
              + "if no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -646,7 +646,7 @@ class BioMLT(nn.Module):
 
         if self.args.mode not in ["ner"]:
             print("Initializing question answering components...")
-            self.yesno_head = nn.Linear(self.args.qas_input_dim , 2)
+            self.yesno_head = nn.Linear(self.args.qas_input_dim, 2)
             self.yesno_soft = nn.Softmax(dim=1)
             self.yesno_loss = CrossEntropyLoss()
             self.yesno_lr = self.args.qas_lr
@@ -670,7 +670,7 @@ class BioMLT(nn.Module):
             self.ner_head = NerModel(self.args)
             if self.args.qas_with_ner:
                 print("Initializing ner latent representation getter")
-                self.ner_label_embedding = nn.Embedding(label_dim,self.args.ner_latent_dim)
+                self.ner_label_embedding = nn.Embedding(label_dim, self.args.ner_latent_dim)
 
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                                     lr=2e-5)
@@ -1093,7 +1093,7 @@ class BioMLT(nn.Module):
                 #                     reader.label_vocab.unmap(pred)))
                 #
                 #     all_preds.append(pred)
-            all_preds = torch.tensor(preds,dtype=torch.long)
+            all_preds = torch.tensor(preds, dtype=torch.long)
             all_preds = all_preds.to(self.args.device)
 
             print("All preds: {}".format(all_preds.shape))
@@ -1519,29 +1519,49 @@ class BioMLT(nn.Module):
         qas_eval_examples = {}
         qas_eval_features = {}
         if 'yesno' in qa_types:
-            if not for_pred:
-                qas_train_datasets["yesno"] = squad_load_and_cache_examples(args,
-                                                                            self.bert_tokenizer, yes_no=True,
-                                                                            type='yesno')
+            skip_list = []
             qas_eval_datasets['yesno'], qas_eval_examples['yesno'], qas_eval_features[
                 'yesno'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
                                                          yes_no=True, type='yesno')
-        if 'list' in qa_types:
+            skip_list = [example.qas_id for example in qas_eval_examples['yesno']]
+            print("Will try to skip {} examples".format(len(skip_list)))
             if not for_pred:
-                qas_train_datasets["list"] = squad_load_and_cache_examples(args,
-                                                                           self.bert_tokenizer, yes_no=False,
-                                                                           type='list')
+                qas_train_datasets["yesno"] = squad_load_and_cache_examples(args,
+                                                                            self.bert_tokenizer,
+                                                                            output_examples=True,
+                                                                            yes_no=True,
+                                                                            type='yesno', skip_list=skip_list)
+
+        if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
                 'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
                                                         yes_no=False, type='list')
-        if 'factoid' in qa_types:
+            skip_list = [example.qas_id for example in qas_eval_examples['list']]
+            print("Will try to skip {} examples".format(len(skip_list)))
+
             if not for_pred:
-                qas_train_datasets["factoid"] = squad_load_and_cache_examples(args,
-                                                                              self.bert_tokenizer, yes_no=False,
-                                                                              type='factoid')
+                qas_train_datasets["list"], examples, features = squad_load_and_cache_examples(args,
+                                                                                               self.bert_tokenizer,
+                                                                                               output_examples=True,
+                                                                                               yes_no=False,
+                                                                                               type='list',
+                                                                                               skip_list=skip_list)
+
+        if 'factoid' in qa_types:
             qas_eval_datasets['factoid'], qas_eval_examples['factoid'], qas_eval_features[
                 'factoid'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True,
                                                            output_examples=True, yes_no=True, type='factoid')
+            skip_list = [example.qas_id for example in qas_eval_examples['factoid']]
+            print("Will try to skip {} examples".format(len(skip_list)))
+            if not for_pred:
+                qas_train_datasets["factoid"], examples, features = squad_load_and_cache_examples(args,
+                                                                                                  self.bert_tokenizer,
+                                                                                                  yes_no=False,
+                                                                                                  output_examples=True,
+                                                                                                  type='factoid',
+                                                                                                  skip_list=skip_list)
+
+
         self.qas_train_datasets = qas_train_datasets
         self.qas_eval_datasets = qas_eval_datasets
         self.qas_eval_examples = qas_eval_examples
@@ -1570,6 +1590,17 @@ class BioMLT(nn.Module):
     def predict_ner(self):
         self.eval_ner()
 
+    def remove_overlaps(self):
+        # self.qas_train_datasets = qas_train_datasets
+        # self.qas_eval_datasets = qas_eval_datasets
+        # self.qas_eval_examples = qas_eval_examples
+        # self.qas_eval_features = qas_eval_features
+
+        for k in self.qas_eval_examples:
+            print(k)
+            for ex in self.qas_eval_examples[k]:
+                print(ex)
+
     def train_qas(self):
 
         # yes-no and factoid for now?
@@ -1579,6 +1610,8 @@ class BioMLT(nn.Module):
         args = hugging_parse_args()
         args.train_batch_size = self.args.batch_size
         self.load_qas_data(args, qa_types=qa_types)
+        self.remove_overlaps()
+        return
         print("Is yes no ? {}".format(self.args.squad_yes_no))
         # train_dataset = squad_load_and_cache_examples(args,
         #                                              self.bert_tokenizer,
@@ -1647,7 +1680,7 @@ class BioMLT(nn.Module):
         self.qas_head.to(device)
         self.yesno_head.to(device)
         self.yesno_loss.to(device)
-        if hasattr(self,"ner_head"):
+        if hasattr(self, "ner_head"):
             self.ner_head.to(device)
         if hasattr(self, "ner_label_embedding"):
             self.ner_label_embedding.to(device)

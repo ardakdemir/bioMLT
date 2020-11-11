@@ -44,9 +44,7 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
                     all_questions[q_type].append(qas)
                 elif q_type=="factoid":
                     answers = exact_answer
-                    print(exact_answer)
                     for ans in answers:
-                        print(ans)
                         context=context.lower()
                         ind = context.find(ans[0].lower())
                         if ind !=-1:
@@ -56,7 +54,6 @@ def bioasq_to_squad(bioasq_json_path,type = 'test'):
                             any_snippet_count=1
                         else:
                             logging.info('could not find "{}"===== in ===== "{}""'.format(ans,context))
-                            print('could not find "{}"===== in ===== "{}""'.format(ans,context))
                             not_found_count +=1
                             continue
                 elif q_type=="list":
