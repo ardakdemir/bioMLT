@@ -716,9 +716,6 @@ class BioMLT(nn.Module):
             os.makedirs(save_dir)
         if weights:
             logging.info("Saving biomlt model to {}".format(save_name))
-            print("Saved parameter names")
-            for k in self.state_dict():
-                print(k)
             torch.save(self.state_dict(), save_name)
             if hasattr(self, "ner_heads"):
                 for i, head in enumerate(self.ner_heads):
