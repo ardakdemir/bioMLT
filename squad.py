@@ -563,10 +563,10 @@ class SquadProcessor(DataProcessor):
                     is_yes_no = False
                     if not is_impossible:
                         if is_training:
-                            if qa["answers"] in ['yes','no']:
-                                answers = [{"text":qa['answers']}]
+                            if qa["answers"] in ['yes','no',"Yes","No"]:
+                                answers = [{"text":qa['answers'].lower()}]
                                 is_yes_no_dataset = True
-                                answer_text = qa['answers']
+                                answer_text = qa['answers'].lower()
                                 start_position_character = 1 if  answer_text == "yes" else 0
                                 is_yes_no = True
                             else:
@@ -576,10 +576,10 @@ class SquadProcessor(DataProcessor):
 
                         else:
                             if not only_data:
-                                if qa["answers"] in ['yes', 'no']:
-                                    answers = [{"text":qa['answers']}]
+                                if qa["answers"] in ['yes', 'no',"Yes","No"]:
+                                    answers = [{"text":qa['answers'].lower()}]
                                     is_yes_no = True
-                                    answer_text = qa["answers"]
+                                    answer_text = qa["answers"].lower()
                                     start_position_character = 1 if answer_text == "yes" else 0
                                 else:
                                     answers = qa["answers"]
