@@ -74,9 +74,10 @@ def get_raw_scores(examples, preds):
     """
     exact_scores = {}
     f1_scores = {}
-
+    print("Getting raw scores")
     for example in examples:
         qas_id = example.qas_id
+        print(example)
         if example.is_yes_no:
             gold_answers = [example.answer_text]
         else:
@@ -85,7 +86,7 @@ def get_raw_scores(examples, preds):
             except:
                 gold_answers = [answer for answer in example.answers[0]["text"] if normalize_answer(answer)]
 
-                
+
         if not gold_answers:
             # For unanswerable questions, only correct answer is empty string
             gold_answers = [""]
