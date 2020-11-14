@@ -342,6 +342,8 @@ def my_squad_convert_examples_to_features(
                     all_is_impossible,
                     all_squad_bert2tokens,
                 )
+        if is_yes_no:
+            print("All start positions: {}".format(all_start_positions))
         print("Just before returning squad f  {} d {}".format(len(features), len(dataset)))
         return features, dataset
     elif return_dataset == "tf":

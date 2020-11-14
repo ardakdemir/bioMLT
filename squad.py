@@ -578,6 +578,8 @@ class SquadProcessor(DataProcessor):
                             if not only_data:
                                 if qa["answers"] in ['yes', 'no']:
                                     answers = [{"text":qa['answers']}]
+                                    is_yes_no = True
+                                    answer_text = qa["answers"]
                                 else:
                                     answers = qa["answers"]
 
