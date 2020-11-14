@@ -690,7 +690,8 @@ class BioMLT(nn.Module):
         logging.info("Model loaded  from: %s" % load_path)
         loaded_params = torch.load(load_path, map_location=torch.device('cpu'))
         my_dict = self.state_dict()
-        pretrained_dict = {k: v for k, v in loaded_params.items() if k in self.state_dict() and self.state_dict()[k].size() == v.size() }
+        pretrained_dict = {k: v for k, v in loaded_params.items() if
+                           k in self.state_dict() and self.state_dict()[k].size() == v.size()}
         # print("My params")
         # for my_params in self.state_dict():
         #     print(self.state_dict()[my_params].size())
@@ -902,7 +903,7 @@ class BioMLT(nn.Module):
                 }
                 with torch.no_grad():
                     # outputs = self.bert_model(**bert_inputs)
-                    qas_input = self.get_qas_input( bert_inputs, batch)
+                    qas_input = self.get_qas_input(bert_inputs, batch)
                     # squad_inputs["bert_outputs"] = outputs[-1][-2]
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
@@ -1028,7 +1029,7 @@ class BioMLT(nn.Module):
         logging.info("Example {}".format(tokens))
         logging.info("Answer {}".format(tokens[start_pred:end_pred + 1]))
 
-    def get_qas(self, bert_output, batch, eval=False, is_yes_no=False, type='factoid'):
+    def get_qas(self, bert_output, batch, eval=False, type='factoid'):
 
         # batch = tuple(t.unsqueeze_(0) for t in batch)
         if eval:
@@ -1057,8 +1058,12 @@ class BioMLT(nn.Module):
         elif type == 'yesno':
             ##!!!  CLS TOKEN  !!! ##
             yes_no_logits = self.yesno_head(bert_output[:, 0])
+
             if not eval:
                 loss = self.yesno_loss(yes_no_logits, batch[3])
+                print("Yes no logits: {}".format(yes_no_logits))
+                print("Ground truth: {}".format(batch[3]))
+                print("Loss: {}".format(loss))
                 return (loss, yes_no_logits)
             return yes_no_logits
         # print(qas_outputs[0].item())
@@ -1375,7 +1380,7 @@ class BioMLT(nn.Module):
                 #
                 bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 # logging.info("Bert out shape {}".format(bert_out.shape))
-                qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
+                qas_outputs = self.get_qas(bert_out, batch, eval=False, type=type)
                 qas_loss = qas_outputs[0]
 
                 # empty gradients
@@ -1536,10 +1541,10 @@ class BioMLT(nn.Module):
             print("Will try to skip {} examples".format(len(skip_list)))
 
             if not for_pred:
-                qas_train_datasets["list"]= squad_load_and_cache_examples(args,
-                                                                                               self.bert_tokenizer,                                                                                               yes_no=False,
-                                                                                               type='list',
-                                                                                               skip_list=skip_list)
+                qas_train_datasets["list"] = squad_load_and_cache_examples(args,
+                                                                           self.bert_tokenizer, yes_no=False,
+                                                                           type='list',
+                                                                           skip_list=skip_list)
 
         if 'factoid' in qa_types:
             qas_eval_datasets['factoid'], qas_eval_examples['factoid'], qas_eval_features[
@@ -1548,12 +1553,11 @@ class BioMLT(nn.Module):
             skip_list = [example.qas_id for example in qas_eval_examples['factoid']]
             print("Will try to skip {} examples".format(len(skip_list)))
             if not for_pred:
-                qas_train_datasets["factoid"]= squad_load_and_cache_examples(args,
-                                                                                                  self.bert_tokenizer,
-                                                                                                  yes_no=False,
-                                                                                                  type='factoid',
-                                                                                                  skip_list=skip_list)
-
+                qas_train_datasets["factoid"] = squad_load_and_cache_examples(args,
+                                                                              self.bert_tokenizer,
+                                                                              yes_no=False,
+                                                                              type='factoid',
+                                                                              skip_list=skip_list)
 
         self.qas_train_datasets = qas_train_datasets
         self.qas_eval_datasets = qas_eval_datasets
@@ -1731,7 +1735,6 @@ class BioMLT(nn.Module):
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
-                print("Question type {}".format(type))
                 # logging.info("Input ids shape : {}".format(batch[0].shape))
                 # outputs = self.bert_model(**bert_inputs)
 
@@ -1745,7 +1748,7 @@ class BioMLT(nn.Module):
                 # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                 # logging.info("Bert out shape {}".format(bert_out.shape))
 
-                qas_outputs = self.get_qas(qas_input, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
+                qas_outputs = self.get_qas(qas_input, batch, eval=False, type=type)
 
                 loss = qas_outputs[0]
                 loss.backward()
