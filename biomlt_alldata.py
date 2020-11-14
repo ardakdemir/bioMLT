@@ -1528,7 +1528,10 @@ class BioMLT(nn.Module):
             print("Will try to skip {} examples".format(len(skip_list)))
             print("Yesno eval examples")
             for example in qas_eval_examples['yesno']:
-                print(example)
+                try:
+                    print(example)
+                except:
+                    continue
             examples, feats = [], []
             if not for_pred:
                 qas_train_datasets["yesno"], examples, feats = squad_load_and_cache_examples(args,
@@ -1542,7 +1545,6 @@ class BioMLT(nn.Module):
                     print(example)
                 except:
                     continue
-            sys.exit()
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
                 'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
