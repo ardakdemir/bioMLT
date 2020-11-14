@@ -1531,7 +1531,7 @@ class BioMLT(nn.Module):
                 print(example)
             examples, feats = [], []
             if not for_pred:
-                qas_train_datasets["yesno"] examples, feats = squad_load_and_cache_examples(args,
+                qas_train_datasets["yesno"], examples, feats = squad_load_and_cache_examples(args,
                                                                             self.bert_tokenizer,
                                                                             yes_no=True,
                                                                             output_examples=True,
