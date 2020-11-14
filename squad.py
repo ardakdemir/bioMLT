@@ -673,8 +673,9 @@ class SquadExample(object):
             self.end_position = char_to_word_offset[
                 min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)
             ]
-
-
+    def __str__(self):
+        s = "Qid: {} question: {} answer: {} answers: {} start_position: {} is_yes_no: {}".format(self.qas_id,self.question_text, self.answer_text,self.answers,self.start_position, self.is_yes_no)
+        return s
 class SquadFeatures(object):
     """
     Single squad example features to be fed to a model.
