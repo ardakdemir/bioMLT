@@ -329,6 +329,8 @@ def my_squad_convert_examples_to_features(
                 )
             else:
                 all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
+                if is_yes_no:
+                    print("All start positions: {}".format(all_start_positions))
                 ## dummy end position
                 all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
                 dataset = TensorDataset(
@@ -342,8 +344,7 @@ def my_squad_convert_examples_to_features(
                     all_is_impossible,
                     all_squad_bert2tokens,
                 )
-        if is_yes_no:
-            print("All start positions: {}".format(all_start_positions))
+
         print("Just before returning squad f  {} d {}".format(len(features), len(dataset)))
         return features, dataset
     elif return_dataset == "tf":
