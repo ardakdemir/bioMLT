@@ -74,7 +74,7 @@ def get_raw_scores(examples, preds):
     """
     exact_scores = {}
     f1_scores = {}
-    ("Getting raw scores")
+    print("Getting raw scores")
     for example in examples:
         qas_id = example.qas_id
         if example.is_yes_no:
