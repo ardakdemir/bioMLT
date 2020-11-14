@@ -911,7 +911,7 @@ class BioMLT(nn.Module):
                     qas_out = self.get_qas(qas_input,
                                            batch,
                                            eval=True,
-                                           is_yes_no=self.args.squad_yes_no, type=type)
+                                           type=type)
                     example_indices = batch[3]
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
