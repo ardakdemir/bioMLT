@@ -16,7 +16,7 @@ import json
 import copy
 import torch
 import random
-
+import sys
 import os
 import torch.nn as nn
 import torch.optim as optim
@@ -1526,13 +1526,16 @@ class BioMLT(nn.Module):
                                                          yes_no=True, type='yesno')
             skip_list = [example.qas_id for example in qas_eval_examples['yesno']]
             print("Will try to skip {} examples".format(len(skip_list)))
+            print("Yesno eval examples")
+            print(qas_eval_examples['yesno'])
             if not for_pred:
                 qas_train_datasets["yesno"] = squad_load_and_cache_examples(args,
                                                                             self.bert_tokenizer,
-
                                                                             yes_no=True,
                                                                             type='yesno', skip_list=skip_list)
-
+            print("Yesno train examples")
+            print(qas_train_datasets['yesno'])
+            sys.exit()
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
                 'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
