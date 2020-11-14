@@ -567,7 +567,7 @@ class SquadProcessor(DataProcessor):
                                 answers = [{"text":qa['answers']}]
                                 is_yes_no_dataset = True
                                 answer_text = qa['answers']
-                                start_position_character = 0
+                                start_position_character = 1 if  answer_text == "yes" else 0
                                 is_yes_no = True
                             else:
                                 answer = qa["answers"][0]
@@ -580,6 +580,7 @@ class SquadProcessor(DataProcessor):
                                     answers = [{"text":qa['answers']}]
                                     is_yes_no = True
                                     answer_text = qa["answers"]
+                                    start_position_character = 1 if answer_text == "yes" else 0
                                 else:
                                     answers = qa["answers"]
 

@@ -1538,7 +1538,10 @@ class BioMLT(nn.Module):
                                                                             type='yesno', skip_list=skip_list)
             print("Yesno train examples")
             for example in examples:
-                print(example)
+                try:
+                    print(example)
+                except:
+                    continue
             sys.exit()
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
