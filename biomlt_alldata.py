@@ -1756,7 +1756,9 @@ class BioMLT(nn.Module):
                     self.ner_head.optimizer.step()
 
                 total_loss += loss.item()
-                if step % 500 == 99:
+
+                # Never
+                if step % 500 == 501:
                     print("Loss {} ".format(loss.item()))
                     if self.args.model_save_name is None:
                         checkpoint_name = self.args.mode + "_" + exp_prefix + "_check_{}_{}".format(epoch, step)

@@ -612,6 +612,7 @@ def compute_predictions_logits(
         new_all_predictions = collections.OrderedDict()
         for pred in all_predictions:
             new_all_predictions[pred] = all_predictions[pred][0]
+        print("Yesno predictions: {}".format(new_all_predictions))
         return new_all_predictions
     return all_predictions
 
