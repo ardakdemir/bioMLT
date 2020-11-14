@@ -74,14 +74,10 @@ def get_raw_scores(examples, preds, is_yes_no = False):
     """
     exact_scores = {}
     f1_scores = {}
-    print("Getting raw scores")
+    print("Getting raw scores...")
     for example in examples:
         qas_id = example.qas_id
         if is_yes_no:
-            try:
-                print(example)
-            except:
-                print("My answer: {}".format(example.answer_text))
             gold_answers = [example.answer_text]
         else:
             try:

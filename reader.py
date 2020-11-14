@@ -329,8 +329,6 @@ def my_squad_convert_examples_to_features(
                 )
             else:
                 all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
-                if is_yes_no:
-                    print("All start positions: {}".format(all_start_positions))
                 ## dummy end position
                 all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
                 dataset = TensorDataset(

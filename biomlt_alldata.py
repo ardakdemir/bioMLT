@@ -1061,9 +1061,9 @@ class BioMLT(nn.Module):
 
             if not eval:
                 loss = self.yesno_loss(yes_no_logits, batch[3])
-                print("Yes no logits: {}".format(yes_no_logits))
-                print("Ground truth: {}".format(batch[3]))
-                print("Loss: {}".format(loss))
+                # print("Yes no logits: {}".format(yes_no_logits))
+                # print("Ground truth: {}".format(batch[3]))
+                # print("Loss: {}".format(loss))
                 return (loss, yes_no_logits)
             return yes_no_logits
         # print(qas_outputs[0].item())
@@ -1527,11 +1527,11 @@ class BioMLT(nn.Module):
             skip_list = [example.qas_id for example in qas_eval_examples['yesno']]
             print("Will try to skip {} examples".format(len(skip_list)))
             print("Yesno eval examples")
-            for example in qas_eval_examples['yesno']:
-                try:
-                    print(example)
-                except:
-                    continue
+            # for example in qas_eval_examples['yesno']:
+            #     try:
+            #         print(example)
+            #     except:
+            #         continue
             examples, feats = [], []
             if not for_pred:
                 qas_train_datasets["yesno"], examples, feats = squad_load_and_cache_examples(args,
@@ -1540,11 +1540,11 @@ class BioMLT(nn.Module):
                                                                             output_examples=True,
                                                                             type='yesno', skip_list=skip_list)
             print("Yesno train examples")
-            for example in examples:
-                try:
-                    print(example)
-                except:
-                    continue
+            # for example in examples:
+            #     try:
+            #         print(example)
+            #     except:
+            #         continue
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
                 'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
