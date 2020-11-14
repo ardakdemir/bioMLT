@@ -83,7 +83,9 @@ def get_raw_scores(examples, preds):
             try:
                 gold_answers = [answer["text"] for answer in example.answers if normalize_answer(answer["text"])]
             except:
-                gold_answers = [answer for answer in example.answers[0]["text"] if normalize_answer(answer)
+                gold_answers = [answer for answer in example.answers[0]["text"] if normalize_answer(answer)]
+
+                
         if not gold_answers:
             # For unanswerable questions, only correct answer is empty string
             gold_answers = [""]
