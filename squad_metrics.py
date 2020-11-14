@@ -68,7 +68,7 @@ def compute_f1(a_gold, a_pred):
     return f1
 
 
-def get_raw_scores(examples, preds):
+def get_raw_scores(examples, preds, is_yes_no = False):
     """
     Computes the exact and f1 scores from the examples and the model predictions
     """
@@ -77,12 +77,11 @@ def get_raw_scores(examples, preds):
     print("Getting raw scores")
     for example in examples:
         qas_id = example.qas_id
-        if example.is_yes_no:
+        if is_yes_no:
             try:
                 print(example)
             except:
                 print("My answer: {}".format(example.answer_text))
-        if example.is_yes_no:
             gold_answers = [example.answer_text]
         else:
             try:
@@ -220,7 +219,7 @@ def find_all_best_thresh(main_eval, preds, exact_raw, f1_raw, na_probs, qid_to_h
     main_eval["best_f1_thresh"] = f1_thresh
 
 
-def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_threshold=1.0):
+def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_threshold=1.0,is_yes_no = False):
     qas_id_to_has_answer = {example.qas_id: bool(example.answers) for example in examples}
     has_answer_qids = [qas_id for qas_id, has_answer in qas_id_to_has_answer.items() if has_answer]
     no_answer_qids = [qas_id for qas_id, has_answer in qas_id_to_has_answer.items() if not has_answer]
@@ -228,7 +227,7 @@ def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_
     if no_answer_probs is None:
         no_answer_probs = {k: 0.0 for k in preds}
 
-    exact, f1 = get_raw_scores(examples, preds)
+    exact, f1 = get_raw_scores(examples, preds, is_yes_no = is_yes_no)
 
     exact_threshold = apply_no_ans_threshold(
         exact, no_answer_probs, qas_id_to_has_answer, no_answer_probability_threshold

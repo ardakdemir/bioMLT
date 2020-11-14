@@ -977,7 +977,7 @@ class BioMLT(nn.Module):
             # print("Example pred: ")
             # print(predictions[k])
 
-            results = squad_evaluate(examples, predictions)
+            results = squad_evaluate(examples, predictions,is_yes_no=True if type == "yesno")
             f1 = results['f1']
             exact = results['exact']
             total = results['total']
