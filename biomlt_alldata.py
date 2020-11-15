@@ -1093,7 +1093,7 @@ class BioMLT(nn.Module):
                     pred, score = self.ner_head._viterbi_decode(ner_outs[i, :], sent_len)
                     preds.append(pred)
                     labels = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
-                                      reader.ner_covab.unmap(pred)))
+                                      self.ner_vocab.unmap(pred)))
                     ner_classes.append(labels)
                     for t, l in zip(tokens, labels):
                         try:
