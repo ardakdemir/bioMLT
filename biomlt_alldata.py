@@ -1095,11 +1095,11 @@ class BioMLT(nn.Module):
                     labels = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                       self.ner_vocab.unmap(pred)))
                     ner_classes.append(labels)
-                    for t, l in zip(tokens, labels):
-                        try:
-                            print("{}\t{}".format(t, l))
-                        except:
-                            continue
+                    # for t, l in zip(tokens, labels):
+                    #     try:
+                    #         print("{}\t{}".format(t, l))
+                    #     except:
+                    #         continue
                     # print("Tokens : {}".format(tokens))
                     # print("Ner labels: {}".format(ner_classes))
                 # for pred in preds:
