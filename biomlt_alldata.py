@@ -1087,7 +1087,7 @@ class BioMLT(nn.Module):
             if self.args.crf:
                 sent_len = ner_outs.shape[1]
                 for i in range(ner_outs.shape[0]):
-                    input_ids = batch[0][i,:,:]
+                    input_ids = batch[0][i,:]
                     print("Input id shape: {}".format(input_ids.shape))
                     tokens = self.bert_tokenizer.convert_ids_to_tokens(input_ids)
                     pred, score = self.ner_head._viterbi_decode(ner_outs[i, :], sent_len)
