@@ -114,6 +114,10 @@ def hugging_parse_args():
         help="Whether to initialize the ner head or not."
     )
     parser.add_argument(
+        "--ner_dataset_name", default=None,  type=str,
+        help="Dataset name of ner model pretrained"
+    )
+    parser.add_argument(
         "--ner_label_dim", default=-1, type=int,
         help="Output dimension of ner head"
     )
@@ -992,11 +996,12 @@ class BioMLT(nn.Module):
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
         if not os.path.exists(qas_save_path):
             with open(qas_save_path, "w") as o:
-                o.write("{}\t{}\t{}\n".format("TYPE", "F1", "EXACT"))
+                o.write("{}\t{}\t{}\n".format("MODEL", "TYPE", "F1", "EXACT"))
 
         with open(qas_save_path, "a") as o:
+            model_name = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_with_{}".format(self.args.ner_dataset_name)
             for t in types:
-                s = "{}\t{}\t{}\n".format(t, f1s[t], exacts[t])
+                s = "{}\t{}\t{}\t{}\n".format(model_name, t, f1s[t], exacts[t])
                 o.write(s)
         return f1s, exacts, totals
 
@@ -1623,7 +1628,7 @@ class BioMLT(nn.Module):
         # yes-no and factoid for now?
         qa_types = ["yesno", "factoid", "list"]
         device = self.args.device
-        print("My device {}".format(device))
+        print("My device: {}".format(device))
         args = hugging_parse_args()
         args.train_batch_size = self.args.batch_size
         self.load_qas_data(args, qa_types=qa_types)
@@ -1820,10 +1825,19 @@ class BioMLT(nn.Module):
                     self.save_all_model(save_name)
             qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
             print("Writing results to {}".format(qas_save_path))
-            with open(qas_save_path, "a") as out:
-                s = "List\tyes-no\tfactoid\n"
-                s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
-                out.write(s)
+            if os.path.exists(qas_save_path):
+                with open(qas_save_path, "a") as out:
+                    s = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
+                    s = s + "\t"
+                    s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
+                    out.write(s)
+            else:
+                with open(qas_save_path, "a") as out:
+                    s = "List\tyes-no\tfactoid\n"
+                    s = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
+                    s = s + "\t"
+                    s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
+                    out.write(s)
 
     def pretrain_mlm(self):
         device = self.args.device
