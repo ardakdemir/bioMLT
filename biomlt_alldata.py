@@ -1082,13 +1082,19 @@ class BioMLT(nn.Module):
             # print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
             ner_outs = self.ner_head(bert_outs_for_ner)
             preds = []
+            ner_classes = []
             voc_size = len(self.ner_vocab)
             if self.args.crf:
                 sent_len = ner_outs.shape[1]
                 for i in range(ner_outs.shape[0]):
+                    input_ids = batch[0][i,:,:]
+                    print("Input id shape: {}".format(input_ids.shape))
+                    tokens = self.bert_tokenizer.convert_ids_to_tokens(input_ids)
                     pred, score = self.ner_head._viterbi_decode(ner_outs[i, :], sent_len)
                     preds.append(pred)
-
+                    ner_classes.append(self.ner_vocab.unmap(pred))
+                    print("Tokens : {}".format(tokens))
+                    print("Ner labels: {}".format(ner_classes))
                 # for pred in preds:
                 #     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                 #                     reader.label_vocab.unmap(pred)))
@@ -1540,11 +1546,6 @@ class BioMLT(nn.Module):
                                                                             output_examples=True,
                                                                             type='yesno', skip_list=skip_list)
             print("Yesno train examples")
-            # for example in examples:
-            #     try:
-            #         print(example)
-            #     except:
-            #         continue
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
                 'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
