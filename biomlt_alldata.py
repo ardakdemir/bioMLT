@@ -977,7 +977,7 @@ class BioMLT(nn.Module):
             # print("Example pred: ")
             # print(predictions[k])
 
-            results = squad_evaluate(examples, predictions,is_yes_no=True if type == "yesno" else False)
+            results = squad_evaluate(examples, predictions, is_yes_no=True if type == "yesno" else False)
             f1 = results['f1']
             exact = results['exact']
             total = results['total']
@@ -1087,14 +1087,21 @@ class BioMLT(nn.Module):
             if self.args.crf:
                 sent_len = ner_outs.shape[1]
                 for i in range(ner_outs.shape[0]):
-                    input_ids = batch[0][i,:]
+                    input_ids = batch[0][i, :]
                     print("Input id shape: {}".format(input_ids.shape))
                     tokens = self.bert_tokenizer.convert_ids_to_tokens(input_ids)
                     pred, score = self.ner_head._viterbi_decode(ner_outs[i, :], sent_len)
                     preds.append(pred)
-                    ner_classes.append(self.ner_vocab.unmap(pred))
-                    print("Tokens : {}".format(tokens))
-                    print("Ner labels: {}".format(ner_classes))
+                    labels = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
+                                      reader.ner_covab.unmap(pred)))
+                    ner_classes.append(labels)
+                    for t, l in zip(tokens, labels):
+                        try:
+                            print("{}\t{}".format(t, l))
+                        except:
+                            continue
+                    # print("Tokens : {}".format(tokens))
+                    # print("Ner labels: {}".format(ner_classes))
                 # for pred in preds:
                 #     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                 #                     reader.label_vocab.unmap(pred)))
@@ -1541,10 +1548,11 @@ class BioMLT(nn.Module):
             examples, feats = [], []
             if not for_pred:
                 qas_train_datasets["yesno"], examples, feats = squad_load_and_cache_examples(args,
-                                                                            self.bert_tokenizer,
-                                                                            yes_no=True,
-                                                                            output_examples=True,
-                                                                            type='yesno', skip_list=skip_list)
+                                                                                             self.bert_tokenizer,
+                                                                                             yes_no=True,
+                                                                                             output_examples=True,
+                                                                                             type='yesno',
+                                                                                             skip_list=skip_list)
             print("Yesno train examples")
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
