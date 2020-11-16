@@ -114,7 +114,7 @@ def hugging_parse_args():
         help="Whether to initialize the ner head or not."
     )
     parser.add_argument(
-        "--ner_dataset_name", default=None,  type=str,
+        "--ner_dataset_name", default=None, type=str,
         help="Dataset name of ner model pretrained"
     )
     parser.add_argument(
@@ -183,6 +183,13 @@ def hugging_parse_args():
     parser.add_argument(
         "--qas_train_result_file",
         default='qas_train_results.txt',
+        type=str,
+        required=False,
+        help="The output file where the model predictions on training set will be written.",
+    )
+    parser.add_argument(
+        "--qas_latex_table_file",
+        default='qas_latex_table',
         type=str,
         required=False,
         help="The output file where the model predictions on training set will be written.",
@@ -847,7 +854,7 @@ class BioMLT(nn.Module):
         torch.save(self.bert_optimizer.state_dict(), os.path.join(out_dir, "optimizer.pt"))
         torch.save(self.bert_scheduler.state_dict(), os.path.join(out_dir, "scheduler.pt"))
 
-    def evaluate_qas(self, ind, only_preds=False, types=['factoid', 'list', 'yesno']):
+    def evaluate_qas(self, ind, only_preds=False, types=['factoid', 'list', 'yesno'], result_save_path=None):
 
         device = self.args.device
         self.device = device
@@ -993,7 +1000,8 @@ class BioMLT(nn.Module):
         if only_preds:
             return nbests, preds
 
-        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
+        qas_save_path = os.path.join(self.args.output_dir, "{}_".format(
+            i) + self.args.qas_train_result_file) if result_save_path is None else result_save_path
         if not os.path.exists(qas_save_path):
             with open(qas_save_path, "w") as o:
                 o.write("{}\t{}\t{}\n".format("MODEL", "TYPE", "F1", "EXACT"))
@@ -1694,6 +1702,7 @@ class BioMLT(nn.Module):
             print("Training will be done for {} epochs of total {} steps".format(epoch_num, total_steps))
 
         best_results = {q: 0 for q in qa_types}
+        best_exacts = {q: 0 for q in qa_types}
         train_iterator = trange(
             epochs_trained, int(args.num_train_epochs), desc="Epoch")
         # Added here for reproductibility
@@ -1814,6 +1823,7 @@ class BioMLT(nn.Module):
                 f1 = f1s[q]
                 if f1 >= best_results[q]:
                     best_results[q] = f1
+                    best_exacts[q] = exacts[q]
                     print("Best f1 of {} for {} ".format(f1, q))
                     save_name = "mode_{}_exp_{}_qtype_{}".format(self.args.mode, exp_prefix,
                                                                  q) if self.args.model_save_name is None else self.args.model_save_name + "_{}".format(
@@ -1823,21 +1833,27 @@ class BioMLT(nn.Module):
                     logging.info("Saving best model for {} questions with {} f1  to {}".format(q, f1,
                                                                                                save_name))
                     self.save_all_model(save_name)
-            qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
-            print("Writing results to {}".format(qas_save_path))
-            if os.path.exists(qas_save_path):
-                with open(qas_save_path, "a") as out:
-                    s = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
-                    s = s + "\t"
-                    s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
-                    out.write(s)
-            else:
-                with open(qas_save_path, "a") as out:
-                    s = "List\tyes-no\tfactoid\n"
-                    s = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
-                    s = s + "\t"
-                    s = s + "\t".join([str(best_results[q]) for q in ["list", "yesno", "factoid"]]) + "\n"
-                    out.write(s)
+
+        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
+        latex_save_path = os.path.join(self.args.output_dir, self.args.qas_latex_table_file)
+        exp_name = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
+        write_to_latex_table(exp_name,best_results, best_exacts, latex_save_path)
+        # f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types, result_save_path=qas_save_path)
+        print("Writing best results to {}".format(qas_save_path))
+        if os.path.exists(qas_save_path):
+            with open(qas_save_path, "a") as out:
+                s = exp_name
+                s = s + "\t"
+                s = s + "\t".join(["\t".join([str(best_results[q]),str(best_exacts[q])]) if q!="yesno" else str(best_results[q]) for q in ["list", "factoid","yesno"]]) + "\n"
+                out.write(s)
+        else:
+            with open(qas_save_path, "a") as out:
+                s = "\tlist\t\tfactoid\t\tyes-no\n"
+                s = s + "Model\tF1\tExact\tF1\tExact\tF1\n"
+                s = s + exp_name
+                s = s + "\t"
+                s = s + "\t".join(["\t".join([str(best_results[q]),str(best_exacts[q])]) if q!="yesno" else str(best_results[q]) for q in ["list", "factoid","yesno"]]) + "\n"
+                out.write(s)
 
     def pretrain_mlm(self):
         device = self.args.device
@@ -2463,6 +2479,20 @@ def write_nerresult_with_repeat(save_path, row_name, results):
         s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([str(round(res, 3)) for res in results]), mean_res, max_res)
         o.write(s)
 
+def write_to_latex_table(exp_name, best_results, best_exacts, latex_save_path, col_order = ["list","factoid","yesno"]):
+    col_vals = {k : "&".join([str(round(best_results[k],3)),str(round(best_exacts[k],3))]) if k!="yesno"else  str(round(best_results[k],3)) for k in col_order}
+
+    header = "&" + "&".join(["\\multicolumn{2}{c}{" + key +  "}"  if key!= "yesno" else key for key in col_order]) + "\\\\\\hline\n"
+    header2 ="&" +  "&".join(["&".join(["F1", "Exact"]) if key!= "yesno" else "F1" for key in col_order]) + "\\\\\\hline\n"
+    row = "&".join([exp_name] + [col_vals[k] for k in col_order]) + "\\\\\n"
+
+    if os.path.exists(latex_save_path):
+        with open(latex_save_path,"a") as o:
+            o.write(row)
+    else:
+        row = header + header2 + row
+        with open(latex_save_path,"a") as o:
+            o.write(row)
 
 def checkSavedModel():
     biomlt = BioMLT()
