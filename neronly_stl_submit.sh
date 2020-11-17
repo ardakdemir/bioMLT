@@ -6,7 +6,7 @@ total_train_steps=30000
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 cd ~
-ner_data_folder="biobert_data/datasets/NER"
+ner_data_folder="biobert_data/datasets/NER_for_QAS"
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
 
