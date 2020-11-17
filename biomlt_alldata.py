@@ -1844,7 +1844,7 @@ class BioMLT(nn.Module):
             with open(qas_save_path, "a") as out:
                 s = exp_name
                 s = s + "\t"
-                s = s + "\t".join(["\t".join([str(best_results[q]),str(best_exacts[q])]) if q!="yesno" else str(best_results[q]) for q in ["list", "factoid","yesno"]]) + "\n"
+                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q]),3) for q in ["list", "factoid","yesno"]]) + "\n"
                 out.write(s)
         else:
             with open(qas_save_path, "a") as out:
@@ -1852,7 +1852,7 @@ class BioMLT(nn.Module):
                 s = s + "Model\tF1\tExact\tF1\tExact\tF1\n"
                 s = s + exp_name
                 s = s + "\t"
-                s = s + "\t".join(["\t".join([str(best_results[q]),str(best_exacts[q])]) if q!="yesno" else str(best_results[q]) for q in ["list", "factoid","yesno"]]) + "\n"
+                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q]),3) for q in ["list", "factoid","yesno"]]) + "\n"
                 out.write(s)
 
     def pretrain_mlm(self):
@@ -2055,7 +2055,7 @@ class BioMLT(nn.Module):
         test_losses = defaultdict(list)
 
         epoch_num = self.args.num_train_epochs
-        if self.args.total_train_steps == -1:
+        if int(self.args.total_train_steps) == -1:
             len_data = len(self.ner_readers[target_index])
             len_data = len_data // shrink
             eval_interval = len_data // eval_freq
