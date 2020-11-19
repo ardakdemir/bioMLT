@@ -2,7 +2,7 @@
 output_dir=$1
 target_dataset=$2
 epoch_num=10
-total_train_steps=-1
+total_train_steps=-
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 cd ~

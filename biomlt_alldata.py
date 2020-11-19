@@ -1844,7 +1844,7 @@ class BioMLT(nn.Module):
             with open(qas_save_path, "a") as out:
                 s = exp_name
                 s = s + "\t"
-                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q]),3) for q in ["list", "factoid","yesno"]]) + "\n"
+                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q],3)) for q in ["list", "factoid","yesno"]]) + "\n"
                 out.write(s)
         else:
             with open(qas_save_path, "a") as out:

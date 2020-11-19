@@ -940,32 +940,16 @@ def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args):
     # The rest of the time (10% of the time) we keep the masked input tokens unchanged
     return inputs, labels
 
+def load_cached_dataset(cached_features_file):
+    features_and_dataset = torch.load(cached_features_file)
+    features, dataset, examples = (
+        features_and_dataset["features"],
+        features_and_dataset["dataset"],
+        features_and_dataset["examples"],
+    )
+    return dataset, examples
 
 if __name__ == "__main__":
-    file_list = ["PMC6961255.txt"]
-    args = parse_args()
-    bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
-    # train_dataset = LineByLineTextDataset(bert_tokenizer,args, file_list)
-    train_dataset = MyTextDataset(bert_tokenizer, args, file_list)
-    # print("Padding var mii", train_dataset[-1])
-
-    # print(train_dataset[0])
-    train_sampler = RandomSampler(train_dataset)
-
-
-    def collate(examples):
-        return pad_sequence(examples, batch_first=True, padding_value=bert_tokenizer.pad_token_id)
-
-
-    train_sampler = RandomSampler(train_dataset)
-    train_dataloader = DataLoader(
-        train_dataset, sampler=train_sampler, batch_size=10, collate_fn=collate
-    )
-    # self.dataset = reader.create_training_instances(file_list,bert_tokenizer)
-    epoch_iterator = tqdm(train_dataloader, desc="Iteration")
-    for step, batch in enumerate(epoch_iterator):
-        print("Padding var mi inside ", batch.shape)
-        # print("Batch shape {} ".format(batch.shape))
-        # print("First input {} ".format(batch[0]))
-        inputs, labels = mask_tokens(batch, bert_tokenizer, args)
-        # print(inputs.shape)
+    file_name = "data_cache/cached_training8b_squadformat_train_yesno_train_bert-base-cased_256_0.txt"
+    dataset,examples = load_cached_dataset(file_name)
+    print("{} examples in total".format(len(examples)))

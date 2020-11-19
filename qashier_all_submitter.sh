@@ -8,7 +8,7 @@ then
   rm $output_dir
 fi
 
-ner_data_folder="/home/aakdemir/biobert_data/datasets/NER"
+ner_data_folder="/home/aakdemir/biobert_data/datasets/NER_for_QAS"
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
 target=0
