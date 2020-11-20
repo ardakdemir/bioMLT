@@ -27,6 +27,7 @@ do
       echo "Dataset path "$folder_path
       y=$((y + 1))
       experiment_name=${pref_name}${exp_code}
+      echo "Experiment name: "$experiment_name
     done
     x=$((x + 1))
 done
