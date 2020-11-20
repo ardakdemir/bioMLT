@@ -15,7 +15,7 @@ do
     echo $subset_folder
     subset_folder_path=$ner_data_folder_pref "/" $subset_folder
     datasets=$(ls ${ner_data_folder_pref})
-    for target_fd $datasets
+    for target_fd in $datasets
     do
       folder_path=$subset_folder_path"/"$target_fd
       echo "NER FOLDER "$folder_path
