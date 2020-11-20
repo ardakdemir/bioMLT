@@ -24,7 +24,8 @@ do
       output_dir=$output_pref"_"${x}"_"${y}
       echo "Dataset path "$folder_path
       echo "Output dir: "$output_dir
+      y=$((y + 1))
     done
-    x=$x+1
+    x=$((x + 1))
 done
 
