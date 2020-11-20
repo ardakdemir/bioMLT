@@ -1,13 +1,13 @@
 /usr/local/bin/nosh
 output_dir=$1
-target_dataset=$2
+ner_data_folder=$2
+target_dataset=$3
 epoch_num=10
-total_train_steps=-
+total_train_steps=-1
 #$ -cwd
 #$ -l v100=1,s_vmem=100G,mem_req=100G
 cd ~
-ner_data_folder="biobert_data/datasets/NER_for_QAS"
-datasets=$(ls ${ner_data_folder})
+
 # Fix the dataset for now
 
 folder_path=$ner_data_folder"/"$target_dataset
