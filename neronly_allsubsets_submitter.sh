@@ -9,7 +9,7 @@ fi
 
 ner_data_folder_pref="/home/aakdemir/biobert_data/datasets/subsetNER_for_QAS_*"
 root_folder="/home/aakdemir/"
-dataset_folders=$(ls ${ner_data_folder_pref})
+dataset_folders=$(ls -d ${ner_data_folder_pref})
 # Fix the dataset for now
 for subset_folder in $dataset_folders
 do
