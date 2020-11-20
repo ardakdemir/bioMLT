@@ -14,7 +14,7 @@ dataset_folders=$(ls ${ner_data_folder_pref})
 for subset_folder in $dataset_folders
 do
     echo "Subset folder: "$subset_folder
-    subset_folder_path=$root_folder "/" $subset_folder
+    subset_folder_path=${root_folder}${subset_folder}
     datasets=$(ls ${subset_folder_path})
     for target_fd in $datasets
     do
