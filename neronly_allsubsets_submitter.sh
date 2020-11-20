@@ -20,12 +20,13 @@ do
     exp_code=${subset_folder:55}
     output_dir=$output_pref"_"$exp_code
     y=0
+    echo "Output dir: "$output_dir
     for target_fd in $datasets
     do
       folder_path=$subset_folder_path"/"$target_fd
       echo "Dataset path "$folder_path
-      echo "Output dir: "$output_dir
       y=$((y + 1))
+      experiment_name=${pref_name}${exp_code}
     done
     x=$((x + 1))
 done
