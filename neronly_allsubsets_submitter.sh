@@ -17,11 +17,12 @@ do
     echo "Subset folder: "$subset_folder
     subset_folder_path=${subset_folder}
     datasets=$(ls ${subset_folder_path})
+    exp_code=${$subset_folder:55}
+    output_dir=$output_pref"_"$exp_code
     y=0
     for target_fd in $datasets
     do
       folder_path=$subset_folder_path"/"$target_fd
-      output_dir=$output_pref"_"${x}"_"${y}
       echo "Dataset path "$folder_path
       echo "Output dir: "$output_dir
       y=$((y + 1))
