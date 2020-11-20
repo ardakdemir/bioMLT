@@ -26,8 +26,9 @@ do
       folder_path=$subset_folder_path"/"$target_fd
       echo "Dataset path "$folder_path
       y=$((y + 1))
-      experiment_name=${pref_name}${exp_code}
+      experiment_name=${pref_name}"_"${exp_code}
       echo "Experiment name: "$experiment_name
+      #qsub -N $experiment_name /home/aakdemir/bioMLT/neronly_stl_submit.sh $output_dir $target_fd
     done
     x=$((x + 1))
 done
