@@ -4,10 +4,10 @@ output_dir_pref=$1
 ner_datasets_pref=$2
 exp_name=$3
 
-l=$(expr length "${ner_folder_pref}")
+l=$(expr length "${ner_datasets_pref}")
 echo $l
 
-ner_folders=$(ls -d ${ner_datasets_pref}"*")
+ner_folders=$(ls -d ${ner_datasets_pref}*)
 # Fix the dataset for now
 for folder in $ner_folders
 do
