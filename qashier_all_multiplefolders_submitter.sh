@@ -6,17 +6,15 @@ ner_folders_pref=$3
 l=$4
 exp_name=$5
 
-
-ner_dataset_folders=$(ls -d ${ner_datasets_pref}*)
 ner_folders=$(ls -d ${ner_folders_pref}*)
 # Fix the dataset for now
 for folder in $ner_folders
 do
   echo "FOLDER: "$folder
   exp_code=${folder:$l}
-  ner_folder=$ner_datasets_pref"_"$exp_code
+  ner_folder=$ner_datasets_pref$exp_code
   echo "NER dataset folder: "$ner_folder
-  output_dir=$output_dir_pref"_"$exp_code
+  output_dir=$output_dir_pref$exp_code
   datasets=$(ls ${ner_folder})
   echo "All datasets: "$datasets
   if [ -d $output_dir ]
