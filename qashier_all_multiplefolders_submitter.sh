@@ -14,9 +14,10 @@ do
   exp_code=${folder:$l}
   ner_folder=$ner_datasets_pref$exp_code
   echo "NER dataset folder: "$ner_folder
-  output_dir=$output_dir_pref$exp_code
+  output_dir=$output_dir_pref"_"$exp_code
   datasets=$(ls ${ner_folder})
   echo "All datasets: "$datasets
+  ner_experiment_folder=$folder
   if [ -d $output_dir ]
   then
     rm $output_dir
@@ -27,7 +28,7 @@ do
       echo "Ner  dir: "$ner_folder
       echo "Output dir: "$output_dir
       echo "Target dataset: "$target_fd
-      qsub -N $exp_name"_nermodel_"$target_fd /home/aakdemir/bioMLT/qashier_submit.sh $output_dir $ner_folder $target_fd
+      qsub -N $exp_name"_nermodel_"$target_fd /home/aakdemir/bioMLT/qashier_submit.sh $output_dir $ner_experiment_folder $target_fd
   done
   echo ""
 done
