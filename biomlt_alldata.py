@@ -1000,14 +1000,14 @@ class BioMLT(nn.Module):
         if only_preds:
             return nbests, preds
 
-        qas_save_path = os.path.join(self.args.output_dir, "{}_".format(
-            i) + self.args.qas_train_result_file) if result_save_path is None else result_save_path
+        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file) if result_save_path is None else result_save_path
         if not os.path.exists(qas_save_path):
             with open(qas_save_path, "w") as o:
                 o.write("{}\t{}\t{}\n".format("MODEL", "TYPE", "F1", "EXACT"))
 
         with open(qas_save_path, "a") as o:
             model_name = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_with_{}".format(self.args.ner_dataset_name)
+
             for t in types:
                 s = "{}\t{}\t{}\t{}\n".format(model_name, t, f1s[t], exacts[t])
                 o.write(s)
