@@ -3,11 +3,9 @@
 output_dir_pref=$1
 ner_datasets_pref=$2
 ner_folders_pref=$3
-exp_name=$4
+l=$4
+exp_name=$5
 
-l=$(expr length "${ner_datasets_pref}")
-l=$((l + 1))
-echo $l
 
 ner_dataset_folders=$(ls -d ${ner_datasets_pref}*)
 ner_folders=$(ls -d ${ner_folders_pref}*)
