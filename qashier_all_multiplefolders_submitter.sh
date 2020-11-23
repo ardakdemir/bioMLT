@@ -29,5 +29,6 @@ do
       echo "Target dataset: "$target_fd
       #qsub -N $pref_name"_nermodel_"$target_fd /home/aakdemir/bioMLT/qashier_submit.sh $output_dir $ner_folder $target_fd
   done
+  echo ""
 done
 
