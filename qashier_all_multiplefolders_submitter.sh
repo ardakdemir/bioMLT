@@ -14,7 +14,7 @@ do
   exp_code=${folder:$l}
   datasets=$(ls ${folder})
   ner_folder=$ner_datasets_pref"_"$exp_code
-  output_dir=output_dir_pref"_"$exp_code
+  output_dir=$output_dir_pref"_"$exp_code
   if [ -d $output_dir ]
   then
     rm $output_dir
