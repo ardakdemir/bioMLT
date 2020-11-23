@@ -27,7 +27,7 @@ do
       echo "Ner  dir: "$ner_folder
       echo "Output dir: "$output_dir
       echo "Target dataset: "$target_fd
-      #qsub -N $pref_name"_nermodel_"$target_fd /home/aakdemir/bioMLT/qashier_submit.sh $output_dir $ner_folder $target_fd
+      qsub -N $exp_name"_nermodel_"$target_fd /home/aakdemir/bioMLT/qashier_submit.sh $output_dir $ner_folder $target_fd
   done
   echo ""
 done
