@@ -14,6 +14,7 @@ ner_folders=$(ls -d ${ner_folders_pref}*)
 # Fix the dataset for now
 for folder in $ner_folders
 do
+  echo "FOLDER: "$folder
   exp_code=${folder:$l}
   ner_folder=$ner_datasets_pref"_"$exp_code
   echo "NER dataset folder: "$ner_folder
