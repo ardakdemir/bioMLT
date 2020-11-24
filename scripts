@@ -68,3 +68,8 @@ singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py -
 
 # Qas hier all submitter
 bash bioMLT/qashier_all_submitter.sh qashier1711_0825 neronly_outs_1311 qashier1711_1
+
+
+# Qas hier multiple ner folders submitter!
+
+bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_allsubsets_2411_0835  biobert_data/datasets/subsetNER_for_QAS_ subsetNER_2011 15  qashier_allsubsets_2411_0835
