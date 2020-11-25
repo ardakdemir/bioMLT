@@ -254,6 +254,12 @@ class DataReader:
 
         for sent in self.dataset:
             for word in sent:
+                try:
+                    a = word[0]
+                except :
+                    print("Problem during vocab reading")
+                    print("Sentence: {}".format(sentence))
+                    print("Word: {}".format(word))
                 if word[0] not in word2ix:
                     word2ix[word[0]] = len(word2ix)
         vocab_size = len(word2ix)

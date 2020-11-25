@@ -49,8 +49,8 @@ python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 2 --total_train_s
 
 
 ## Train ner only model with qas head initialized
-python bioMLT/biomlt_alldata.py --mode ner --crf --ner_train_file biobert_data/datasets/NER/BC2GM/ent_train.tsv --ner_test_file biobert_data/datasets/NER/BC2GM/ent_test.tsv --ner_dev_file biobert_data/datasets/NER/BC2GM/ent_devel.tsv --num_train_epochs 10 --total_train_steps 100 --model_save_name nermodel0911  --output_dir neronly1111_deneme --batch_size 12 --load_model
-
+# Train on combined dataset
+python3 bioMLT/biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 100 --output_dir all-entities_2511_deneme --num_train_epochs 10 --ner_train_file  biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv --ner_dev_file  biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_devel.tsv 
 
 
 ## Qas with ner head input hierarchical
