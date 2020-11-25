@@ -182,7 +182,7 @@ def save_occurring_entities_only_datasets(dataset_root_folder, qas_file_path, sa
 def main():
     args = sys.argv
     dataset_root_folder, qas_file_path, save_root = args[1], args[2], args[3]
-    save_occurring_entities_only_datasets(dataset_root_folder, qas_file_path, save_root )
+    save_occurring_entities_only_datasets(dataset_root_folder, qas_file_path, save_root)
 
 
 if __name__ == "__main__":
