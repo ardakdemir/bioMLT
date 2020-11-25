@@ -45,8 +45,8 @@ def get_entities_from_tsv_dataset(file_path, tag_type="BIO"):
             prev_tag = "O"
             curr_entity = ""
             for token in sent.split("\n"):
-                word = token.split()[0]
-                label = token.split()[-1]
+                word = token.split("\t")[0]
+                label = token.split("\t")[-1]
                 if label != "O":
                     if label[0] == "I":
                         curr_entity = curr_entity + " " + word
