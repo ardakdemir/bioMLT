@@ -269,6 +269,11 @@ class DataReader:
         dataset = open(self.file_path, encoding='utf-8').readlines()
         new_dataset = []
         first_line = dataset[0].split()
+        ind = 1
+        while len(first_line) == 0:
+            first_line = dataset[ind].split()
+            ind = ind + 1
+
         sent = []
         cropped_long_sentence = 0
         label_counts = Counter()

@@ -2,13 +2,13 @@
 
 output_dir=$1
 ner_folder=$2
-pref_name=$3
+ner_data_folder=$3
+pref_name=$4
 if [ -d $output_dir ]
 then
   rm $output_dir
 fi
 
-ner_data_folder="/home/aakdemir/biobert_data/datasets/NER_for_QAS"
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
 target=0
