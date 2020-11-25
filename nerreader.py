@@ -258,7 +258,7 @@ class DataReader:
                     a = word[0]
                 except :
                     print("Problem during vocab reading")
-                    print("Sentence: {}".format(sentence))
+                    print("Sentence: {}".format(sent))
                     print("Word: {}".format(word))
                 if word[0] not in word2ix:
                     word2ix[word[0]] = len(word2ix)
