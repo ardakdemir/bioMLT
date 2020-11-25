@@ -285,10 +285,13 @@ class DataReader:
                     # new_dataset.append(sent)
                     sent = []
             else:
-                row = line.rstrip().split()
-                row[0] = row[0].replace("\ufeff", "")
-                sent.append(row)
-                label_counts.update([row[-1]])
+                if len(line.strip()) < 2:
+                    continue
+                else:
+                    row = line.rstrip().split()
+                    row[0] = row[0].replace("\ufeff", "")
+                    sent.append(row)
+                    label_counts.update([row[-1]])
         if len(sent) > 2 and len(sent) < 200:
             sent.append(end_tags)
             new_dataset.append([root] + sent)
