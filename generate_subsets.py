@@ -39,18 +39,19 @@ def generate_small_datasets(folder, save_folder, shrink=None, size=None):
                     s_p.write(shrinked)
 
 
-
 def main():
     args = sys.argv
     root_folder, save_folder_prefix, repeat = args[1], args[2], args[3]
-    subset_sizes = [1000,2000,5000,10000,20000]
+    subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    repeat = int(repeat)
     for size in subset_sizes:
         for r in range(repeat):
             save_name = save_folder_prefix + "{}_".format(str(size) if size is not None else "All")
             save_name = save_name + str(r)
-            generate_small_datasets(root_folder,save_name,size = size)
+            generate_small_datasets(root_folder, save_name, size=size)
             if size is None:
                 break
+
 
 if __name__ == "__main__":
     main()
