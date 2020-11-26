@@ -1,13 +1,15 @@
 #!/bin/bash
 
 output_pref=$1
-pref_name=$2
+ner_folder=$2
+pref_name=$3
 if [ -d $output_dir ]
 then
   rm $output_dir
 fi
 
-ner_data_folder_pref="/home/aakdemir/biobert_data/datasets/subsetNER_for_QAS_*"
+ner_data_folder_pref=$ner_folder
+ner_data_folder_pref=$ner_data_folder_pref*
 root_folder="/home/aakdemir/"
 dataset_folders=$(ls -d ${ner_data_folder_pref})
 # Fix the dataset for now
