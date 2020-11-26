@@ -1,14 +1,14 @@
 #!/bin/bash
 
 output_pref=$1
-ner_folder=$2
+ner_folder_pref=$2
 pref_name=$3
 if [ -d $output_dir ]
 then
   rm $output_dir
 fi
-
-ner_data_folder_pref=$ner_folder
+pref_length=$(expr length $ner_folder_pref)
+ner_data_folder_pref=$ner_folder_pref
 ner_data_folder_pref=$ner_data_folder_pref*
 root_folder="/home/aakdemir/"
 dataset_folders=$(ls -d ${ner_data_folder_pref})
@@ -19,7 +19,7 @@ do
     echo "Subset folder: "$subset_folder
     subset_folder_path=${subset_folder}
     datasets=$(ls ${subset_folder_path})
-    exp_code=${subset_folder:55}
+    exp_code=${subset_folder:$pref_length}
     output_dir=$output_pref"_"$exp_code
     y=0
     echo "Output dir: "$output_dir
