@@ -38,8 +38,8 @@ def generate_small_datasets(folder, save_folder, shrink=None, size=None):
                     s_p.write(shrinked)
 
 
-subset_sizes = [1000,2000,3000,4000,5000,None]
-repeat = 5
+subset_sizes = [1000,2000,5000,10000,20000]
+repeat = 3
 root_folder = "biobert_data/datasets/NER_for_QAS"
 save_folder_prefix = "biobert_data/datasets/subsetNER_for_QAS_"
 for size in subset_sizes:
