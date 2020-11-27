@@ -29,14 +29,10 @@ def generate_small_datasets(folder, save_folder, shrink=None, size=None):
             os.makedirs(dataset_save_folder)
         for file in file_names:
             file_path = os.path.join(path, file)
-            save_path = os.path.join(dataset_save_folder, file)
-            if file == "ent_test.tsv":
-                cmd = "cp {} {}".format(file_path, save_path)
-                subprocess.call(cmd, shell=True)
-            else:
-                shrinked = get_small_dataset(file_path, shrink=shrink, size=size)
-                with open(save_path, "w") as s_p:
-                    s_p.write(shrinked)
+            save_path = os.path.join(dataset_save_folder, file
+            shrinked = get_small_dataset(file_path, shrink=shrink, size=size)
+            with open(save_path, "w") as s_p:
+                s_p.write(shrinked)
 
 
 def main():
