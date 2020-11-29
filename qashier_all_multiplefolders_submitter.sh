@@ -6,7 +6,7 @@ ner_folders_pref=$3
 exp_name=$4
 
 ner_folders=$(ls -d ${ner_folders_pref}*)
-ner_datasets_pref_length=${#ner_folders}
+ner_datasets_pref_length=${#ner_datasets_pref}
 # Fix the dataset for now
 for folder in $ner_folders
 do
