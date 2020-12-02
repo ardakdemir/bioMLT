@@ -82,7 +82,7 @@ args = sys.argv
 
 folder_pref = args[1]
 results_dict = get_multiple_results(".", folder_pref)
-results_table = printDict(results_dict)
+# results_table = printDict(results_dict)
 averaged = average_results_by_folder(results_dict)
 table = printDict(averaged)
 print(table)
