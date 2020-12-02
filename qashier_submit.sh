@@ -3,7 +3,7 @@ output_dir=${1}
 ner_folder=${2}
 ner_dataset_name=${3}
 epoch_num=3
-ner_latent_dim=16
+ner_latent_dim=64
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N qas_hier_train
