@@ -29,8 +29,7 @@ def printDict(results_dict):
     table = title
     exp_names_sorted = [int(exp_name)for exp_name in results_dict.keys()]
     exp_names_sorted.sort()
-    print(results_dict)
-    print(exp_names_sorted)
+    exp_names_sorted = [str(x) for x in exp_names_sorted])
     for exp_name in exp_names_sorted:
         results = results_dict[str(exp_name)]
         keys = ["factoid_exact","factoid_f1","list_exact","list_f1","yesno_f1"]
@@ -62,7 +61,7 @@ def average_results_by_folder(results_dict):
     for folder in averaged_results:
         for model in averaged_results[folder]:
             for metric in averaged_results[folder][model]:
-                averaged_results[folder][model][metric ]= round(sum(averaged_results[folder][model][metric ])/len(averaged_results[folder][model][metric ]),3)
+                averaged_results[folder][model][metric]= round(sum(averaged_results[folder][model][metric ])/len(averaged_results[folder][model][metric ]),3)
     return averaged_results
 
 def get_multiple_results(root, folder_pref):
