@@ -25,7 +25,7 @@ def get_single_result(result_folder, file_name="qas_latex_table", offset=2):
 
 
 def printDict(results_dict):
-    title = "\t".join(["Folder","Model","Factoid Exact", "Factoid F1", "List Exact", "List F1", "YesNo F1"]) + "\n"
+    title = "\t".join(["Size","Model","Factoid Exact", "Factoid F1", "List Exact", "List F1", "YesNo F1"]) + "\n"
     table = title
     for exp_name,results in results_dict.items():
         keys = ["factoid_exact","factoid_f1","list_exact","list_f1","yesno_f1"]
@@ -34,6 +34,32 @@ def printDict(results_dict):
             row = "\t".join([exp_name,model] + [str(round(result[key],3))for key in keys]) + "\n"
             table = table + row
     return table
+
+def average_results_by_folder(results_dict):
+    averaged_results = {}
+    keys = ["factoid_exact", "factoid_f1", "list_exact", "list_f1", "yesno_f1"]
+    for folder in results_dict:
+        s,r = folder.split("_")
+        if s not in averaged_results:
+            averaged_results[s] = {}
+        for model,result in results_dict[folder].items():
+            print(model,result)
+            if model in averaged_results[s]:
+                for key in keys:
+                    averaged_results[s][model][key].append(result[key])
+            else:
+                print(averaged_results[s])
+                averaged_results[s][model] = {}
+                for key in keys:
+                    averaged_results[s][model][key]= [result[key]]
+
+    print(averaged_results)
+    for folder in averaged_results:
+        for model in averaged_results[folder]:
+            for metric in averaged_results[folder][model]:
+                averaged_results[folder][model][metric ]= round(sum(averaged_results[folder][model][metric ])/len(averaged_results[folder][model][metric ]),3)
+    return averaged_results
+
 def get_multiple_results(root, folder_pref):
     x = os.listdir(root)
     results = {}
@@ -52,5 +78,7 @@ args = sys.argv
 folder_pref = args[1]
 results_dict = get_multiple_results(".", folder_pref)
 results_table = printDict(results_dict)
-print(results_table)
+averaged = average_results_by_folder(results_dict)
+table = printDict(averaged)
+print(table)
 # print(results)
