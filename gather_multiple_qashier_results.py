@@ -30,7 +30,7 @@ def printDict(results_dict):
     exp_names_sorted = [int(exp_name)for exp_name in results_dict.keys()]
     exp_names_sorted.sort()
     for exp_name in exp_names_sorted:
-        results = results_dict[exp_name]
+        results = results_dict[str(exp_name)]
         keys = ["factoid_exact","factoid_f1","list_exact","list_f1","yesno_f1"]
         for model,result in results.items():
 
