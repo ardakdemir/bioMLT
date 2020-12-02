@@ -1001,6 +1001,9 @@ class BioMLT(nn.Module):
             return nbests, preds
 
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file) if result_save_path is None else result_save_path
+        logging.info("Writing eval results to {}".format(qas_save_path))
+        print("Writing eval results to {}".format(qas_save_path))
+
         if not os.path.exists(qas_save_path):
             with open(qas_save_path, "w") as o:
                 o.write("{}\t{}\t{}\n".format("MODEL", "TYPE", "F1", "EXACT"))
@@ -1852,7 +1855,7 @@ class BioMLT(nn.Module):
                 s = s + "Model\tF1\tExact\tF1\tExact\tF1\n"
                 s = s + exp_name
                 s = s + "\t"
-                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q]),3) for q in ["list", "factoid","yesno"]]) + "\n"
+                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q],3)) for q in ["list", "factoid","yesno"]]) + "\n"
                 out.write(s)
 
     def pretrain_mlm(self):
