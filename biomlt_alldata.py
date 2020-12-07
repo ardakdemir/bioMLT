@@ -122,7 +122,7 @@ def hugging_parse_args():
         help="Output dimension of ner head"
     )
     parser.add_argument(
-        "--ner_latent_dim", default=36, type=int,
+        "--ner_latent_dim", default=32, type=int,
         help="Output dimension of ner latent module"
     )
     parser.add_argument(

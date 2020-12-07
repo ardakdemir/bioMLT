@@ -428,9 +428,6 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
     elif type == "factoid":
         args.squad_train_file = args.squad_train_factoid_file
         args.squad_predict_file = args.squad_predict_factoid_file
-    if args.local_rank not in [-1, 0] and not evaluate:
-        # Make sure only the first process in distributed training process the dataset, and the others will use the cache
-        torch.distributed.barrier()
 
     # Load data features from cache or dataset file
     cache_folder = args.cache_folder
@@ -512,22 +509,19 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             max_query_length=args.max_query_length,
             is_training=not evaluate,
             return_dataset="pt",
-            threads=args.threads,
             is_yes_no=yes_no
         )
         print("We have e {} f {} d {} for eval  : {} ".format(len(examples), len(features), len(dataset),
                                                               evaluate))
-        if args.local_rank in [-1, 0]:
-            if not os.path.exists(cached_features_file):
-                folder = os.path.split(cached_features_file)[0]
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-            logger.info("Saving features into cached file %s", cached_features_file)
-            torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
+        if not os.path.exists(cached_features_file):
+            folder = os.path.split(cached_features_file)[0]
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+        logger.info("Saving features into cached file %s", cached_features_file)
+        torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
-    if args.local_rank == 0 and not evaluate:
-        # Make sure only the first process in distributed training process the dataset, and the others will use the cache
-        torch.distributed.barrier()
+    # Make sure only the first process in distributed training process the dataset, and the others will use the cache
+    # torch.distributed.barrier()
     if output_examples:
         return dataset, examples, features
     return dataset

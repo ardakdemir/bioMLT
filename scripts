@@ -50,7 +50,7 @@ python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 2 --total_train_s
 
 ## Train ner only model with qas head initialized
 # Train on combined dataset
-python3 bioMLT/biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 100 --output_dir all-entities_2511_deneme --num_train_epochs 10 --ner_train_file  biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv --ner_dev_file  biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_devel.tsv 
+python3 bioMLT/biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 100 --output_dir all-entities_2511_deneme --num_train_epochs 10 --ner_train_file  biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv --ner_dev_file  biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_devel.tsv --ner_test_file biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_test.tsv  --load_model
 
 
 ## Qas with ner head input hierarchical
@@ -72,4 +72,10 @@ bash bioMLT/qashier_all_submitter.sh qashier1711_0825 neronly_outs_1311 qashier1
 
 # Qas hier multiple ner folders submitter!
 
-bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_allsubsets_2411_0835  biobert_data/datasets/subsetNER_for_QAS_ subsetNER_2011 15  qashier_allsubsets_2411_0835
+bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_allsubsets_0212_2021_64dim  biobert_data/datasets/subsetNER_for_QAS_combinedonly  neronly_Alls_2811_   qashier_Alls_0212_64dim
+
+
+
+# NER multiple subsets submitter
+
+bash bioMLT/neronly_allsubsets_submitter.sh neronly_Alls_2811 biobert_data/datasets/subsetNER_for_QAS_combinedonly neronly_Alls_2811
