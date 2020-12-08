@@ -546,7 +546,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset_vector = []
     eval_dataloader = DataLoader(dataset, batch_size=12)
-    self.bert_model = self.bert_model.to(device)
+    similarity.bert_model = similarity.bert_model.to(device)
     print("Getting bert vectors...")
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
         batch = tuple(t.to(device) for t in batch)
