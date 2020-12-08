@@ -557,6 +557,9 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     print("Getting bert vectors...")
     i = 0
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
+        i = i + 1
+        if i > 200:
+            break
         with torch.no_grad():
             if dataset_type == "qas":
                 batch = tuple(t.to(device) for t in batch)
