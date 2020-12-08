@@ -549,8 +549,12 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     eval_dataloader = DataLoader(dataset, batch_size=1)# Doesnt work with batch_size > 1 atm
     similarity.bert_model = similarity.bert_model.to(device)
     print("Getting bert vectors...")
+    i = 0
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
         batch = tuple(t.to(device) for t in batch)
+        if i > 10:
+            break
+        i = i + 1
         with torch.no_grad():
             if dataset_type == "qas":
                 bert_inputs = {
@@ -561,10 +565,11 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                 bert2toks = batch[-1]
             outputs = similarity.bert_model(**bert_inputs)
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
-            cls_vector = bert_hiddens[:, 0, :]
+            cls_vector = bert_hiddens[0, 0, :]
             dataset_vector.append(cls_vector.detach().cpu())
 
     dataset_vectors = torch.stack(dataset_vector)
+
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
     print("Shape {}".format(dataset_vectors.shape))
     return dataset_vectors
@@ -575,6 +580,7 @@ def main():
     similarity = Similarity()
     qas_train_datasets = {}
     q_types = ["list", "yesno", "factoid"]
+    all_vectors = []
     for q in q_types:
         dataset, examples, feats = squad_load_and_cache_examples(args,
                                                                  similarity.bert_tokenizer,
@@ -582,10 +588,10 @@ def main():
                                                                  output_examples=True,
                                                                  type=q,
                                                                  skip_list=[])
-        all_vectors = []
         vectors = get_bert_vectors(similarity, dataset)
         all_vectors.extend(vectors)
-
+    vectors = np.array(all_vectors)
+    print("Final shaape of vectors: {}".format(vectors.shape))
     vector_folder = "bert_vectors"
     dataset_name = args.squad_train_factoid_file
     dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
@@ -593,7 +599,7 @@ def main():
         os.makedirs(vector_folder)
     dataset_path = os.path.join(vector_folder, dataset_name)
     with h5py.File(dataset_path, "w") as h:
-        h["vectors"] = np.array(all_vectors)
+        h["vectors"] = np.array(vectors)
 
 
 if __name__ == "__main__":
