@@ -71,6 +71,13 @@ def parse_args():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
+        "--vector_save_folder",
+        default='bert_vectors',
+        type=str,
+        required=False,
+        help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument(
         "--qas_result_file",
         default='qas_results',
         type=str,
@@ -395,7 +402,7 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
-    parser.add_argument('--ner_train_file', type=str, default='ner_data/all_entities_train_dev.tsv',
+    parser.add_argument('--ner_train_file', type=str, default='biobert_data/datasets/NER_for_QAS_2/All-entities/ent_train.tsv',
                         help='training file for ner')
     parser.add_argument('--ner_dev_file', type=str, default='ner_data/all_entities_test.tsv',
                         help='development file for ner')
@@ -420,7 +427,7 @@ class Similarity(nn.Module):
         # try:
         if self.args.biobert_model_path is not None and not self.args.init_bert:
             print("Trying to load from {} ".format(self.args.biobert_model_path))
-            print("Using Biobert Model{} ".format(self.args.biobert_model_path))
+            print("Using Biobert Model: {} ".format(self.args.biobert_model_path))
 
             self.bert_model = BertForPreTraining.from_pretrained(self.args.biobert_model_path,
                                                                  from_tf=True, output_hidden_states=True)
@@ -441,7 +448,6 @@ class Similarity(nn.Module):
         self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
-
 
     def _get_bert_batch_hidden(self, hiddens, bert2toks, layers=[-2, -3, -4]):
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]), 0)
@@ -546,24 +552,35 @@ class Similarity(nn.Module):
 def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset_vector = []
-    eval_dataloader = DataLoader(dataset, batch_size=1)# Doesnt work with batch_size > 1 atm
+    eval_dataloader = DataLoader(dataset, batch_size=1) if  dataset_type =="qas" else dataset # Doesnt work with batch_size > 1 atm
     similarity.bert_model = similarity.bert_model.to(device)
     print("Getting bert vectors...")
     i = 0
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
-        batch = tuple(t.to(device) for t in batch)
         with torch.no_grad():
             if dataset_type == "qas":
+                batch = tuple(t.to(device) for t in batch)
                 bert_inputs = {
                     "input_ids": batch[0],
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2],
                 }
                 bert2toks = batch[-1]
+            elif dataset_type == "ner":
+                tokens, bert_batch_after_padding, data = batch
+                data = [d.to(device) for d in data]
+                sent_lens, masks, tok_inds, ner_inds, \
+                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
+                bert_inputs = {
+                    "input_ids": bert_batch_ids,
+                    "token_type_ids": bert_seq_ids
+                }
             outputs = similarity.bert_model(**bert_inputs)
+            print("Output shape: {}".format(outputs[-1][0].shape))
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
-            cls_vector = bert_hiddens[0, 0, :]
-            dataset_vector.append(cls_vector.detach().cpu())
+            cls_vector = bert_hiddens[:, 0, :]
+            print("CLS vector shape: {}".format(cls_vector.shape))
+            dataset_vector.extend(cls_vector.detach().cpu())
 
     dataset_vectors = torch.stack(dataset_vector)
 
@@ -572,9 +589,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     return dataset_vectors
 
 
-def main():
-    args = parse_args()
-    similarity = Similarity()
+def get_qas_vectors(similarity, args):
     qas_train_datasets = {}
     q_types = ["list", "yesno", "factoid"]
     all_vectors = []
@@ -588,8 +603,13 @@ def main():
         vectors = get_bert_vectors(similarity, dataset)
         all_vectors.extend(vectors)
     vectors = np.array(all_vectors)
-    print("Final shaape of vectors: {}".format(vectors.shape))
-    vector_folder = "bert_vectors"
+    return vectors
+
+
+def store_qas_vectors(similarity, args):
+    vectors = get_qas_vectors(similarity, args)
+    print("Final shape of qas vectors: {}".format(vectors.shape))
+    vector_folder = args.vector_save_folder
     dataset_name = args.squad_train_factoid_file
     dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
     if not os.path.exists(vector_folder):
@@ -597,6 +617,33 @@ def main():
     dataset_path = os.path.join(vector_folder, dataset_name)
     with h5py.File(dataset_path, "w") as h:
         h["vectors"] = np.array(vectors)
+
+
+def get_ner_vectors(similarity, args):
+    ner_file_path = args.ner_train_file
+    dataset = DataReader(ner_file_path, "NER", for_eval=True,tokenizer=similarity.bert_tokenizer,
+                         batch_size=128, crf=False)
+    all_vectors = get_bert_vectors(similarity, dataset, dataset_type="ner")
+    vectors = np.array(all_vectors)
+    return vectors
+
+def store_ner_vectors(similarity, args):
+    vectors = get_ner_vectors(similarity, args)
+    print("Final shape of ner vectors: {}".format(vectors.shape))
+    vector_folder = args.vector_save_folder
+    dataset_name = args.ner_train_file
+    dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
+    if not os.path.exists(vector_folder):
+        os.makedirs(vector_folder)
+    dataset_path = os.path.join(vector_folder, dataset_name)
+    with h5py.File(dataset_path, "w") as h:
+        h["vectors"] = np.array(vectors)
+
+def main():
+    args = parse_args()
+    similarity = Similarity()
+    store_ner_vectors(similarity, args)
+    # store_qas_vectors(similarity,args)
 
 
 if __name__ == "__main__":

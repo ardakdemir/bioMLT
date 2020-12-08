@@ -128,6 +128,7 @@ def group_into_batch(dataset, batch_size):
     ## they are already in sorted order
     current = []
     max_len = 0
+    print("Batch size: {}".format(batch_size))
     for x in dataset:
         current.append(x)
         max_len = max(len(x), max_len)  ##
