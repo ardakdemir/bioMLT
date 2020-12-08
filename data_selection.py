@@ -402,7 +402,7 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
-    parser.add_argument('--ner_train_file', type=str, default='biobert_data/datasets/NER_for_QAS_2/All-entities/ent_train.tsv',
+    parser.add_argument('--ner_train_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
                         help='training file for ner')
     parser.add_argument('--ner_dev_file', type=str, default='ner_data/all_entities_test.tsv',
                         help='development file for ner')
