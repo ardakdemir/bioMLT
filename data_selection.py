@@ -6,6 +6,7 @@ import torch
 import random
 import os
 import torch.nn as nn
+from tqdm import tqdm, trange
 from nerreader import DataReader, ner_document_reader
 import argparse
 import datetime
@@ -540,59 +541,15 @@ class Similarity(nn.Module):
         self.all_train_entities = all_train_entities
         self.all_test_entities = all_test_entities
 
-    def get_all_dataset_bertvectors(self):
-        self.dataset_bert_vectors = [self.get_dataset_bertvector(d) for d in self.ner_readers]
-
-    def load_datasets(self):
-        train_files = self.get_train_file_names()
-        self.ner_readers = []
-
-        for train_file in train_files:
-            ner_reader = DataReader(
-                train_file, "NER", tokenizer=self.bert_tokenizer,
-                batch_size=self.args.batch_size)
-            self.ner_readers.append(ner_reader)
-
-    def get_bert_vectors(self, dataset_loader):
-        for x in dataset_loader[:10]:
-            with torch.no_grad():
-                tokens, bert_batch_after_padding, data = dataset[i]
-                data = [d.to(device) for d in data]
-                sent_lens, masks, tok_inds, ner_inds, \
-                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
-                outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
-
-    def get_dataset_bertvector(self, dataset):
-        """
-
-        :param dataset: A ner dataset consisting of batched sentences?
-        :return: A vector representing the document?
-        """
-        device = self.args.device
-        dataset.for_eval = False
-        dataset_vector = []
-        for i in range(10):
-            with torch.no_grad():
-                tokens, bert_batch_after_padding, data = dataset[i]
-                data = [d.to(device) for d in data]
-                sent_lens, masks, tok_inds, ner_inds, \
-                bert_batch_ids, bert_seq_ids, bert2toks, cap_inds = data
-                outputs = self.bert_model(bert_batch_ids, token_type_ids=bert_seq_ids)
-                bert_hiddens = self._get_bert_batch_hidden(outputs[-1], bert2toks)
-                cls_vector = bert_hiddens[0, 0, :]
-                dataset_vector.append(cls_vector)
-        dataset_vector = torch.stack(dataset_vector)
-        print("After stack shape : {}".format(dataset_vector.shape))
-        dataset_vector = torch.mean(dataset_vector, 0)
-        print("Dataset vector shape {}".format(dataset_vector.shape))
-        return dataset_vector.detach().cpu().numpy()
-
 
 def get_bert_vectors(similarity, dataset, dataset_type="qas"):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset_vector = []
-    eval_dataloader = DataLoader(dataset, batch_size=1)
-
-    for batch in eval_dataloader:
+    eval_dataloader = DataLoader(dataset, batch_size=12)
+    self.bert_model = self.bert_model.to(device)
+    print("Getting bert vectors...")
+    for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
+        batch = tuple(t.to(device) for t in batch)
         with torch.no_grad():
             if dataset_type == "qas":
                 bert_inputs = {
@@ -603,8 +560,9 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                 bert2toks = batch[-1]
             outputs = similarity.bert_model(**bert_inputs)
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
-            cls_vector = bert_hiddens[0, 0, :]
-            dataset_vector.append(cls_vector)
+            cls_vector = bert_hiddens[:, 0, :]
+            print("Cls vector shape: {}".format(cls_vector.shape))
+            dataset_vector.extend(cls_vector)
 
     dataset_vectors = torch.stack(dataset_vector)
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
