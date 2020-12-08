@@ -562,8 +562,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
             outputs = similarity.bert_model(**bert_inputs)
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
             cls_vector = bert_hiddens[:, 0, :]
-            print("Cls vector shape: {}".format(cls_vector.shape))
-            dataset_vector.extend(cls_vector)
+            dataset_vector.append(cls_vector.detach().cpu())
 
     dataset_vectors = torch.stack(dataset_vector)
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
