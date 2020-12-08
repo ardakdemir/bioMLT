@@ -557,6 +557,9 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     print("Getting bert vectors...")
     i = 0
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
+        i = i + 1
+        if i > 10:
+            break
         with torch.no_grad():
             if dataset_type == "qas":
                 batch = tuple(t.to(device) for t in batch)
@@ -576,10 +579,10 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     "token_type_ids": bert_seq_ids
                 }
             outputs = similarity.bert_model(**bert_inputs)
-            print("Output shape: {}".format(outputs[-1][0].shape))
+            # print("Output shape: {}".format(outputs[-1][0].shape))
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
             cls_vector = bert_hiddens[:, 0, :]
-            print("CLS vector shape: {}".format(cls_vector.shape))
+            # print("CLS vector shape: {}".format(cls_vector.shape))
             dataset_vector.extend(cls_vector.detach().cpu())
 
     dataset_vectors = torch.stack(dataset_vector)
