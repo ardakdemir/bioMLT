@@ -442,6 +442,7 @@ class Similarity(nn.Module):
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
+
     def _get_bert_batch_hidden(self, hiddens, bert2toks, layers=[-2, -3, -4]):
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]), 0)
         batch_my_hiddens = []
@@ -545,7 +546,7 @@ class Similarity(nn.Module):
 def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset_vector = []
-    eval_dataloader = DataLoader(dataset, batch_size=12)
+    eval_dataloader = DataLoader(dataset, batch_size=1)# Doesnt work with batch_size > 1 atm
     similarity.bert_model = similarity.bert_model.to(device)
     print("Getting bert vectors...")
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
