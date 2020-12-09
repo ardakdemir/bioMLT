@@ -556,8 +556,13 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     similarity.bert_model = similarity.bert_model.to(device)
     print("Getting bert vectors...")
     i = 0
+    s = len(dataset)
+    print("Number of sentences: {}".format(s))
+
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
         i = i + 1
+        if i>s:
+            break
         with torch.no_grad():
             if dataset_type == "qas":
                 batch = tuple(t.to(device) for t in batch)
