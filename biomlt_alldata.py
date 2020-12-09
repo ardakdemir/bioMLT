@@ -2266,8 +2266,6 @@ class BioMLT(nn.Module):
             print("Average ner training loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
             if j in epoch_for_grad_intervals:
-                if j == 0:
-                    continue
                 print("Calculating loss gradient for epoch : {}".format(j))
                 grad = get_gradient(avg_ner_losses, 1)
                 grads.append(grad)
@@ -2410,6 +2408,7 @@ class BioMLT(nn.Module):
         all_preds = []
         all_truths = []
         eval_loss = 0
+
         for i, batch in enumerate(dataset):
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d in data]
