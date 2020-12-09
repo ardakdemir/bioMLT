@@ -549,11 +549,11 @@ def hugging_parse_args():
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
 
-    parser.add_argument('--ner_train_file', type=str, default='ner_data/all_entities_train_dev.tsv',
+    parser.add_argument('--ner_train_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
                         help='training file for ner')
-    parser.add_argument('--ner_dev_file', type=str, default='ner_data/all_entities_test.tsv',
+    parser.add_argument('--ner_dev_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_devel.tsv',
                         help='development file for ner')
-    parser.add_argument('--ner_test_file', type=str, default='ner_data/all_entities_test.tsv', help='test file for ner')
+    parser.add_argument('--ner_test_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_test.tsv', help='test file for ner')
     parser.add_argument('--ner_vocab_path', type=str, default='ner_vocab', help='training file for ner')
     parser.add_argument('--load_ner_vocab_path', type=str, default='ner_vocab', help='vocab for ner')
     parser.add_argument('--load_ner_label_vocab_path', type=str, default='ner_label_vocab', help='label vocab for ner')

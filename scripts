@@ -38,7 +38,11 @@ python biomlt.py --mode qas --squad_train_file toy_qas.json  --squad_dir . --bat
 
 python biomlt_alldata.py --load_model_path key_models/mybiobert_finetunedsquad --model_save_name alldata_8b_0403 --num_train_epochs --squad_train_factoid_file ~/biobert_data/BioASQ-training8b/training8b_squadformat_train_factoid.json --squad_train_list_file ~/biobert_data/BioASQ-training8b/training8b_squadformat_train_list.json --squad_train_yesno_file ~/biobert_data/BioASQ-training8b/training8b_squadformat_train_yesno.json --squad_predict_factoid_file ~/biobert_data/BioASQ-7b/train/Snippet-as-is/train_factoid_7b_snippet.json --squad_predict_list_file ~/biobert_data/BioASQ-7b/train/Snippet-as-is/train_list_7b_snippet.json --squad_predict_yesno_file ~/biobert_data/BioASQ-7b/train/Snippet-as-is/train_yesno_7b_snippet.json --max_seq_length 256
 
+## Train QAS Only with BERT INIT!
+python bioMLT/biomlt_alldata.py --init_bert --output_dir qasonly_bertinit_0912  --load_model --max_seq_length 512 --num_train_epochs 10  --batch_size 12
 
+## Train NER onlt with BERT Iniy
+python bioMLT/biomlt_alldata.py --init_bert --qas_with_ner --crf --mode ner --total_train_steps 500 --output_dir neronly_initbert_0912_1040  --num_train_epochs 2  --load_model
 
 ## Train qas model with a ner head (without joint learning)
 python bioMLT/biomlt_alldata.py --mode qas  --num_train_epochs 10 --total_train_steps 1000  --output_dir qasonly_1311_full_test8b --max_seq_length 256 --batch_size 12 --load_model
