@@ -4,6 +4,7 @@ import numpy as np
 from dcg_metrics import ndcg_score
 import torch
 import random
+import time
 import os
 import torch.nn as nn
 from tqdm import tqdm, trange
@@ -17,6 +18,15 @@ import h5py
 from numpy.linalg import norm
 from sklearn.decomposition import LatentDirichletAllocation, NMF
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
+from sklearn.decomposition import PCA
+from scipy.spatial import distance
+
+from generate_subsets import get_small_dataset
+from functools import reduce
+import numpy as np
+
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
@@ -70,6 +80,14 @@ def parse_args():
         required=False,
         help="The output directory where the model predictions and checkpoints will be written.",
     )
+    parser.add_argument(
+        "--ner_root_folder",
+        default='biobert_data/datasets/NER_for_QAS_combinedonly',
+        type=str,
+        required=False,
+        help="The root folder containing all the ner datasets.",
+    )
+
     parser.add_argument(
         "--vector_save_folder",
         default='bert_vectors',
@@ -402,7 +420,8 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
-    parser.add_argument('--ner_train_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
+    parser.add_argument('--ner_train_file', type=str,
+                        default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
                         help='training file for ner')
     parser.add_argument('--ner_dev_file', type=str, default='ner_data/all_entities_test.tsv',
                         help='development file for ner')
@@ -552,16 +571,19 @@ class Similarity(nn.Module):
 def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset_vector = []
-    eval_dataloader = DataLoader(dataset, batch_size=1) if  dataset_type =="qas" else dataset # Doesnt work with batch_size > 1 atm
+    eval_dataloader = DataLoader(dataset,
+                                 batch_size=1) if dataset_type == "qas" else dataset  # Doesnt work with batch_size > 1 atm
     similarity.bert_model = similarity.bert_model.to(device)
     print("Getting bert vectors...")
     i = 0
     s = len(dataset)
+    s = 10
     print("Number of sentences: {}".format(s))
-
+    sentences = []
+    labels = []
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
         i = i + 1
-        if i>s:
+        if i > s:
             break
         with torch.no_grad():
             if dataset_type == "qas":
@@ -581,6 +603,16 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     "input_ids": bert_batch_ids,
                     "token_type_ids": bert_seq_ids
                 }
+                label_vocab = dataset.label_vocab
+                for toks, n_inds in zip(tokens, ner_inds):
+                    my_labels = label_vocab.unmap(n_inds)
+                    # print("Tokens: {}".format(toks))
+                    # print("Labels: {}".format(my_labels))
+                    # print("# tokens: {}  # labels: {}".format(len(toks), len(my_labels)))
+                    sentence = toks[1:len(toks) - 1]
+                    sentences.append(sentence)
+                    labels.append(my_labels[1:len(toks) - 1])
+
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
@@ -592,7 +624,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
     print("Shape {}".format(dataset_vectors.shape))
-    return dataset_vectors
+    return dataset_vectors, sentences, labels
 
 
 def get_qas_vectors(similarity, args):
@@ -606,7 +638,7 @@ def get_qas_vectors(similarity, args):
                                                                  output_examples=True,
                                                                  type=q,
                                                                  skip_list=[])
-        vectors = get_bert_vectors(similarity, dataset)
+        vectors, _, _ = get_bert_vectors(similarity, dataset)
         all_vectors.extend(vectors)
     vectors = np.array(all_vectors)
     return vectors
@@ -623,34 +655,217 @@ def store_qas_vectors(similarity, args):
     dataset_path = os.path.join(vector_folder, dataset_name)
     with h5py.File(dataset_path, "w") as h:
         h["vectors"] = np.array(vectors)
+    return np.array(vectors)
+
+
+def load_vectors(file_path, dim=768):
+    with h5py.File(file_path, "r") as h:
+        vectors = h["vectors"][:]
+        vectors = vectors.reshape(-1, dim)
+        return vectors
 
 
 def get_ner_vectors(similarity, args):
     ner_file_path = args.ner_train_file
-    dataset = DataReader(ner_file_path, "NER", for_eval=True,tokenizer=similarity.bert_tokenizer,
+    dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
                          batch_size=128, crf=False)
-    all_vectors = get_bert_vectors(similarity, dataset, dataset_type="ner")
+    all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
     vectors = np.array(all_vectors)
-    return vectors
+    return vectors, ner_sentences, ner_labels
+
+
+def multiple_clusters(vectors, k_start, k_end, algo="kmeans"):
+    models = []
+    for k in range(k_start, min(len(vectors) + 1, k_end + 1)):
+        if algo == "kmeans":
+            model = KMeans(n_clusters=k, random_state=0).fit(vectors)
+        elif algo == "gm":
+            model = GaussianMixture(n_components=k).fit(vectors)
+        else:
+            print("Unknown algo: {}".format(algo))
+            return []
+        models.append(model)
+    return models
+
+
+def load_store_qas_vectors():
+    args = parse_args()
+    vector_folder = args.vector_save_folder
+    dataset_name = args.squad_train_factoid_file
+    save_path = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
+    if os.path.exists(save_path):
+        print("Found qas vectors previously stored...")
+        vectors = load_vectors(file_path)
+        return vectors
+    else:
+        print("Qas vectors not found...")
+        similarity = Similarity()
+        vectors = store_qas_vectors(similarity, args)
+        return vectors
+
+
+def train_qas_model():
+    qas_vectors = load_store_qas_vectors()
+    k_start = 2
+    k_finish = 7
+    print("Training gm model on qas vectors!")
+    models = multiple_clusters(qas_vectors, k_start, k_finish, "gm")
+
+    # Intrinsically Evaluate
+    sample_size = 10000
+    np.random.shuffle(qas_vectors)
+    sample_feats = qas_vectors
+    aics = [model.aic(sample_feats) / reduce(lambda x, y: x * y, sample_feats.shape, 1) for model in models]
+    best_model_index = np.argmin(aics)
+    best_k = k_start + best_model_index
+    best_model = models[best_model_index]
+    print("Best gm model found with k={}".format(best_k))
+
+    return best_model
+
+
+def min_mahalanobis_distance(vec_1, model):
+    means = model.means_
+    precisions = model.precisions_
+    min_dist = min([distance.mahalanobis(vec_1, mean, precision) for mean, precision in zip(means, precisions)])
+    return min_dist
+
+
+def mahalanobis_distance(vec_1, vec_2, inv):
+    dist = distance.mahalanobis(vec_1, vec_2, inv)
+    return dist
+
+
+def get_penalty(v, selected_vectors, precision):
+    penalty = sum([mahalanobis_distance(v, v2, precision) for v2 in selected_vectors])
+    penalty = penalty / len(selected_vectors)
+    return penalty
+
+
+def get_topN_similar_single_iterative_penalize(target_model, source_vectors, N):
+    """
+        Selects top N sentences for each topic inside the model
+        Force model to select diverse examples
+    """
+    top_inds = {}
+    l = 0
+    used_indices = []
+    for mean, prec in zip(target_model.means_, target_model.precisions_):
+        my_inds = get_topN_withpenalty(source_vectors, mean, prec, N, used_indices)
+        used_indices.extend(my_inds)
+        top_inds[l] = my_inds
+        l = l + 1
+    return top_inds
+
+
+def get_topN_withpenalty(vectors, mean, precision, N, skip_list):
+    a = 0.8
+    b = 1 - a
+    limit = 10000
+    print("Selecting {} vectors from {} vectors".format(N, len(vectors)))
+    mah_dists = [mahalanobis_distance(v, mean, precision) if i not in skip_list else 999999 for i, v in
+                 enumerate(vectors)]
+    zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
+    zipped.sort(key=lambda x: x[1])
+    indices, dists = list(zip(*zipped))
+    indices = indices[:limit]
+    index = indices[0]
+    selected_vectors = [vectors[index]]
+    my_inds = [index]
+    remaining_indices = set(indices)
+    remaining_indices = list(remaining_indices.difference(set(my_inds)))
+    while len(my_inds) < N:
+        scores = {r: a * mah_dists[r] - 10 * b * get_penalty(vectors[r], selected_vectors, precision) for r in
+                  remaining_indices}
+        index_score_tuples = [(r, scores[r]) for r in remaining_indices]
+        index_score_tuples.sort(key=lambda x: x[1])
+        best_index = index_score_tuples[0][0]
+        my_inds.append(best_index)
+        selected_vectors.append(vectors[best_index])
+        remaining_indices = set(remaining_indices)
+        remaining_indices = list(remaining_indices.difference(set(my_inds)))
+    print("{} vectors {} indices".format(len(selected_vectors), len(my_inds)))
+    return my_inds
+
+
+def select_ner_subset(vectors, size=500):
+    """
+        Complete this script to graduate from Ph.D
+    :param vectors: list of BERT-based vector representations
+    :return:  list of indices of the selected sentences for the given size
+    """
+    best_model = train_qas_model()
+    top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
+    return [0, 2, 4]
+
+
+def write_subset_dataset(indices, sentences, labels, save_path):
+    s = "\n\n".join(["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i])]) for i in indices])
+    with open(save_path, "w") as o:
+        o.write(s)
+
 
 def store_ner_vectors(similarity, args):
-    vectors = get_ner_vectors(similarity, args)
+    vectors, sentences, labels = get_ner_vectors(similarity, args)
     print("Final shape of ner vectors: {}".format(vectors.shape))
     vector_folder = args.vector_save_folder
-    dataset_name = args.ner_train_file
-    dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
-    if not os.path.exists(vector_folder):
-        os.makedirs(vector_folder)
-    dataset_path = os.path.join(vector_folder, dataset_name)
-    with h5py.File(dataset_path, "w") as h:
-        h["vectors"] = np.array(vectors)
+    # dataset_name = args.ner_train_file
+    # dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
+    # if not os.path.exists(vector_folder):
+    #     os.makedirs(vector_folder)
+    # dataset_path = os.path.join(vector_folder, dataset_name)
+    # with h5py.File(dataset_path, "w") as h:
+    #     h["vectors"] = np.array(vectors)
 
-def main():
+
+def store_ner_subset(similarity, args, save_file_path):
+    b = time.time()
+    vectors, sentences, labels = get_ner_vectors(similarity, args)
+    e = time.time()
+    t = round(e - b, 3)
+    print("Time to get ner vectors: {}".format(t))
+    size = 10
+    b = time.time()
+    indices = select_ner_subset(vectors, size)
+    e = time.time()
+    t = round(e - b, 3)
+    print("Time to select ner subset of size {}: {}".format(size, t))
+    write_subset_dataset(indices, sentences, labels, save_file_path)
+
+
+def generate_store_ner_subsets():
     args = parse_args()
     similarity = Similarity()
-    store_ner_vectors(similarity, args)
+    ner_root_folder = args.ner_root_folder
+    ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
+    print("Generate subsets for {} datasets".format(len(ner_datasets)))
+    ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
+    # store_ner_vectors(similarity, args)
     # store_qas_vectors(similarity,args)
+    subset_sizes = [10,20]
+    for dataset_name in ner_datasets:
+        folder_name = os.path.split(dataset_name)[-1]
+        print("Generating subsets for {}...".format(folder_name))
+        for s in subset_sizes:
+            save_folder_path = os.path.join(ner_root_folder,"subset_{}_{}".format(folder_name,s))
+            if not os.path.exists(save_folder_path):
+                os.makedirs(save_folder_path)
+            save_file_path = os.path.join(save_folder_path,"ent_train.tsv")
+            train_file_name = os.path.join(dataset_name, "ent_train.tsv")
+            args.ner_train_file = train_file_name
+            print("NER file: {}".format(train_file_name))
+            store_ner_subset(similarity, args,save_file_path)
+            file_names = ["ent_devel.tsv", "ent_test.tsv"]
+            for file_name in file_names:
+                file_path = os.path.join(dataset_name,file_name)
+                save_path = os.path.join(save_folder_path,file_name)
+                small_dataset = get_small_dataset(file_path,size = 1000)
+                with open(save_path,"w") as w:
+                    w.write(small_dataset)
 
+
+def main():
+    generate_store_ner_subsets()
 
 if __name__ == "__main__":
     main()
