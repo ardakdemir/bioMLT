@@ -582,9 +582,6 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     sentences = []
     labels = []
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
-        i = i + 1
-        if i > s:
-            break
         with torch.no_grad():
             if dataset_type == "qas":
                 batch = tuple(t.to(device) for t in batch)
@@ -842,7 +839,7 @@ def generate_store_ner_subsets():
     ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     # store_ner_vectors(similarity, args)
     # store_qas_vectors(similarity,args)
-    subset_sizes = [10,20]
+    subset_sizes = [1000,2000,3000,5000,10000,20000]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
