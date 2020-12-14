@@ -843,8 +843,11 @@ def generate_store_ner_subsets():
     args = parse_args()
     similarity = Similarity()
     ner_root_folder = args.ner_root_folder
+
     save_root_folder = os.path.split(ner_root_folder)[0]
+    ner_root_name = os.path.split(ner_root_folder)[-1]
     save_folder_pref = args.save_folder_pref
+
     ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
     print("Generate subsets for {} datasets".format(len(ner_datasets)))
     ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
@@ -855,7 +858,7 @@ def generate_store_ner_subsets():
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
         for s in subset_sizes:
-            save_folder_path = os.path.join(save_root_folder, "{}_{}_{}".format(save_folder_pref, folder_name, s))
+            save_folder_path = os.path.join("{}_{}_{}".format(save_folder_pref, ner_root_name, s), folder_name)
             if not os.path.exists(save_folder_path):
                 os.makedirs(save_folder_path)
             save_file_path = os.path.join(save_folder_path, "ent_train.tsv")

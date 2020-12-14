@@ -77,6 +77,7 @@ bash bioMLT/qashier_all_submitter.sh qashier1711_0825 neronly_outs_1311 qashier1
 # Qas hier multiple ner folders submitter!
 
 bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_allsubsets_0212_2021_64dim  biobert_data/datasets/subsetNER_for_QAS_combinedonly  neronly_Alls_2811_   qashier_Alls_0212_64dim
+bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_initberts_1412_2021   biobert_data/datasets/subsetNER_for_QAS_combinedonly  neronly_initbert_allsubsets_0912_1055_   qashier_initberts_1412
 
 
 
