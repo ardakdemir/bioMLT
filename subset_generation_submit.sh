@@ -3,7 +3,7 @@ ner_root_folder=$1
 save_folder_pref=$2
 
 #$ -cwd
-#$ -l v100=1, s_vmem=100G, mem_req=100G
+#$ -l v100=1,s_vmem=100G,mem_req=100G
 cd ~
 
 
