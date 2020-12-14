@@ -87,6 +87,13 @@ def parse_args():
         required=False,
         help="The root folder containing all the ner datasets.",
     )
+    parser.add_argument(
+        "--save_folder_pref",
+        default='subset',
+        type=str,
+        required=False,
+        help="Prefix of the folders for all the subsets!",
+    )
 
     parser.add_argument(
         "--vector_save_folder",
@@ -577,11 +584,13 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     print("Getting bert vectors...")
     i = 0
     s = len(dataset)
-    s = 10
     print("Number of sentences: {}".format(s))
     sentences = []
     labels = []
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
+        if i >= 10:
+            break
+        i = i + 1
         with torch.no_grad():
             if dataset_type == "qas":
                 batch = tuple(t.to(device) for t in batch)
@@ -834,35 +843,37 @@ def generate_store_ner_subsets():
     args = parse_args()
     similarity = Similarity()
     ner_root_folder = args.ner_root_folder
+    save_folder_pref = args.save_folder_pref
     ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
     print("Generate subsets for {} datasets".format(len(ner_datasets)))
     ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     # store_ner_vectors(similarity, args)
     # store_qas_vectors(similarity,args)
-    subset_sizes = [1000,2000,3000,5000,10000,20000]
+    subset_sizes = [10]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
         for s in subset_sizes:
-            save_folder_path = os.path.join(ner_root_folder,"subset_{}_{}".format(folder_name,s))
+            save_folder_path = os.path.join(ner_root_folder, "{}_{}_{}".format(save_folder_pref,folder_name, s))
             if not os.path.exists(save_folder_path):
                 os.makedirs(save_folder_path)
-            save_file_path = os.path.join(save_folder_path,"ent_train.tsv")
+            save_file_path = os.path.join(save_folder_path, "ent_train.tsv")
             train_file_name = os.path.join(dataset_name, "ent_train.tsv")
             args.ner_train_file = train_file_name
             print("NER file: {}".format(train_file_name))
-            store_ner_subset(similarity, args,save_file_path)
+            store_ner_subset(similarity, args, save_file_path)
             file_names = ["ent_devel.tsv", "ent_test.tsv"]
             for file_name in file_names:
-                file_path = os.path.join(dataset_name,file_name)
-                save_path = os.path.join(save_folder_path,file_name)
-                small_dataset = get_small_dataset(file_path,size = 1000)
-                with open(save_path,"w") as w:
+                file_path = os.path.join(dataset_name, file_name)
+                save_path = os.path.join(save_folder_path, file_name)
+                small_dataset = get_small_dataset(file_path, size=1000)
+                with open(save_path, "w") as w:
                     w.write(small_dataset)
 
 
 def main():
     generate_store_ner_subsets()
+
 
 if __name__ == "__main__":
     main()
