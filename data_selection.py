@@ -748,6 +748,32 @@ def get_penalty(v, selected_vectors, precision):
     return penalty
 
 
+
+def get_topN_similar_single(target_model,source_vectors,N):
+    """
+        Gets the top N inds for each cluster
+    """
+    top_inds = {}
+    l = 0
+    used_indices = []
+    for mean,prec in zip(target_model.means_,target_model.precisions_):
+        mah_dists = [mahalanobis_distance(v, mean, prec) for v in source_vectors]
+        zipped = list(zip([i for i in range(len(mah_dists))],mah_dists))
+        zipped.sort(key = lambda x : x[1])
+        indices, dists = list(zip(*zipped))
+        my_inds = []
+        i = 0
+        while len(my_inds) < N:
+            index = indices[i]
+            if index not in used_indices:
+                my_inds.append(index)
+            i = i + 1
+        used_indices.extend(my_inds)
+        top_inds[l] = my_inds
+        l = l + 1
+    return top_inds
+
+
 def get_topN_similar_single_iterative_penalize(target_model, source_vectors, N):
     """
         Selects top N sentences for each topic inside the model
@@ -767,7 +793,7 @@ def get_topN_similar_single_iterative_penalize(target_model, source_vectors, N):
 def get_topN_withpenalty(vectors, mean, precision, N, skip_list):
     a = 0.8
     b = 1 - a
-    limit = 10000
+    limit = 1000
     print("Selecting {} vectors from {} vectors".format(N, len(vectors)))
     mah_dists = [mahalanobis_distance(v, mean, precision) if i not in skip_list else 999999 for i, v in
                  enumerate(vectors)]
@@ -801,8 +827,17 @@ def select_ner_subset(vectors, size=500):
     :return:  list of indices of the selected sentences for the given size
     """
     best_model = train_qas_model()
-    top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
-    return [0, 2, 4]
+    num_clusters = len(best_model.means_)
+    print("Best model has {} clusters".format(num_clusters))
+    # top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
+    top_inds = get_topN_similar_single(best_model,vectors,size)
+    all_inds = []
+    for k,v in top_inds.items():
+        s = int(len(v)//num_clusters)
+        print("{} indices for {}. Top {} will be added".format(len(v),k,s))
+        all_inds = v[:s]
+
+    return all_inds
 
 
 def write_subset_dataset(indices, sentences, labels, save_path):
@@ -824,15 +859,15 @@ def store_ner_vectors(similarity, args):
     #     h["vectors"] = np.array(vectors)
 
 
-def store_ner_subset(similarity, args, save_file_path):
+def store_ner_subset(similarity, args, size, save_file_path):
     b = time.time()
     vectors, sentences, labels = get_ner_vectors(similarity, args)
     e = time.time()
     t = round(e - b, 3)
     print("Time to get ner vectors: {}".format(t))
-    size = 10
     b = time.time()
     indices = select_ner_subset(vectors, size)
+    print("Selected {} indices in total.".format(len(indices)))
     e = time.time()
     t = round(e - b, 3)
     print("Time to select ner subset of size {}: {}".format(size, t))
@@ -867,7 +902,7 @@ def generate_store_ner_subsets():
             args.ner_train_file = train_file_name
             print("NER file: {}".format(train_file_name))
             print("Save folder: {}".format(save_folder_path))
-            store_ner_subset(similarity, args, save_file_path)
+            store_ner_subset(similarity, args,s, save_file_path)
             file_names = ["ent_devel.tsv", "ent_test.tsv"]
             for file_name in file_names:
                 file_path = os.path.join(dataset_name, file_name)
