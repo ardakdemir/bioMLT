@@ -853,7 +853,7 @@ def generate_store_ner_subsets():
     ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     # store_ner_vectors(similarity, args)
     # store_qas_vectors(similarity,args)
-    subset_sizes = [1000, 2000, 3000, 5000, 10000, 2000]
+    subset_sizes = [10,20]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
