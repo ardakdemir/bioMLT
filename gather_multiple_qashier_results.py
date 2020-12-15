@@ -71,6 +71,7 @@ def get_multiple_results(root, folder_pref):
         if f.startswith(folder_pref):
             folder_exp_name = f[len(folder_pref):]
             split = folder_exp_name.split("_")
+            print(split)
             if len(split) > 1:
                 size,repeat = split
             else:
