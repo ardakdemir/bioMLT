@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 def get_single_result(result_folder, file_name="qas_latex_table", offset=2):
     file_path = os.path.join(result_folder, file_name)
     results = {}
@@ -25,29 +26,29 @@ def get_single_result(result_folder, file_name="qas_latex_table", offset=2):
 
 
 def printDict(results_dict):
-    title = "\t".join(["Size","Model","Factoid Exact", "Factoid F1", "List Exact", "List F1", "YesNo F1"]) + "\n"
+    title = "\t".join(["Size", "Model", "List F1", "List Exact", "Factoid F1", "Factoid Exact", "YesNo F1"]) + "\n"
     table = title
-    exp_names_sorted = [int(exp_name)for exp_name in results_dict.keys()]
+    exp_names_sorted = [int(exp_name) for exp_name in results_dict.keys()]
     exp_names_sorted.sort()
     exp_names_sorted = [str(x) for x in exp_names_sorted]
     for exp_name in exp_names_sorted:
         results = results_dict[str(exp_name)]
-        keys = ["factoid_exact","factoid_f1","list_exact","list_f1","yesno_f1"]
-        for model,result in results.items():
-
-            row = "\t".join([exp_name,model] + [str(round(result[key],3))for key in keys]) + "\n"
+        keys = ["list_f1", "list_exact", "factoid_f1", "factoid_exact", "yesno_f1"]
+        for model, result in results.items():
+            row = "\t".join([exp_name, model] + [str(round(result[key], 3)) for key in keys]) + "\n"
             table = table + row
     return table
 
+
 def average_results_by_folder(results_dict):
     averaged_results = {}
-    keys = ["factoid_exact", "factoid_f1", "list_exact", "list_f1", "yesno_f1"]
+    keys = ["list_f1", "list_exact", "factoid_f1", "factoid_exact", "yesno_f1"]
     for folder in results_dict:
-        s,r = folder.split("_")
+        s, r = folder.split("_")
         if s not in averaged_results:
             averaged_results[s] = {}
-        for model,result in results_dict[folder].items():
-            print(model,result)
+        for model, result in results_dict[folder].items():
+            print(model, result)
             if model in averaged_results[s]:
                 for key in keys:
                     averaged_results[s][model][key].append(result[key])
@@ -55,14 +56,16 @@ def average_results_by_folder(results_dict):
                 print(averaged_results[s])
                 averaged_results[s][model] = {}
                 for key in keys:
-                    averaged_results[s][model][key]= [result[key]]
+                    averaged_results[s][model][key] = [result[key]]
 
     print(averaged_results)
     for folder in averaged_results:
         for model in averaged_results[folder]:
             for metric in averaged_results[folder][model]:
-                averaged_results[folder][model][metric]= round(sum(averaged_results[folder][model][metric ])/len(averaged_results[folder][model][metric ]),3)
+                averaged_results[folder][model][metric] = round(
+                    sum(averaged_results[folder][model][metric]) / len(averaged_results[folder][model][metric]), 3)
     return averaged_results
+
 
 def get_multiple_results(root, folder_pref):
     x = os.listdir(root)
@@ -73,13 +76,15 @@ def get_multiple_results(root, folder_pref):
             split = folder_exp_name.split("_")
             print(split)
             if len(split) > 1:
-                size,repeat = split
+                size, repeat = split
             else:
                 size = split[0]
             path = os.path.join(root, f)
             result = get_single_result(path, file_name="qas_latex_table", offset=2)
             results[folder_exp_name] = result
     return results
+
+
 # results = get_single_result(".")
 
 args = sys.argv
