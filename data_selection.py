@@ -858,7 +858,7 @@ def generate_store_ner_subsets():
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
         for s in subset_sizes:
-            save_folder_path = os.path.join("{}_{}_{}".format(save_folder_pref, ner_root_name, s), folder_name)
+            save_folder_path = os.path.join("{}_{}_{}".format(save_root_folder,save_folder_pref, ner_root_name, s), folder_name)
             if not os.path.exists(save_folder_path):
                 os.makedirs(save_folder_path)
             save_file_path = os.path.join(save_folder_path, "ent_train.tsv")
