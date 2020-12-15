@@ -588,7 +588,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     sentences = []
     labels = []
     for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
-        if i >= 10:
+        if i >= s:
             break
         i = i + 1
         with torch.no_grad():

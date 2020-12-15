@@ -84,3 +84,10 @@ bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_initberts_1412_2021
 # NER multiple subsets submitter
 
 bash bioMLT/neronly_allsubsets_submitter.sh neronly_Alls_2811 biobert_data/datasets/subsetNER_for_QAS_combinedonly neronly_Alls_2811
+
+
+
+
+#QAS combine results from subset selection experiments
+
+python  bioMLT/gather_multiple_qashier_results.py  qashier_initberts_1412_2021_
