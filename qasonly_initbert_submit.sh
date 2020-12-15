@@ -6,5 +6,5 @@ output_dir=${1}
 cd ~
 
 echo "NOT LOADING MODEL. STARTING WITH BERT"
-singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --init_bert --output_dir $output_dir  --load_model --max_seq_length 256 --num_train_epochs 3  --batch_size 12
+singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --init_bert --output_dir $output_dir  --load_model --max_seq_length 256   --batch_size 12
 echo "All results are stored in "$output_dir
