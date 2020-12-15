@@ -675,9 +675,19 @@ def get_ner_vectors(similarity, args):
     ner_file_path = args.ner_train_file
     dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
                          batch_size=128, crf=False)
-    all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
-    vectors = np.array(all_vectors)
-    return vectors, ner_sentences, ner_labels
+    if not hasattr(similarity,"ner_sentences"):
+        print("Generating ner vectors and sentences")
+        all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
+        vectors = np.array(all_vectors)
+        similarity.ner_vectors = vectors
+        similarity.ner_sentences = ner_sentences
+        similarity.ner_labels = ner_labels
+    else:
+        print("Ner vectors are already generated")
+        vectors = similarity.ner_vectors
+        ner_sentences = similarity.ner_sentences
+        ner_labels = similarity.ner_labels
+    return similarity, vectors, ner_sentences, ner_labels
 
 
 def multiple_clusters(vectors, k_start, k_end, algo="kmeans"):
@@ -710,8 +720,14 @@ def load_store_qas_vectors():
         return vectors
 
 
-def train_qas_model():
-    qas_vectors = load_store_qas_vectors()
+def train_qas_model(similarity):
+    if not hasattr(similarity,"qas_vectors"):
+        print("Generating qas vectors...")
+        qas_vectors = load_store_qas_vectors()
+        similarity.qas_vectors = qas_vectors
+    else:
+        print("Qas vectors are already generated...")
+        qas_vectors =  similarity.qas_vectors
     k_start = 2
     k_finish = 7
     print("Training gm model on qas vectors!")
@@ -727,7 +743,7 @@ def train_qas_model():
     best_model = models[best_model_index]
     print("Best gm model found with k={}".format(best_k))
 
-    return best_model
+    return best_model,similarity
 
 
 def min_mahalanobis_distance(vec_1, model):
@@ -820,13 +836,13 @@ def get_topN_withpenalty(vectors, mean, precision, N, skip_list):
     return my_inds
 
 
-def select_ner_subset(vectors, size=500):
+def select_ner_subset(similarity, vectors, size=500):
     """
         Complete this script to graduate from Ph.D
     :param vectors: list of BERT-based vector representations
     :return:  list of indices of the selected sentences for the given size
     """
-    best_model = train_qas_model()
+    best_model,similarity = train_qas_model(similarity)
     num_clusters = len(best_model.means_)
     print("Best model has {} clusters".format(num_clusters))
     # top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
@@ -835,9 +851,9 @@ def select_ner_subset(vectors, size=500):
     for k,v in top_inds.items():
         s = int(len(v)//num_clusters)
         print("{} indices for {}. Top {} will be added".format(len(v),k,s))
-        all_inds = v[:s]
+        all_inds.extend(v[:s])
 
-    return all_inds
+    return all_inds, similarity
 
 
 def write_subset_dataset(indices, sentences, labels, save_path):
@@ -847,7 +863,7 @@ def write_subset_dataset(indices, sentences, labels, save_path):
 
 
 def store_ner_vectors(similarity, args):
-    vectors, sentences, labels = get_ner_vectors(similarity, args)
+    similarity, vectors, sentences, labels = get_ner_vectors(similarity, args)
     print("Final shape of ner vectors: {}".format(vectors.shape))
     vector_folder = args.vector_save_folder
     # dataset_name = args.ner_train_file
@@ -861,18 +877,18 @@ def store_ner_vectors(similarity, args):
 
 def store_ner_subset(similarity, args, size, save_file_path):
     b = time.time()
-    vectors, sentences, labels = get_ner_vectors(similarity, args)
+    similarity, vectors, sentences, labels = get_ner_vectors(similarity, args)
     e = time.time()
     t = round(e - b, 3)
     print("Time to get ner vectors: {}".format(t))
     b = time.time()
-    indices = select_ner_subset(vectors, size)
+    indices,similarity = select_ner_subset(similarity,vectors, size)
     print("Selected {} indices in total.".format(len(indices)))
     e = time.time()
     t = round(e - b, 3)
     print("Time to select ner subset of size {}: {}".format(size, t))
     write_subset_dataset(indices, sentences, labels, save_file_path)
-
+    return similarity
 
 def generate_store_ner_subsets():
     args = parse_args()
@@ -902,7 +918,7 @@ def generate_store_ner_subsets():
             args.ner_train_file = train_file_name
             print("NER file: {}".format(train_file_name))
             print("Save folder: {}".format(save_folder_path))
-            store_ner_subset(similarity, args,s, save_file_path)
+            similarity = store_ner_subset(similarity, args,s, save_file_path)
             file_names = ["ent_devel.tsv", "ent_test.tsv"]
             for file_name in file_names:
                 file_path = os.path.join(dataset_name, file_name)
