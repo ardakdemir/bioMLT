@@ -70,7 +70,11 @@ def get_multiple_results(root, folder_pref):
     for f in x:
         if f.startswith(folder_pref):
             folder_exp_name = f[len(folder_pref):]
-            size, repeat = folder_exp_name.split("_")
+            split = folder_exp_name.split("_")
+            if len(split) > 1:
+                size,repeat = split
+            else:
+                size = split[0]
             path = os.path.join(root, f)
             result = get_single_result(path, file_name="qas_latex_table", offset=2)
             results[folder_exp_name] = result
