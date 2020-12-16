@@ -784,9 +784,18 @@ def get_topN_similar_single(target_model,source_vectors,N):
             if index not in used_indices:
                 my_inds.append(index)
             i = i + 1
+        print("Length of my indices: {}".format(len(my_inds)))
+        print("My indices: {}".format(my_inds))
         used_indices.extend(my_inds)
         top_inds[l] = my_inds
         l = l + 1
+    for l in top_inds:
+        for l2 in top_inds:
+            if l==l2:
+                continue
+            for index in top_inds[l]:
+                if index in top_inds[l2]:
+                    print("{} is included in lists for  both {} and {}.".format(index,l,l2))
     return top_inds
 
 
@@ -842,7 +851,11 @@ def select_ner_subset(similarity, vectors, size=500):
     :param vectors: list of BERT-based vector representations
     :return:  list of indices of the selected sentences for the given size
     """
-    best_model,similarity = train_qas_model(similarity)
+    if not hasattr(similarity,"qas_model"):
+        best_model,similarity = train_qas_model(similarity)
+        similarity.qas_model = best_model
+    else:
+        best_model = similarity.qas_model
     num_clusters = len(best_model.means_)
     print("Best model has {} clusters".format(num_clusters))
     # top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
@@ -887,6 +900,8 @@ def store_ner_subset(similarity, args, size, save_file_path):
     e = time.time()
     t = round(e - b, 3)
     print("Time to select ner subset of size {}: {}".format(size, t))
+    print("Indices")
+    print(indices)
     write_subset_dataset(indices, sentences, labels, save_file_path)
     return similarity
 
