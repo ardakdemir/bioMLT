@@ -209,7 +209,7 @@ class DataReader:
         self.label_vocab = Vocab(self.l2ind)
         self.word_vocab = Vocab(self.word2ind)
         self.batched_dataset, self.sentence_lens = group_into_batch(self.dataset, batch_size=self.batch_size)
-        self.for_eval = False
+        self.for_eval = for_eval
         self.num_cats = len(self.l2ind)
         self.bert_tokenizer = tokenizer
         self.val_index = 0
