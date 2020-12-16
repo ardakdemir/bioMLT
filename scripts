@@ -91,3 +91,6 @@ bash bioMLT/neronly_allsubsets_submitter.sh neronly_Alls_2811 biobert_data/datas
 #QAS combine results from subset selection experiments
 
 python  bioMLT/gather_multiple_qashier_results.py  qashier_initberts_1412_2021_
+
+#NER daata seelection
+python bioMLT/data_selection.py --ner_root_folder biobert_data/datasets/NER_for_QAS_combinedonly --save_folder_pref subsets1612_0755

@@ -1840,7 +1840,7 @@ class BioMLT(nn.Module):
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
         latex_save_path = os.path.join(self.args.output_dir, self.args.qas_latex_table_file)
         exp_name = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
-            write_to_latex_table(exp_name,best_results, best_exacts, latex_save_path)
+        write_to_latex_table(exp_name,best_results, best_exacts, latex_save_path)
         # f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types, result_save_path=qas_save_path)
         print("Writing best results to {}".format(qas_save_path))
         if os.path.exists(qas_save_path):
