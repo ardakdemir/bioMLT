@@ -673,10 +673,11 @@ def load_vectors(file_path, dim=768):
 
 def get_ner_vectors(similarity, args):
     ner_file_path = args.ner_train_file
-    dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
-                         batch_size=128, crf=False)
+
     if not hasattr(similarity,"ner_sentences"):
         print("Generating ner vectors and sentences")
+        dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
+                             batch_size=128, crf=False)
         all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
@@ -785,6 +786,7 @@ def get_topN_similar_single(target_model,source_vectors,N):
                 my_inds.append(index)
             i = i + 1
         print("Length of my indices: {}".format(len(my_inds)))
+        my_inds.sort()
         print("My indices: {}".format(my_inds))
         used_indices.extend(my_inds)
         top_inds[l] = my_inds
@@ -865,7 +867,9 @@ def select_ner_subset(similarity, vectors, size=500):
         s = int(len(v)//num_clusters)
         print("{} indices for {}. Top {} will be added".format(len(v),k,s))
         all_inds.extend(v[:s])
-
+    all_inds.sort()
+    print("All final indices.")
+    print(all_inds)
     return all_inds, similarity
 
 
@@ -919,7 +923,7 @@ def generate_store_ner_subsets():
     ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     # store_ner_vectors(similarity, args)
     # store_qas_vectors(similarity,args)
-    subset_sizes = [1000, 2000, 3000, 5000, 10000]
+    subset_sizes = [1000]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
