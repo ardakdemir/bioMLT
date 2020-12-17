@@ -78,12 +78,15 @@ bash bioMLT/qashier_all_submitter.sh qashier1711_0825 neronly_outs_1311 qashier1
 
 bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_allsubsets_0212_2021_64dim  biobert_data/datasets/subsetNER_for_QAS_combinedonly  neronly_Alls_2811_   qashier_Alls_0212_64dim
 bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_initberts_1412_2021   biobert_data/datasets/subsetNER_for_QAS_combinedonly  neronly_initbert_allsubsets_0912_1055_   qashier_initberts_1412
+bash bioMLT/qashier_all_multiplefolders_submitter.sh qashier_wopenalty_1712   biobert_data/datasets/subsetNER_for_QAS_combinedonly  neronly_wopenalty_1612__   qashier_wopenalty1712
 
 
 
 # NER multiple subsets submitter
 
 bash bioMLT/neronly_allsubsets_submitter.sh neronly_Alls_2811 biobert_data/datasets/subsetNER_for_QAS_combinedonly neronly_Alls_2811
+bash bioMLT/neronly_allsubsets_submitter.sh neronly_wopenalty_1612 biobert_data/datasets/subsets1612_wopenalty_NER_for_QAS_combinedonly neronly_wopenalty_1612
+bash bioMLT/neronly_initbert_allsubsets_submitter.sh neronly_initbert_wopenalty_1712 biobert_data/datasets/subsets1612_wopenalty_NER_for_QAS_combinedonly neronly_initbert_wopenalty_1712_exp
 
 
 
@@ -91,6 +94,13 @@ bash bioMLT/neronly_allsubsets_submitter.sh neronly_Alls_2811 biobert_data/datas
 #QAS combine results from subset selection experiments
 
 python  bioMLT/gather_multiple_qashier_results.py  qashier_initberts_1412_2021_
+python  bioMLT/gather_multiple_qashier_results.py  qashier_wopenalty_1712_
+
 
 #NER daata seelection
 python bioMLT/data_selection.py --ner_root_folder biobert_data/datasets/NER_for_QAS_combinedonly --save_folder_pref subsets1612_0755
+
+
+
+# NER -> QAS pipeline initbert
+bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_pipeline_1712 biobert_data/datasets/subsets1612_wopenalty_NER_for_QAS_combinedonly_  nerqas_pipeline_1712
