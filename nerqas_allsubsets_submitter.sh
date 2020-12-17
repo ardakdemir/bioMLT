@@ -23,7 +23,6 @@ do
     echo "NER Output dir: "$output_dir
     for target_fd in $datasets
     do
-      folder_path=$subset_folder_path"/"$target_fd
       echo "Dataset path "$folder_path
       echo "Target dataset: "$target_fd
       y=$((y + 1))
