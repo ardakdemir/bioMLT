@@ -674,7 +674,7 @@ def load_vectors(file_path, dim=768):
 def get_ner_vectors(similarity, args):
     ner_file_path = args.ner_train_file
 
-    if not hasattr(similarity,"ner_sentences"):
+    if not hasattr(similarity, "ner_sentences"):
         print("Generating ner vectors and sentences")
         dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
                              batch_size=128, crf=False)
@@ -722,13 +722,13 @@ def load_store_qas_vectors():
 
 
 def train_qas_model(similarity):
-    if not hasattr(similarity,"qas_vectors"):
+    if not hasattr(similarity, "qas_vectors"):
         print("Generating qas vectors...")
         qas_vectors = load_store_qas_vectors()
         similarity.qas_vectors = qas_vectors
     else:
         print("Qas vectors are already generated...")
-        qas_vectors =  similarity.qas_vectors
+        qas_vectors = similarity.qas_vectors
     k_start = 2
     k_finish = 7
     print("Training gm model on qas vectors!")
@@ -743,8 +743,10 @@ def train_qas_model(similarity):
     best_k = k_start + best_model_index
     best_model = models[best_model_index]
     print("Best gm model found with k={}".format(best_k))
-
-    return best_model,similarity
+    labels = best_model.predict(qas_vectors)
+    clust_sizes = Counter(labels)
+    print("Size of each cluster: {}".format(clust_sizes))
+    return best_model, similarity, clust_sizes
 
 
 def min_mahalanobis_distance(vec_1, model):
@@ -765,18 +767,17 @@ def get_penalty(v, selected_vectors, precision):
     return penalty
 
 
-
-def get_topN_similar_single(target_model,source_vectors,N):
+def get_topN_similar_single(target_model, source_vectors, N):
     """
         Gets the top N inds for each cluster
     """
     top_inds = {}
     l = 0
     used_indices = []
-    for mean,prec in zip(target_model.means_,target_model.precisions_):
+    for mean, prec in zip(target_model.means_, target_model.precisions_):
         mah_dists = [mahalanobis_distance(v, mean, prec) for v in source_vectors]
-        zipped = list(zip([i for i in range(len(mah_dists))],mah_dists))
-        zipped.sort(key = lambda x : x[1])
+        zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
+        zipped.sort(key=lambda x: x[1])
         indices, dists = list(zip(*zipped))
         my_inds = []
         i = 0
@@ -793,11 +794,11 @@ def get_topN_similar_single(target_model,source_vectors,N):
         l = l + 1
     for l in top_inds:
         for l2 in top_inds:
-            if l==l2:
+            if l == l2:
                 continue
             for index in top_inds[l]:
                 if index in top_inds[l2]:
-                    print("{} is included in lists for  both {} and {}.".format(index,l,l2))
+                    print("{} is included in lists for  both {} and {}.".format(index, l, l2))
     return top_inds
 
 
@@ -853,19 +854,25 @@ def select_ner_subset(similarity, vectors, size=500):
     :param vectors: list of BERT-based vector representations
     :return:  list of indices of the selected sentences for the given size
     """
-    if not hasattr(similarity,"qas_model"):
-        best_model,similarity = train_qas_model(similarity)
+    if not hasattr(similarity, "qas_model"):
+        best_model, similarity, clust_sizes = train_qas_model(similarity)
         similarity.qas_model = best_model
+        similarity.clust_sizes = clust_sizes
     else:
         best_model = similarity.qas_model
+        clust_sizes = similarity.clust_sizes
     num_clusters = len(best_model.means_)
+
     print("Best model has {} clusters".format(num_clusters))
+    print("Clust sizes: {}".format(clust_sizes))
     # top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
-    top_inds = get_topN_similar_single(best_model,vectors,size)
+    top_inds = get_topN_similar_single(best_model, vectors, size)
     all_inds = []
-    for k,v in top_inds.items():
-        s = int(len(v)//num_clusters)
-        print("{} indices for {}. Top {} will be added".format(len(v),k,s))
+    total_size = sum(clust_sizes.values())
+    for k, v in top_inds.items():
+        ratio = clust_sizes[k] / total_size
+        s = int(size * ratio)
+        print("{} indices for {}. Clust size: {}. Top {} will be added..".format(len(v), k, clust_sizes[k], s))
         all_inds.extend(v[:s])
     all_inds.sort()
     print("All final indices.")
@@ -899,7 +906,7 @@ def store_ner_subset(similarity, args, size, save_file_path):
     t = round(e - b, 3)
     print("Time to get ner vectors: {}".format(t))
     b = time.time()
-    indices,similarity = select_ner_subset(similarity,vectors, size)
+    indices, similarity = select_ner_subset(similarity, vectors, size)
     print("Selected {} indices in total.".format(len(indices)))
     e = time.time()
     t = round(e - b, 3)
@@ -908,6 +915,7 @@ def store_ner_subset(similarity, args, size, save_file_path):
     print(indices)
     write_subset_dataset(indices, sentences, labels, save_file_path)
     return similarity
+
 
 def generate_store_ner_subsets():
     args = parse_args()
@@ -923,7 +931,7 @@ def generate_store_ner_subsets():
     ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     # store_ner_vectors(similarity, args)
     # store_qas_vectors(similarity,args)
-    subset_sizes = [1000,3000,5000]
+    subset_sizes = [1000, 3000, 4000, 5000, 10000]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
@@ -937,7 +945,7 @@ def generate_store_ner_subsets():
             args.ner_train_file = train_file_name
             print("NER file: {}".format(train_file_name))
             print("Save folder: {}".format(save_folder_path))
-            similarity = store_ner_subset(similarity, args,s, save_file_path)
+            similarity = store_ner_subset(similarity, args, s, save_file_path)
             file_names = ["ent_devel.tsv", "ent_test.tsv"]
             for file_name in file_names:
                 file_path = os.path.join(dataset_name, file_name)
