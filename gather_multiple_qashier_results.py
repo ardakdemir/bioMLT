@@ -43,8 +43,12 @@ def printDict(results_dict):
 def average_results_by_folder(results_dict):
     averaged_results = {}
     keys = ["list_f1", "list_exact", "factoid_f1", "factoid_exact", "yesno_f1"]
+    print(results_dict)
     for folder in results_dict:
-        s, r = folder.split("_")
+        if "_" in folder:
+            s, r = folder.split("_")
+        else:
+            s = folder
         if s not in averaged_results:
             averaged_results[s] = {}
         for model, result in results_dict[folder].items():
