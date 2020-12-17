@@ -23,7 +23,7 @@ do
     echo "NER Output dir: "$output_dir
     for target_fd in $datasets
     do
-      echo "Dataset path "$folder_path
+      echo "Dataset path "$subset_folder_path
       echo "Target dataset: "$target_fd
       y=$((y + 1))
       experiment_name="NERQAS_"${pref_name}"_"${exp_code}
