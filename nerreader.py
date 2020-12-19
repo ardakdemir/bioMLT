@@ -253,7 +253,8 @@ class DataReader:
         # print(self.label_counts)
 
         for x in self.label_counts:
-            l2ind[x] = len(l2ind)
+            if x not in l2ind:
+                l2ind[x] = len(l2ind)
 
         for sent in self.dataset:
             for word in sent:

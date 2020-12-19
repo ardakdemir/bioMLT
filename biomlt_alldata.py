@@ -1263,7 +1263,6 @@ class BioMLT(nn.Module):
         self.args.ner_label_dim = len(self.args.ner_label_vocab)
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
-        print("NER label vocab indexes from training set : {}".format(self.args.ner_label_vocab.w2ind))
 
         # Eval
         print("Reading NER eval data from: {}".format(self.args.ner_test_file))

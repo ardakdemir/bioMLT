@@ -881,7 +881,8 @@ def select_ner_subset(similarity, vectors, size=500):
 
 
 def write_subset_dataset(indices, sentences, labels, save_path):
-    s = "\n\n".join(["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i])]) for i in indices])
+    # Sometimes writes [SEP] at the end!!
+    s = "\n\n".join(["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i]) if l!=["[SEP]"]]) for i in indices])
     with open(save_path, "w") as o:
         o.write(s)
 
