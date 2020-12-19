@@ -15,12 +15,13 @@ class NerModel(nn.Module):
         super(NerModel, self).__init__()
         self.args = args
         self.input_dims = args.bert_output_dim
-        if not hasattr(self.args, "ner_label_dim"):
+        if not hasattr(self.args, "ner_label_dim") or self.args.ner_label_dim == -1:
             self.label_dim = len(args.ner_label_vocab)
         else:
             self.label_dim = self.args.ner_label_dim
         self.ner_drop = 0.3 if not hasattr(self.args, "ner_drop") else self.args.ner_drop
         self.num_labels = self.label_dim
+        print("Number of labels : {}".format(self.num_labels))
         self.output_dim = self.label_dim * self.label_dim
         self.device = args.device
         if self.args.crf:
@@ -35,7 +36,6 @@ class NerModel(nn.Module):
                                      lr=self.lr, eps=1e-6)
 
         self.dropout = nn.Dropout(self.ner_drop)
-
 
     def _viterbi_decode(self, feats, sent_len):
         start_ind = START_IND
