@@ -375,7 +375,6 @@ class DataReader:
         for current_tag in targets:
             targets_1d.append(current_tag * (tagset_size) + prev_tag)
             prev_tag = current_tag
-        print("Targets 1-d: {}".format())
         return targets_1d
 
     def getword2vec2(self, row):

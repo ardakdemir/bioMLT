@@ -90,9 +90,6 @@ class CRFLoss(nn.Module):
         # print(score_before_sum[0])
         gold_score = score_before_sums[0].sum()
 
-        ## Print targets
-        print("Targets")
-        print(targets.detach().cpu().numpy())
         ## forward score : initialize from start tag
         forward_scores = torch.zeros(batch_size, self.tagset_size).to(self.device)
 
