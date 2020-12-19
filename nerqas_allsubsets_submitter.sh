@@ -26,7 +26,7 @@ do
       echo "Dataset path "$subset_folder_path
       echo "Target dataset: "$target_fd
       y=$((y + 1))
-      experiment_name="NERQAS_"${pref_name}"_"${exp_code}
+      experiment_name="nerqas_"${pref_name}"_"${exp_code}
       qsub -N $experiment_name /home/aakdemir/bioMLT/nerqas_sequential_submit.sh $output_dir $subset_folder_path $target_fd
     done
     x=$((x + 1))
