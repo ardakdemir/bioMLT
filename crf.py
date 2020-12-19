@@ -92,7 +92,7 @@ class CRFLoss(nn.Module):
 
         ## Print targets
         print("Targets")
-        print(targets)
+        print(targets.detach().cpu().numpy())
         ## forward score : initialize from start tag
         forward_scores = torch.zeros(batch_size, self.tagset_size).to(self.device)
 
