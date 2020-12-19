@@ -1184,6 +1184,8 @@ class BioMLT(nn.Module):
                 return all_preds, loss
         # logging.info("NER output {} ".format(ner_outs.))
         else:
+            print("NER INDS")
+            print(ner_inds)
             ner_outs = ner_head(bert_hiddens, ner_inds)
             return ner_outs
 
