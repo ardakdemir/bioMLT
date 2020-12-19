@@ -203,6 +203,7 @@ class DataReader:
         self.batch_size = batch_size
         self.dataset, self.orig_idx, self.label_counts = self.get_dataset()
         print("Dataset size : {}".format(len(self.dataset)))
+        print("NER Label Counts: {}".format(self.label_counts))
         self.data_len = len(self.dataset)
         self.l2ind, self.word2ind, self.vocab_size = self.get_vocabs()
         # self.pos_voc = Vocab(self.pos2ind)
@@ -211,6 +212,7 @@ class DataReader:
         self.batched_dataset, self.sentence_lens = group_into_batch(self.dataset, batch_size=self.batch_size)
         self.for_eval = for_eval
         self.num_cats = len(self.l2ind)
+        print("Number of NER categories: {}".format(self.num_cats))
         self.bert_tokenizer = tokenizer
         self.val_index = 0
 
@@ -372,6 +374,7 @@ class DataReader:
         for current_tag in targets:
             targets_1d.append(current_tag * (tagset_size) + prev_tag)
             prev_tag = current_tag
+        print("Targets 1-d: {}".format())
         return targets_1d
 
     def getword2vec2(self, row):
