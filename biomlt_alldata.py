@@ -496,7 +496,7 @@ def hugging_parse_args():
     parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
     parser.add_argument(
-        "--num_train_epochs", default=5, type=int, help="Total number of training epochs to perform."
+        "--num_train_epochs", default=10, type=int, help="Total number of training epochs to perform."
     )
     parser.add_argument("--total_train_steps", default=-1, required=False, type=int,
                         help="Total number of training steps to perform.")
