@@ -86,6 +86,8 @@ class NerModel(nn.Module):
             ## view tehlikeli bir hareket!!!!
             if self.args.crf:
                 lengths = torch.sum((labels > self.num_labels), axis=1)
+                print("Lengths: {}".format(lengths))
+                print("Labels: {}".format(labels))
                 loss = self.loss(out_logits, labels, lengths)
             else:
                 loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
