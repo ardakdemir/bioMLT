@@ -1816,17 +1816,17 @@ class BioMLT(nn.Module):
                 if hasattr(self, "ner_head"):
                     self.ner_head.optimizer.step()
 
-                if self.args.fix_ner:
-                    print("Printing ner head weights for debug...")
-                    if self.args.crf:
-                        weights = self.ner_head.classifier.transition
-                    else:
-                        weights = self.ner_head.classifier.weight
-                    if prev !=0:
-                        val = prev == weights
-                        print("Compared to prev: {}".format(val))
-                    prev = weights
-                    print("Weights value: {}".format(weights))
+                # if self.args.fix_ner:
+                #     print("Printing ner head weights for debug...")
+                #     if self.args.crf:
+                #         weights = self.ner_head.classifier.transition
+                #     else:
+                #         weights = self.ner_head.classifier.weight
+                #     if prev !=0:
+                #
+                #         print("Compared to prev: {}".format(val))
+                #     prev = weights
+                #     print("Weights value: {}".format(weights))
                 total_loss += loss.item()
 
                 # Never
