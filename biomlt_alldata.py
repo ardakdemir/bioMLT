@@ -36,9 +36,12 @@ import datetime
 import logging
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import uuid
 
 pretrained_bert_name = 'bert-base-cased'
-gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute)
+exp_id = str(uuid.uuid4())[:4]
+gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute,
+                                                                    x.second)
 
 exp_prefix = gettime()
 print("Time  {} ".format(exp_prefix))
@@ -429,6 +432,12 @@ def hugging_parse_args():
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
     parser.add_argument(
+        "--fix_ner",
+        default=False,
+        action="store_true",
+        help="If set to false ner head is fixed during training!",
+    )
+    parser.add_argument(
         "--qas_with_ner",
         default=False,
         action="store_true",
@@ -549,11 +558,15 @@ def hugging_parse_args():
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
 
-    parser.add_argument('--ner_train_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
+    parser.add_argument('--ner_train_file', type=str,
+                        default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
                         help='training file for ner')
-    parser.add_argument('--ner_dev_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_devel.tsv',
+    parser.add_argument('--ner_dev_file', type=str,
+                        default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_devel.tsv',
                         help='development file for ner')
-    parser.add_argument('--ner_test_file', type=str, default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_test.tsv', help='test file for ner')
+    parser.add_argument('--ner_test_file', type=str,
+                        default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_test.tsv',
+                        help='test file for ner')
     parser.add_argument('--ner_vocab_path', type=str, default='ner_vocab', help='training file for ner')
     parser.add_argument('--load_ner_vocab_path', type=str, default='ner_vocab', help='vocab for ner')
     parser.add_argument('--load_ner_label_vocab_path', type=str, default='ner_label_vocab', help='label vocab for ner')
@@ -1000,7 +1013,8 @@ class BioMLT(nn.Module):
         if only_preds:
             return nbests, preds
 
-        qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file) if result_save_path is None else result_save_path
+        qas_save_path = os.path.join(self.args.output_dir,
+                                     self.args.qas_train_result_file) if result_save_path is None else result_save_path
         logging.info("Writing eval results to {}".format(qas_save_path))
         print("Writing eval results to {}".format(qas_save_path))
 
@@ -1660,6 +1674,11 @@ class BioMLT(nn.Module):
                 weights = self.ner_head.classifier.weight
             print("Transition weights shape: {} value: {}".format(weights.shape, weights))
 
+            if self.args.fix_ner:
+                print("Not training the ner head...")
+                logging.info("Not training the ner head...")
+                for x in self.ner_head.parameters():
+                    x.requires_grad = False
         if self.args.only_squad:
             type = "squad"
         if self.args.qa_type is not None:
@@ -1796,6 +1815,13 @@ class BioMLT(nn.Module):
                 if hasattr(self, "ner_head"):
                     self.ner_head.optimizer.step()
 
+                if self.args.fix_ner:
+                    print("Printing ner head weights for debug...")
+                    if self.args.crf:
+                        weights = self.ner_head.classifier.transition
+                    else:
+                        weights = self.ner_head.classifier.weight
+                    print("Weights value: {}".format(weights))
                 total_loss += loss.item()
 
                 # Never
@@ -1841,14 +1867,16 @@ class BioMLT(nn.Module):
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
         latex_save_path = os.path.join(self.args.output_dir, self.args.qas_latex_table_file)
         exp_name = "QAS_ONLY" if not self.args.qas_with_ner else "QAS_hier_" + self.args.ner_dataset_name
-        write_to_latex_table(exp_name,best_results, best_exacts, latex_save_path)
+        write_to_latex_table(exp_name, best_results, best_exacts, latex_save_path)
         # f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types, result_save_path=qas_save_path)
         print("Writing best results to {}".format(qas_save_path))
         if os.path.exists(qas_save_path):
             with open(qas_save_path, "a") as out:
                 s = exp_name
                 s = s + "\t"
-                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q],3)) for q in ["list", "factoid","yesno"]]) + "\n"
+                s = s + "\t".join(["\t".join(
+                    [str(round(best_results[q], 3)), str(round(best_exacts[q], 3))]) if q != "yesno" else str(
+                    round(best_results[q], 3)) for q in ["list", "factoid", "yesno"]]) + "\n"
                 out.write(s)
         else:
             with open(qas_save_path, "a") as out:
@@ -1856,7 +1884,9 @@ class BioMLT(nn.Module):
                 s = s + "Model\tF1\tExact\tF1\tExact\tF1\n"
                 s = s + exp_name
                 s = s + "\t"
-                s = s + "\t".join(["\t".join([str(round(best_results[q],3)),str(round(best_exacts[q],3))]) if q!="yesno" else str(round(best_results[q],3)) for q in ["list", "factoid","yesno"]]) + "\n"
+                s = s + "\t".join(["\t".join(
+                    [str(round(best_results[q], 3)), str(round(best_exacts[q], 3))]) if q != "yesno" else str(
+                    round(best_results[q], 3)) for q in ["list", "factoid", "yesno"]]) + "\n"
                 out.write(s)
 
     def pretrain_mlm(self):
@@ -2439,7 +2469,7 @@ class BioMLT(nn.Module):
         sents = generate_pred_content(all_sents, all_preds, all_truths, all_lens)
         orig_idx = dataset.orig_idx
         sents = unsort_dataset(sents, orig_idx)
-        conll_file = os.path.join(self.args.output_dir, 'ner_out')
+        conll_file = os.path.join(self.args.output_dir, 'ner_out_{}'.format(exp_id))
         conll_writer(conll_file, sents, ["token", 'truth', "ner_pred"], "ner")
         # prec, rec, f1 = 0,0,0
         prec, rec, f1 = evaluate_conll_file(open(conll_file, encoding='utf-8').readlines())
@@ -2482,20 +2512,25 @@ def write_nerresult_with_repeat(save_path, row_name, results):
         s += "{}\t{}\t{}\t{}\n".format(row_name, "\t".join([str(round(res, 3)) for res in results]), mean_res, max_res)
         o.write(s)
 
-def write_to_latex_table(exp_name, best_results, best_exacts, latex_save_path, col_order = ["list","factoid","yesno"]):
-    col_vals = {k : "&".join([str(round(best_results[k],3)),str(round(best_exacts[k],3))]) if k!="yesno"else  str(round(best_results[k],3)) for k in col_order}
 
-    header = "&" + "&".join(["\\multicolumn{2}{c}{" + key +  "}"  if key!= "yesno" else key for key in col_order]) + "\\\\\\hline\n"
-    header2 ="&" +  "&".join(["&".join(["F1", "Exact"]) if key!= "yesno" else "F1" for key in col_order]) + "\\\\\\hline\n"
+def write_to_latex_table(exp_name, best_results, best_exacts, latex_save_path, col_order=["list", "factoid", "yesno"]):
+    col_vals = {k: "&".join([str(round(best_results[k], 3)), str(round(best_exacts[k], 3))]) if k != "yesno" else str(
+        round(best_results[k], 3)) for k in col_order}
+
+    header = "&" + "&".join(
+        ["\\multicolumn{2}{c}{" + key + "}" if key != "yesno" else key for key in col_order]) + "\\\\\\hline\n"
+    header2 = "&" + "&".join(
+        ["&".join(["F1", "Exact"]) if key != "yesno" else "F1" for key in col_order]) + "\\\\\\hline\n"
     row = "&".join([exp_name] + [col_vals[k] for k in col_order]) + "\\\\\n"
 
     if os.path.exists(latex_save_path):
-        with open(latex_save_path,"a") as o:
+        with open(latex_save_path, "a") as o:
             o.write(row)
     else:
         row = header + header2 + row
-        with open(latex_save_path,"a") as o:
+        with open(latex_save_path, "a") as o:
             o.write(row)
+
 
 def checkSavedModel():
     biomlt = BioMLT()
