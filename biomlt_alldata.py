@@ -1741,6 +1741,7 @@ class BioMLT(nn.Module):
         print("weights before training !!")
         print(self.qas_head.qa_outputs.weight[-10:])
         print("Concat size {} yesno size {}".format(len(train_dataset), len(yesno_train_dataset)))
+        prev = 0
         for epoch, _ in enumerate(train_iterator):
             total_loss = 0
             epoch_iterator = tqdm(train_dataloader, desc="Factoid Iteration")
@@ -1821,6 +1822,10 @@ class BioMLT(nn.Module):
                         weights = self.ner_head.classifier.transition
                     else:
                         weights = self.ner_head.classifier.weight
+                    if prev !=0:
+                        val = prev == weights
+                        print("Compared to prev: {}".format(val))
+                    prev = weights
                     print("Weights value: {}".format(weights))
                 total_loss += loss.item()
 
