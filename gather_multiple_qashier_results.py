@@ -38,7 +38,7 @@ def printDict(results_dict):
         results = results_dict[str(exp_name)]
         keys = ["list_f1", "list_exact", "factoid_f1", "factoid_exact", "yesno_f1"]
         for model in model_names:
-            result in results[model]
+            result = results[model]
             row = "\t".join([exp_name, model] + [str(round(result[key], 3)) for key in keys]) + "\n"
             table = table + row
     return table
