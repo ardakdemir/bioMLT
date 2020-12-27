@@ -695,7 +695,8 @@ class BioMLT(nn.Module):
             if self.args.qas_with_ner:
                 print("Initializing ner latent representation getter")
                 self.ner_label_embedding = nn.Embedding(label_dim, self.args.ner_latent_dim)
-
+                self.ner_embed_optimizer = optim.AdamW([{"params": self.ner_label_embedding.parameters()}], \
+                                                       lr=self.args.ner_lr, eps=1e-6)
         self.bert_optimizer = AdamW(optimizer_grouped_parameters,
                                     lr=2e-5)
         self.bert_scheduler = get_linear_schedule_with_warmup(
@@ -1782,6 +1783,7 @@ class BioMLT(nn.Module):
                 self.yesno_optimizer.zero_grad()
                 if hasattr(self, "ner_head"):
                     self.ner_head.optimizer.zero_grad()
+                    self.ner_embed_optimizer.zero_grad()
 
                 # batch = train_dataset[0]
                 # batch = tuple(t.unsqueeze(0) for t in batch)
@@ -1815,11 +1817,13 @@ class BioMLT(nn.Module):
                 self.yesno_optimizer.step()
                 if hasattr(self, "ner_head"):
                     self.ner_head.optimizer.step()
+                    self.ner_embed_optimizer.step()
 
                 if self.args.fix_ner:
-                    if hasattr(self,"ner_label_embedding"):
+                    if hasattr(self, "ner_label_embedding"):
                         print("Printing ner head weights for debug...")
                         weight = self.ner_label_embedding.weight
+
                         print("Weights value: {}".format(weight))
                 total_loss += loss.item()
 
