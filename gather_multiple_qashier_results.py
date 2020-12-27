@@ -27,14 +27,18 @@ def get_single_result(result_folder, file_name="qas_latex_table", offset=2):
 
 def printDict(results_dict):
     title = "\t".join(["Size", "Model", "List F1", "List Exact", "Factoid F1", "Factoid Exact", "YesNo F1"]) + "\n"
+
+
     table = title
     exp_names_sorted = [int(exp_name) for exp_name in results_dict.keys()]
     exp_names_sorted.sort()
     exp_names_sorted = [str(x) for x in exp_names_sorted]
+    model_names = list(results_dict[exp_names_sorted[0]].keys())
     for exp_name in exp_names_sorted:
         results = results_dict[str(exp_name)]
         keys = ["list_f1", "list_exact", "factoid_f1", "factoid_exact", "yesno_f1"]
-        for model, result in results.items():
+        for model in model_names:
+            result in results[model]
             row = "\t".join([exp_name, model] + [str(round(result[key], 3)) for key in keys]) + "\n"
             table = table + row
     return table
