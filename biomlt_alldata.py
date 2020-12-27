@@ -1819,7 +1819,7 @@ class BioMLT(nn.Module):
                 if self.args.fix_ner:
                     if hasattr(self,ner_label_embedding):
                         print("Printing ner head weights for debug...")
-                        weight = ner_label_embedding.weight
+                        weight = self.ner_label_embedding.weight
                         print("Weights value: {}".format(weight))
                 total_loss += loss.item()
 
