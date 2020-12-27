@@ -1817,7 +1817,7 @@ class BioMLT(nn.Module):
                     self.ner_head.optimizer.step()
 
                 if self.args.fix_ner:
-                    if hasattr(self,ner_label_embedding):
+                    if hasattr(self,"ner_label_embedding"):
                         print("Printing ner head weights for debug...")
                         weight = self.ner_label_embedding.weight
                         print("Weights value: {}".format(weight))
