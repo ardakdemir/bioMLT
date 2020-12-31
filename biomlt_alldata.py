@@ -1107,6 +1107,7 @@ class BioMLT(nn.Module):
         bert2toks = batch[-1]
         outputs = self.bert_model(**bert_inputs)
         bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
+        print("Bert out shape : {}".format(bert_out.shape))
         if self.args.qas_with_ner:
             bert_outs_for_ner, lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1], bert2toks,
                                                                                device=self.args.device)
