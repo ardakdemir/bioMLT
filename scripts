@@ -98,7 +98,7 @@ python  bioMLT/gather_multiple_qashier_results.py  qashier_initberts_1412_2021_
 python  bioMLT/gather_multiple_qashier_results.py  qashier_wopenalty_1712_
 
 
-#NER daata seelection
+#NER data seelection
 python bioMLT/data_selection.py --ner_root_folder biobert_data/datasets/NER_for_QAS_combinedonly --save_folder_pref subsets1612_0755
 qsub bioMLT/subset_generation_submit.sh biobert_data/datasets/NER_for_QAS_combinedonly	subsets_weighted_wopentaly_1712
 
@@ -107,7 +107,7 @@ qsub bioMLT/subset_generation_submit.sh biobert_data/datasets/NER_for_QAS_combin
 bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_pipeline_1712_1547 biobert_data/datasets/subsets1612_wopenalty_NER_for_QAS_combinedonly_  nerqas_pipeline_1712
 bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_weighted_initbiobert_1812_1629 biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_ nerqas_weighted_initbiobert_1812_1629
 
-bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_weighted_initbiobert_2712 biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_ nerqas_pipeline_1712_1547
+bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_pipeline_1712_1547 biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_ qas_fixner_2712
 
 
 

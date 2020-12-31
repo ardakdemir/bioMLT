@@ -1087,6 +1087,7 @@ class BioMLT(nn.Module):
         if type in ['factoid', 'list']:
             qas_outputs = self.qas_head(**squad_inputs)
         elif type == 'yesno':
+
             ##!!!  CLS TOKEN  !!! ##
             yes_no_logits = self.yesno_head(bert_output[:, 0])
 
@@ -1131,6 +1132,7 @@ class BioMLT(nn.Module):
                             print("{}\t{}".format(t, l))
                         except:
                             continue
+                        print("[EOS]\n\n")
                 # for pred in preds:
                 #     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                 #                     reader.label_vocab.unmap(pred)))
