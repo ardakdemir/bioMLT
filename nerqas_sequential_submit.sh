@@ -16,11 +16,11 @@ target_dev_file=$folder_path"/ent_devel.tsv"
 
 
 #First NER
-# singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py  --qas_with_ner --crf --mode ner --total_train_steps $total_train_steps --output_dir $output_dir  --num_train_epochs $ner_epoch_num --ner_train_file  $target_train_file  --ner_dev_file $target_dev_file  --ner_test_file $target_test_file  --load_model
+ singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py  --qas_with_ner --crf --mode ner --total_train_steps $total_train_steps --output_dir $output_dir  --num_train_epochs $ner_epoch_num --ner_train_file  $target_train_file  --ner_dev_file $target_dev_file  --ner_test_file $target_test_file  --load_model
 
 
 load_model_path=${output_dir}"/best_ner_model_on_"${ner_dataset_name}
 load_ner_vocab_path=${load_model_path}"_vocab"
 
 #Second QAS
-singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --fix_ner --ner_latent_dim $ner_latent_dim  --mode qas --ner_dataset_name ${ner_dataset_name} --mode qas --output_dir $output_dir  --load_model_path ${load_model_path} --load_ner_label_vocab_path ${load_ner_vocab_path} --max_seq_length 256  --qas_with_ner --init_ner_head --crf --model_save_name best_qas_model_${ner_dataset_name}
+singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py --fix_ner --ner_latent_dim $ner_latent_dim   --ner_dataset_name ${ner_dataset_name} --mode qas --output_dir $output_dir  --load_model_path ${load_model_path} --load_ner_label_vocab_path ${load_ner_vocab_path} --max_seq_length 256  --qas_with_ner --init_ner_head --crf --model_save_name best_qas_model_${ner_dataset_name}
