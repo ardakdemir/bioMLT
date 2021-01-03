@@ -1781,7 +1781,7 @@ class BioMLT(nn.Module):
                 self.bert_optimizer.zero_grad()
                 self.qas_head.optimizer.zero_grad()
                 self.yesno_optimizer.zero_grad()
-                if hasattr(self, "ner_head"):
+                if hasattr(self, "ner_head") and self.args.qas_with_ner:
                     self.ner_head.optimizer.zero_grad()
                     self.ner_embed_optimizer.zero_grad()
 
@@ -1815,7 +1815,7 @@ class BioMLT(nn.Module):
                 self.bert_optimizer.step()
                 self.qas_head.optimizer.step()
                 self.yesno_optimizer.step()
-                if hasattr(self, "ner_head"):
+                if hasattr(self, "ner_head") and self.args.qas_with_ner:
                     self.ner_head.optimizer.step()
                     self.ner_embed_optimizer.step()
 
