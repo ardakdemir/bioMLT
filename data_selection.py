@@ -891,13 +891,13 @@ def store_ner_vectors(similarity, args):
     similarity, vectors, sentences, labels = get_ner_vectors(similarity, args)
     print("Final shape of ner vectors: {}".format(vectors.shape))
     vector_folder = args.vector_save_folder
-    # dataset_name = args.ner_train_file
-    # dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
-    # if not os.path.exists(vector_folder):
-    #     os.makedirs(vector_folder)
-    # dataset_path = os.path.join(vector_folder, dataset_name)
-    # with h5py.File(dataset_path, "w") as h:
-    #     h["vectors"] = np.array(vectors)
+    dataset_name = args.ner_train_file
+    dataset_name = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
+    if not os.path.exists(vector_folder):
+        os.makedirs(vector_folder)
+    dataset_path = os.path.join(vector_folder, dataset_name)
+    with h5py.File(dataset_path, "w") as h:
+        h["vectors"] = np.array(vectors)
 
 
 def store_ner_subset(similarity, args, size, save_file_path):
@@ -917,6 +917,12 @@ def store_ner_subset(similarity, args, size, save_file_path):
     write_subset_dataset(indices, sentences, labels, save_file_path)
     return similarity
 
+
+def store_vectors():
+    args = parse_args()
+    similarity = Similarity()
+    store_qas_vectors(similarity, args)
+    store_ner_vectors(similarity, args)
 
 def generate_store_ner_subsets():
     args = parse_args()
@@ -957,8 +963,8 @@ def generate_store_ner_subsets():
 
 
 def main():
-    generate_store_ner_subsets()
-
+    # generate_store_ner_subsets()
+    store_vectors()
 
 if __name__ == "__main__":
     main()
