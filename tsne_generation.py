@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument('--patience', type=int, default=100, help="Number of epochs without progress.")
     parser.add_argument('--n_iter', type=int, default=500, help="Number of epochs.")
     parser.add_argument('--tsne_dim', type=int, default=2, help="Number of dims.")
-    parser.add_argument('--limit', type=int, default=10, help="Number of vectors from each dataset.")
+    parser.add_argument('--limit', type=int, default=500000, help="Number of vectors from each dataset.")
 
     args = parser.parse_args()
     args.device = device
