@@ -19,10 +19,10 @@ def parse_args():
     parser.add_argument('--ner_vector_file', type=str, default='bert_vectors/All-entities.hdf5')
     parser.add_argument('--qas_vector_file', type=str, default='bert_vectors/BioASQ-training8b.hdf5')
     parser.add_argument('--save_folder', type=str, default='tsne_vectors')
-    parser.add_argument('--patience', type=int, default=100, help="Number of epochs without progress")
-    parser.add_argument('--n_iter', type=int, default=500, help="Number of epochs ")
-    parser.add_argument('--tsne_dim', type=int, default=2, help="Number of dims ")
-    parser.add_argument('--limit', type=int, default=50000, help="Number of vectors from each dataset.")
+    parser.add_argument('--patience', type=int, default=100, help="Number of epochs without progress.")
+    parser.add_argument('--n_iter', type=int, default=500, help="Number of epochs.")
+    parser.add_argument('--tsne_dim', type=int, default=2, help="Number of dims.")
+    parser.add_argument('--limit', type=int, default=10, help="Number of vectors from each dataset.")
 
     args = parser.parse_args()
     args.device = device
@@ -61,7 +61,7 @@ def plot_visualization(vector_array,names,save_path):
 def store_tsne_vectors():
     args = parse_args()
     ner_file_path, qas_file_path = args.ner_vector_file, args.qas_vector_file
-    limit = args.limit
+    limit = int(args.limit)
     save_folder = args.save_folder
     exp_name = "niter_{}_patience_{}".format(args.n_iter,args.patience)
     plot_save_path = os.path.join(save_folder,"tsne_visualization_{}.png".format(exp_name))
