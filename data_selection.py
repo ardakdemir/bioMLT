@@ -600,6 +600,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     "token_type_ids": batch[2],
                 }
                 bert2toks = batch[-1]
+                length =
             elif dataset_type == "ner":
                 tokens, bert_batch_after_padding, data = batch
                 data = [d.to(device) for d in data]
@@ -622,9 +623,14 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
             bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
+
+            # CLS-based approach
             cls_vector = bert_hiddens[:, 0, :]
             # print("CLS vector shape: {}".format(cls_vector.shape))
             dataset_vector.extend(cls_vector.detach().cpu())
+
+            # Mean-based approach
+            mean_vector = torch.mean(bert_hiddens[:,:, :],dim=1)
 
     dataset_vectors = torch.stack(dataset_vector)
 
