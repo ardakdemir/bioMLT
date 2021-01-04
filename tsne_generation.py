@@ -37,7 +37,7 @@ def tsne_generation(vectors):
     tsne_vectors = tsne.fit_transform(vectors)
     e = time.time()
     t = round(e - b, 3)
-    print("tSNE in {} seconds".format(t))
+    print("{} tSNE are generated in {} seconds".format(len(tsne_vectors),t))
     return tsne_vectors
 
 def store_tsne_vectors():
