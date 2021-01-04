@@ -43,7 +43,7 @@ def tsne_generation(vectors):
 def store_tsne_vectors():
     args = parse_args()
     ner_file_path, qas_file_path  = args.ner_vector_file, args.qas_vector_file
-    limit = 5000
+    limit = 500000
     save_folder = args.save_folder
 
     ner_file_name = os.path.split(ner_file_path)[-1].split(".")[0]
