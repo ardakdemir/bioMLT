@@ -49,8 +49,14 @@ def store_tsne_vectors():
     ner_file_name = os.path.split(ner_file_path)[-1].split(".")[0]
     qas_file_name = os.path.split(qas_file_path)[-1].split(".")[0]
 
-    ner_feats = get_stored_features(ner_file_path)[:limit]
-    qas_feats = get_stored_features(qas_file_path)[:limit]
+    ner_feats = get_stored_features(ner_file_path)
+
+    qas_feats = get_stored_features(qas_file_path)
+    print("Ner feats shape: {}".format(ner_feats.shape))
+    print("Qas feats shape: {}".format(qas_feats.shape))
+
+    ner_feats = ner_feats[:limit]
+    qas_feats = qas_feats[:limit]
 
     ner_length = len(ner_feats)
     qas_length = len(qas_feats)
