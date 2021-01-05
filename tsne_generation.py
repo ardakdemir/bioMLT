@@ -1,3 +1,11 @@
+"""
+
+It is highly recommended to use another dimensionality reduction method (e.g. PCA for dense data or TruncatedSVD for sparse data)
+ to reduce the number of dimensions to a reasonable amount (e.g. 50) if the number of features is very high.
+  This will suppress some noise and speed up the computation of pairwise distances between samples.
+"""
+
+
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +31,8 @@ def parse_args():
     parser.add_argument('--n_iter', type=int, default=500, help="Number of epochs.")
     parser.add_argument('--tsne_dim', type=int, default=2, help="Number of dims.")
     parser.add_argument('--limit', type=int, default=500000, help="Number of vectors from each dataset.")
+    parser.add_argument('--with_pca', action="store_true", default=False, help="Whether to apply pca before tsne or not (to speed up)...")
+    parser.add_argument('--pca_dim', type=int, default=50, help="Number of components for pca...")
 
     args = parser.parse_args()
     args.device = device
@@ -83,6 +93,11 @@ def store_tsne_vectors():
     vectors = np.vstack([ner_feats, qas_feats])
     print("Shape of features: {}".format(vectors.shape))
 
+    if args.with_pca:
+        print("Applying pca first to reduce dimensionality...")
+        pca = PCA(n_components=args.pca_dim)
+        vectors = pca.fit_transform(vectors)
+        print("Output shape of PCA: {}".format(vectors.shape))
     tsne_vectors = tsne_generation(vectors, args)
     ner_tsne = tsne_vectors[:ner_length]
     qas_tsne = tsne_vectors[ner_length:]
