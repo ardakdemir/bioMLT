@@ -113,7 +113,7 @@ def store_tsne_vectors():
         config = {key: comb[i] for i, key in enumerate(keys)}
         print("tSNE for config: {}".format(config))
 
-        exp_name = "_".join(["_".join(k.replace("-","_"),v) for k,v in config.items()])
+        exp_name = "_".join(["_".join(k.replace("-", "_"), v) for k, v in config.items()])
         plot_save_path = os.path.join(save_folder, "tsne_visualization_{}.png".format(exp_name))
         print("Plot will be saved in {}".format(plot_save_path))
 
@@ -123,8 +123,8 @@ def store_tsne_vectors():
 
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
-        ner_save_path = os.path.join(save_folder, ner_file_name + ".hdf5")
-        qas_save_path = os.path.join(save_folder, qas_file_name + ".hdf5")
+        ner_save_path = os.path.join(save_folder, ner_file_name + "_" + exp_name + ".hdf5")
+        qas_save_path = os.path.join(save_folder, qas_file_name + "_" + exp_name + ".hdf5")
         with h5py.File(ner_save_path, "w") as h:
             h["vectors"] = np.array(ner_tsne)
         with h5py.File(qas_save_path, "w") as h:
