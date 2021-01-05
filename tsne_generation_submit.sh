@@ -6,6 +6,6 @@ save_folder=$1
 #$ -N tsne_generation
 
 echo "Running tsne generation"
-singularity exec ~/singularity/pt-cuda-tf python bioMLT/tsne_generation.py --save_folder $save_folder --limit 10 --with_pca 
+singularity exec ~/singularity/pt-cuda-tf python bioMLT/tsne_generation.py --save_folder $save_folder --limit 100 --with_pca
 
 
