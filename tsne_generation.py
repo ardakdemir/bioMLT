@@ -113,7 +113,7 @@ def store_tsne_vectors():
         config = {key: comb[i] for i, key in enumerate(keys)}
         print("tSNE for config: {}".format(config))
 
-        exp_name = "_".join(["_".join([k.replace("-", "_"), v]) for k, v in config.items()])
+        exp_name = "_".join(["_".join([k.replace("-", "_"), str(v)]) for k, v in config.items()])
         plot_save_path = os.path.join(save_folder, "tsne_visualization_{}.png".format(exp_name))
         print("Plot will be saved in {}".format(plot_save_path))
 
