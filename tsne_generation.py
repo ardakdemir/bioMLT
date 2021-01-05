@@ -58,7 +58,7 @@ def tsne_generation(vectors, args, config=None):
     b = time.time()
 
     if config:
-        tsne = TSNE(n_components=tsne_dim, n_iter=n_iter, n_iter_without_progress=patience, *config)
+        tsne = TSNE(n_components=tsne_dim, n_iter=n_iter, n_iter_without_progress=patience, **config)
     else:
         tsne = TSNE(n_components=tsne_dim, n_iter=n_iter, n_iter_without_progress=patience)
 
