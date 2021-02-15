@@ -1310,7 +1310,7 @@ class BioMLT(nn.Module):
         self.ner_dev_reader.label_vocab = self.args.ner_label_vocab
 
         print("Dataset sizes")
-        print("Train: {}".format(len(self.ner_train_reader)))
+        print("Train: {}".format(len(self.ner_reader)))
         print("Dev: {}".format(len(self.ner_dev_reader)))
         print("Test: {}".format(len(self.ner_test_reader)))
 
