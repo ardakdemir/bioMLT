@@ -107,8 +107,18 @@ qsub bioMLT/subset_generation_submit.sh biobert_data/datasets/NER_for_QAS_combin
 bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_pipeline_1712_1547 biobert_data/datasets/subsets1612_wopenalty_NER_for_QAS_combinedonly_  nerqas_pipeline_1712
 bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_weighted_initbiobert_1812_1629 biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_ nerqas_weighted_initbiobert_1812_1629
 
-bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_pipeline_1712_1547 biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_ qas_fixner_2712
+bash bioMLT/nerqas_allsubsets_submitter.sh nerqas_woembed_pipeline_0401 biobert_data/datasets/subsets_weighted_3112_NER_for_QAS_combinedonly_ nerqas_woembed_0401
 
 
 
 singularity exec --nv ~/singularity/pt-cuda-tf python bioMLT/biomlt_alldata.py  --qas_with_ner --crf --mode ner --total_train_steps 1000 --output_dir deneme10000  --num_train_epochs 2 --ner_train_file  biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_10000/All-entities/ent_train.tsv  --ner_dev_file biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_10000/All-entities/ent_devel.tsv  --ner_test_file biobert_data/datasets/subsets_weighted_wopentaly_1712_NER_for_QAS_combinedonly_10000/All-entities/ent_test.tsv  --load_model
+
+
+
+## CLI qas without ner embedding?!?!?!
+
+python bioMLT/biomlt_alldata.py   --ner_dataset_name All-entities --mode qas --output_dir deneme_0301  --load_model_path singlefolder_3112/best_ner_model_on_All-entities --load_ner_label_vocab_path singlefolder_3112/best_ner_model_on_All-entities_vocab --max_seq_length 256  --init_ner_head --crf --model_save_name best_qas_model_All-entities
+
+
+# NERQAS single folder pipeline
+bash bioMLT/nerqas_singlefolder_submitter.sh singlefolder_3112 biobert_data/datasets/NER_for_QAS_combinedonly  singlefolder_3112_exp
