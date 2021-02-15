@@ -122,3 +122,7 @@ python bioMLT/biomlt_alldata.py   --ner_dataset_name All-entities --mode qas --o
 
 # NERQAS single folder pipeline
 bash bioMLT/nerqas_singlefolder_submitter.sh singlefolder_3112 biobert_data/datasets/NER_for_QAS_combinedonly  singlefolder_3112_exp
+
+
+## Run NER 15 February 2021
+python biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 100 --output_dir ../trial_1502_2021  --num_train_epochs 10 --ner_train_file  ../biobert_data/datasets/NER/BC5CDR-disease/ent_train.tsv  --ner_dev_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_train.tsv  --ner_test_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_train.tsv  --load_model

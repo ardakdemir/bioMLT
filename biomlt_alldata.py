@@ -1289,7 +1289,6 @@ class BioMLT(nn.Module):
         self.args.ner_label_dim = len(self.args.ner_label_vocab)
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
-
         # Eval
         print("Reading NER eval data from: {}".format(self.args.ner_test_file))
         eval_file_path = self.args.ner_test_file if eval_file is None else eval_file
@@ -2233,7 +2232,7 @@ class BioMLT(nn.Module):
         patience = 0
         ner_type = os.path.split(eval_file)[0].split("/")[-1]
         model_save_name = "best_ner_model_on_{}".format(ner_type)
-
+        print("Model save name: {}".format(model_save_name))
         self.load_ner_data()
         # if self.args.load_model:
         #    self.ner_reader.label_vocab = self.ner_label_vocab
@@ -2358,7 +2357,8 @@ class BioMLT(nn.Module):
             test_result[ner_type] = {"f1": f,
                                      "pre": p,
                                      "rec": r}
-            out_path = os.path.join(self.args.output_dir, 'ner_out')
+            # conll_file = os.path.join(self.args.output_dir, 'ner_out_{}'.format(exp_id))
+            out_path = os.path.join(self.args.output_dir, 'ner_out_{}'.format(exp_id))
             save_name = os.path.join(self.args.output_dir, "preds_on_test")
             self.store_output_file(out_path, save_name, ner_type)
             print("result on test file : {}".format(test_result))
