@@ -1311,8 +1311,8 @@ class BioMLT(nn.Module):
 
         print("Dataset sizes")
         print("Train: {}".format(len(self.ner_reader)))
-        print("Dev: {}".format(len(self.ner_eval_reader)))
-        print("Test: {}".format(len(self.ner_test_reader)))
+        print("Dev: {}".format(len(self.ner_dev_reader)))
+        print("Test: {}".format(len(self.ner_eval_reader)))
 
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
