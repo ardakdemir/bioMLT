@@ -420,6 +420,12 @@ def hugging_parse_args():
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
     parser.add_argument(
+        "--biobert_model_name",
+        default="dmis-lab/biobert-v1.1",
+        type=str,
+        help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
+    )
+    parser.add_argument(
         "--init_bert",
         default=False,
         action="store_true",
@@ -630,10 +636,15 @@ class BioMLT(nn.Module):
 
         self.device = self.args.device
         # try:
-        if self.args.biobert_model_path is not None and not self.args.init_bert:
-            print("Trying to load from {} ".format(self.args.biobert_model_path))
-            self.bert_model = BertForPreTraining.from_pretrained(self.args.biobert_model_path,
-                                                                 from_tf=True, output_hidden_states=True)
+        if not self.args.init_bert:
+            # Try with huggingface moodel
+            # print("Trying to load from {} ".format(self.args.biobert_model_path))
+            # self.bert_model = BertForPreTraining.from_pretrained(self.args.biobert_model_path,
+            #                                                      from_tf=True, output_hidden_states=True)
+            print("Trying to load from: {}".format(self.args.biobert_model_name))
+            self.bert_model = BertForTokenClassification.from_pretrained(self.args.biobert_model_name, output_hidden_states=True)
+            self.bert_model.classifier = nn.Identity()
+            self.bert_tokenizer = BertTokenizer.from_pretrained(self.args.biobert_model_name)
         # except:
         # logging.info("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
         # print("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
@@ -645,10 +656,10 @@ class BioMLT(nn.Module):
                 self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name, output_hidden_states=True)
             else:
                 self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
+            self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
 
         # print(self.bert_model)
-        self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-        self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
+        self.bert_out_dim = 768
         self.args.bert_output_dim = self.bert_out_dim
         self.args.qas_input_dim = self.bert_out_dim if not self.args.qas_with_ner else self.bert_out_dim + self.args.ner_latent_dim
         print("BERT output dim {}".format(self.bert_out_dim))
@@ -1024,7 +1035,8 @@ class BioMLT(nn.Module):
                 o.write("{}\t{}\t{}\t{}\n".format("MODEL", "TYPE", "F1", "EXACT"))
 
         with open(qas_save_path, "a") as o:
-            model_name = "QAS_ONLY" if not self.args.qas_with_ner and self.args.ner_dataset_name is None else "QAS_with_{}".format(self.args.ner_dataset_name)
+            model_name = "QAS_ONLY" if not self.args.qas_with_ner and self.args.ner_dataset_name is None else "QAS_with_{}".format(
+                self.args.ner_dataset_name)
 
             for t in types:
                 s = "{}\t{}\t{}\t{}\n".format(model_name, t, f1s[t], exacts[t])
