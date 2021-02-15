@@ -642,7 +642,8 @@ class BioMLT(nn.Module):
             # self.bert_model = BertForPreTraining.from_pretrained(self.args.biobert_model_path,
             #                                                      from_tf=True, output_hidden_states=True)
             print("Trying to load from: {}".format(self.args.biobert_model_name))
-            self.bert_model = BertForTokenClassification.from_pretrained(self.args.biobert_model_name, output_hidden_states=True)
+            self.bert_model = BertForTokenClassification.from_pretrained(self.args.biobert_model_name,
+                                                                         output_hidden_states=True)
             self.bert_model.classifier = nn.Identity()
             self.bert_tokenizer = BertTokenizer.from_pretrained(self.args.biobert_model_name)
         # except:
@@ -1289,10 +1290,10 @@ class BioMLT(nn.Module):
         self.args.ner_label_dim = len(self.args.ner_label_vocab)
         # with open(self.args.ner_vocab_path,"w") as np:
         #    json.dump(self.args.ner_label_vocab.w2ind,np)
-        # Eval
+
+        # Test
         print("Reading NER eval data from: {}".format(self.args.ner_test_file))
         eval_file_path = self.args.ner_test_file if eval_file is None else eval_file
-        print("Reading NER dev data from: {}".format(self.args.ner_dev_file))
         self.eval_file = eval_file_path
         self.ner_eval_reader = DataReader(
             eval_file_path, "NER", tokenizer=self.bert_tokenizer,
@@ -1300,12 +1301,18 @@ class BioMLT(nn.Module):
         self.ner_eval_reader.label_vocab = self.args.ner_label_vocab
 
         # Dev
+        print("Reading NER dev data from: {}".format(self.args.ner_dev_file))
         dev_file_path = self.args.ner_dev_file if self.args.ner_dev_file is not None else self.eval_file
         self.dev_file = dev_file_path
         self.ner_dev_reader = DataReader(
             dev_file_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
         self.ner_dev_reader.label_vocab = self.args.ner_label_vocab
+
+        print("Dataset sizes")
+        print("Train: {}".format(len(self.ner_train_reader)))
+        print("Dev: {}".format(len(self.ner_dev_reader)))
+        print("Test: {}".format(len(self.ner_test_reader)))
 
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
