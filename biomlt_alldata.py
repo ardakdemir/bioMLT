@@ -1144,7 +1144,7 @@ class BioMLT(nn.Module):
                             print("{}\t{}".format(t, l))
                         except:
                             continue
-                        print("[EOS]\n\n")
+                    print("[EOS]\n\n")
                 # for pred in preds:
                 #     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                 #                     reader.label_vocab.unmap(pred)))
