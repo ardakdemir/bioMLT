@@ -1159,7 +1159,7 @@ class BioMLT(nn.Module):
             # print("Bert out shape {}".format(bert_out.shape))
             inp = torch.cat((bert_out, ner_outs_for_qas), dim=2)
             # print("Input shape {}".format(inp.shape))
-            return inp, [all_tokens, ner_labels]
+            return inp, [all_tokens, ner_classes]
             # qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
         else:
             # print("Returning bert output only. Input shape {}".format(bert_out.shape))
