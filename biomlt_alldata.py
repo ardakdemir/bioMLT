@@ -547,19 +547,6 @@ def hugging_parse_args():
         "--overwrite_cache", action="store_true", help="Overwrite the cached training and evaluation sets"
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
-
-    parser.add_argument(
-        "--fp16",
-        action="store_true",
-        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit",
-    )
-    parser.add_argument(
-        "--fp16_opt_level",
-        type=str,
-        default="O1",
-        help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
-             "See details at https://nvidia.github.io/apex/amp.html",
-    )
     parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
@@ -896,6 +883,7 @@ class BioMLT(nn.Module):
         self.bert_model.eval()
         self.qas_head.eval()
         self.yesno_head.eval()
+        ner_outputs = []
         if hasattr(self, "ner_head"):
             self.ner_head.eval()
         if self.args.model_save_name is None:
@@ -940,7 +928,8 @@ class BioMLT(nn.Module):
                 }
                 with torch.no_grad():
                     # outputs = self.bert_model(**bert_inputs)
-                    qas_input = self.get_qas_input(bert_inputs, batch)
+                    qas_input, ner_output = self.get_qas_input(bert_inputs, batch)
+                    ner_outputs.append(ner_output)
                     # squad_inputs["bert_outputs"] = outputs[-1][-2]
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
@@ -1004,6 +993,15 @@ class BioMLT(nn.Module):
                 preds[type] = output_prediction_file
                 continue
                 # return output_nbest_file, output_prediction_file
+
+            ner_output_name = "neroutput_{}_test".format(type)
+            ner_output_save_path = os.path.join(self.args.output_dir, ner_output_name)
+            print("Writing ner output on {} eval data to".format(ner_output_name))
+            with open(ner_output_save_path, "w") as o:
+                output = "\n\n".join(
+                    ["\n".join(["{}\t{}".format(t, l) for t, l in zip(ner_output)]) for ner_output in ner_outputs])
+                o.write(output)
+
 
             # Print examples...
             # print("example answer:: ")
@@ -1128,6 +1126,7 @@ class BioMLT(nn.Module):
             ner_outs = self.ner_head(bert_outs_for_ner)
             preds = []
             ner_classes = []
+            all_tokens = []
             voc_size = len(self.ner_vocab)
             if self.args.crf:
                 sent_len = ner_outs.shape[1]
@@ -1139,12 +1138,8 @@ class BioMLT(nn.Module):
                     labels = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                                       self.ner_vocab.unmap(pred)))
                     ner_classes.append(labels)
-                    for t, l in zip(tokens, labels):
-                        try:
-                            print("{}\t{}".format(t, l))
-                        except:
-                            continue
-                    print("[EOS]\n\n")
+                    prev_l = "O"
+                    all_tokens.append(tokens)
                 # for pred in preds:
                 #     pred = list(map(lambda x: "O" if (x == "[SEP]" or x == "[CLS]" or x == "[PAD]") else x,
                 #                     reader.label_vocab.unmap(pred)))
@@ -1164,11 +1159,11 @@ class BioMLT(nn.Module):
             # print("Bert out shape {}".format(bert_out.shape))
             inp = torch.cat((bert_out, ner_outs_for_qas), dim=2)
             # print("Input shape {}".format(inp.shape))
-            return inp
+            return inp, [all_tokens, ner_labels]
             # qas_outputs = self.get_qas(bert_out, batch, eval=False, is_yes_no=self.args.squad_yes_no, type=type)
         else:
             # print("Returning bert output only. Input shape {}".format(bert_out.shape))
-            return bert_out
+            return bert_out, []
 
     def get_ner(self, bert_output, bert2toks, ner_inds=None, predict=False, task_index=None, loss_aver=True):
         bert_hiddens = self._get_bert_batch_hidden(bert_output, bert2toks)
@@ -1815,7 +1810,7 @@ class BioMLT(nn.Module):
                 # logging.info("Input ids shape : {}".format(batch[0].shape))
                 # outputs = self.bert_model(**bert_inputs)
 
-                qas_input = self.get_qas_input(bert_inputs, batch)
+                qas_input, ner_output = self.get_qas_input(bert_inputs, batch)
                 # bert_outs_for_ner , lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1],batch[-1],device=device)
                 # print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
                 # ner_outs = self.ner_head(bert_outs_for_ner)
