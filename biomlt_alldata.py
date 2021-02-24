@@ -2334,7 +2334,7 @@ class BioMLT(nn.Module):
                     best_f1 = f1
                     patience = 0
                     self.save_all_model(model_save_name)
-                    out_path = os.path.join(self.args.output_dir, 'ner_out')
+                    out_path = os.path.join(self.args.output_dir, 'ner_out_{}'.format(exp_id))
                     save_name = os.path.join(self.args.output_dir, "preds_on_dev")
                     self.store_output_file(out_path, save_name, ner_type)
 
