@@ -684,7 +684,7 @@ class BioMLT(nn.Module):
             logging.info("Initializing the sequence labelling head...")
             vocab_path = self.args.load_ner_label_vocab_path
             label_vocab = {}
-            with open(vocab_path, "r") as r:
+            with open(vocab_path, "r",encoding="utf-8") as r:
                 label_vocab = json.load(r)
             self.ner_vocab = Vocab(label_vocab)
             print("Label vocabulary: {}".format(label_vocab))
