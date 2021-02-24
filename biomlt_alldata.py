@@ -883,7 +883,8 @@ class BioMLT(nn.Module):
         self.bert_model.eval()
         self.qas_head.eval()
         self.yesno_head.eval()
-        ner_outputs = []
+        ner_labels = []
+        ner_tokens = []
         if hasattr(self, "ner_head"):
             self.ner_head.eval()
         if self.args.model_save_name is None:
@@ -929,7 +930,8 @@ class BioMLT(nn.Module):
                 with torch.no_grad():
                     # outputs = self.bert_model(**bert_inputs)
                     qas_input, ner_output = self.get_qas_input(bert_inputs, batch)
-                    ner_outputs.append(ner_output)
+                    ner_labels.extend(ner_output[1])
+                    ner_tokens.extend(ner_output[0])
                     # squad_inputs["bert_outputs"] = outputs[-1][-2]
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
@@ -997,11 +999,15 @@ class BioMLT(nn.Module):
             ner_output_name = "neroutput_{}_test".format(type)
             ner_output_save_path = os.path.join(self.args.output_dir, ner_output_name)
             print("Writing ner output on {} eval data to".format(ner_output_name))
-            with open(ner_output_save_path, "w",encoding = "utf-8") as o:
+            print("Ner labels 0")
+            print(ner_labels[0])
+            print("Ner tokens 0")
+            print(ner_tokens[0])
+            with open(ner_output_save_path, "w", encoding="utf-8") as o:
                 output = "\n\n".join(
-                    ["\n".join(["{}\t{}".format(t, l) for t, l in zip(ner_output[0],ner_output[1]) if t !="[PAD]"]) for ner_output in ner_outputs])
+                    ["\n".join(["{}\t{}".format(t, l) for t, l in zip(tokens, labels) if t != "[PAD]"]) for
+                     labels, tokens in zip(ner_labels, ner_tokens)])
                 o.write(output)
-
 
             # Print examples...
             # print("example answer:: ")
