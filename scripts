@@ -127,12 +127,12 @@ bash bioMLT/nerqas_singlefolder_submitter.sh singlefolder_3112 biobert_data/data
 ## Run NER 15 February 2021
 
 # BC5CDR-disease
-python biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 1000 --output_dir ../trial_1502_2021  --num_train_epochs 10 --ner_train_file  ../biobert_data/datasets/NER/BC5CDR-disease/ent_train.tsv  --ner_dev_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_devel.tsv  --ner_test_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_test.tsv  --load_model
+python biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 1000 --output_dir ../trial_2402  --num_train_epochs 10 --ner_train_file  ../biobert_data/datasets/NER/BC5CDR-disease/ent_train.tsv  --ner_dev_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_devel.tsv  --ner_test_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_test.tsv  --load_model
 
-#
-python biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 1000 --output_dir ../trial_1502_2021  --num_train_epochs 10 --ner_train_file  ../biobert_data/datasets/NER/BC5CDR-disease/ent_train.tsv  --ner_dev_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_devel.tsv  --ner_test_file ../biobert_data/datasets/NER/BC5CDR-disease/ent_test.tsv  --load_model
+# JNLPBA
+python biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_steps 1000 --output_dir ../trial_1502_2021  --num_train_epochs 10 --ner_train_file  ../biobert_data/datasets/NER/JNLPBA/ent_train.tsv  --ner_dev_file ../biobert_data/datasets/NER/JNLPBA/ent_devel.tsv  --ner_test_file ../biobert_data/datasets/NER/JNLPBA/ent_test.tsv  --load_model
 
 
 
 ## Run QAS with NER 1502 2021
-python bioMLT/biomlt_alldata.py  --ner_dataset_name BC5CDR-chem --mode qas --output_dir qaswithner_1502  --load_model_path ../trial_1502_2021/ --load_ner_label_vocab_path ${load_ner_vocab_path} --max_seq_length 256 --init_ner_head --crf --model_save_name best_qas_model_${ner_dataset_name}
+python bioMLT/biomlt_alldata.py    --qas_with_ner --crf  --ner_dataset_name BC5CDR-chem --mode qas --output_dir qaswithner_2202  --load_model_path trial_1502_2021/best_ner_model_on_BC5CDR-chem --load_ner_label_vocab_path trial_1502_2021/best_ner_model_on_BC5CDR-chem_vocab --max_seq_length 256 --init_ner_head --crf --model_save_name best_qas_model_BC5CDR-chem

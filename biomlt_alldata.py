@@ -997,7 +997,7 @@ class BioMLT(nn.Module):
             ner_output_name = "neroutput_{}_test".format(type)
             ner_output_save_path = os.path.join(self.args.output_dir, ner_output_name)
             print("Writing ner output on {} eval data to".format(ner_output_name))
-            with open(ner_output_save_path, "w") as o:
+            with open(ner_output_save_path, "w",encoding = "utf-8") as o:
                 output = "\n\n".join(
                     ["\n".join(["{}\t{}".format(t, l) for t, l in zip(ner_output[0],ner_output[1]) if t !="[PAD]"]) for ner_output in ner_outputs])
                 o.write(output)
