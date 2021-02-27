@@ -1003,11 +1003,14 @@ class BioMLT(nn.Module):
             print(ner_labels[0])
             print("Ner tokens 0")
             print(ner_tokens[0])
-            with open(ner_output_save_path, "w", encoding="utf-8") as o:
-                output = "\n\n".join(
-                    ["\n".join(["{}\t{}".format(t, l) for t, l in zip(tokens, labels) if t != "[PAD]"]) for
-                     labels, tokens in zip(ner_labels, ner_tokens)])
-                o.write(output)
+            if args.qas_with_ner:
+                print("Storing NER outputs for debugging")
+                logging.info("Storing NER outputs for debugging")
+                with open(ner_output_save_path, "w", encoding="utf-8") as o:
+                    output = "\n\n".join(
+                        ["\n".join(["{}\t{}".format(t, l) for t, l in zip(tokens, labels) if t != "[PAD]"]) for
+                         labels, tokens in zip(ner_labels, ner_tokens)])
+                    o.write(output)
 
             # Print examples...
             # print("example answer:: ")
