@@ -602,7 +602,6 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     "token_type_ids": batch[2],
                 }
                 bert2toks = batch[-1]
-                length =
             elif dataset_type == "ner":
                 tokens, bert_batch_after_padding, data = batch
                 data = [d.to(device) for d in data]
