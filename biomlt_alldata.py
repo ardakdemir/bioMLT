@@ -283,7 +283,7 @@ def hugging_parse_args():
     )
     parser.add_argument(
         "--max_seq_length",
-        default=512,
+        default=,
         type=int,
         help="The maximum total input sequence length after WordPiece tokenization. Sequences "
              "longer than this will be truncated, and sequences shorter than this will be padded.",
@@ -684,7 +684,7 @@ class BioMLT(nn.Module):
             logging.info("Initializing the sequence labelling head...")
             vocab_path = self.args.load_ner_label_vocab_path
             label_vocab = {}
-            with open(vocab_path, "r",encoding="utf-8") as r:
+            with open(vocab_path, "r", encoding="utf-8") as r:
                 label_vocab = json.load(r)
             self.ner_vocab = Vocab(label_vocab)
             print("Label vocabulary: {}".format(label_vocab))
@@ -996,14 +996,15 @@ class BioMLT(nn.Module):
                 continue
                 # return output_nbest_file, output_prediction_file
 
-            ner_output_name = "neroutput_{}_test".format(type)
-            ner_output_save_path = os.path.join(self.args.output_dir, ner_output_name)
-            print("Writing ner output on {} eval data to".format(ner_output_name))
-            print("Ner labels 0")
-            print(ner_labels[0])
-            print("Ner tokens 0")
-            print(ner_tokens[0])
             if args.qas_with_ner:
+                ner_name = self.args.ner_dataset_name
+                ner_output_name = "neroutput_{}_{}_test".format(ner_name, type)
+                ner_output_save_path = os.path.join(self.args.output_dir, ner_output_name)
+                print("Writing ner output on {} eval data to".format(ner_output_name))
+                print("Ner labels 0")
+                print(ner_labels[0])
+                print("Ner tokens 0")
+                print(ner_tokens[0])
                 print("Storing NER outputs for debugging")
                 logging.info("Storing NER outputs for debugging")
                 with open(ner_output_save_path, "w", encoding="utf-8") as o:

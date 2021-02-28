@@ -5,7 +5,6 @@ ner_dataset_name=${3}
 ner_latent_dim=64
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N qas_hier_train
 
 load_model_path=${ner_folder}"/best_ner_model_on_"${ner_dataset_name}
 load_ner_vocab_path=${load_model_path}"_vocab"
