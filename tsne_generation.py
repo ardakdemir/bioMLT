@@ -9,7 +9,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-import torch
+# import torch
 import argparse
 import os
 from sklearn.cluster import KMeans
@@ -24,22 +24,26 @@ hyperparameters = {"perplexity": np.linspace(5, 50, 10),
 
 
 def parse_args():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Working  on {}".format(device))
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # print("Working  on {}".format(device))
     parser = argparse.ArgumentParser()
     parser.add_argument('--ner_vector_file', type=str, default='bert_vectors/All-entities.hdf5')
+    parser.add_argument('--ner_vector_folder', type=str, default='bert_vectors/ner_vectors')
+
     parser.add_argument('--qas_vector_file', type=str, default='bert_vectors/BioASQ-training8b.hdf5')
-    parser.add_argument('--save_folder', type=str, default='tsne_vectors')
+    parser.add_argument('--save_folder', type=str, default='tsne_vectors_0103')
     parser.add_argument('--patience', type=int, default=300, help="Number of epochs without progress.")
     parser.add_argument('--n_iter', type=int, default=1000, help="Number of epochs.")
     parser.add_argument('--tsne_dim', type=int, default=2, help="Number of dims.")
     parser.add_argument('--limit', type=int, default=500000, help="Number of vectors from each dataset.")
     parser.add_argument('--with_pca', action="store_true", default=False,
                         help="Whether to apply pca before tsne or not (to speed up)...")
+    parser.add_argument('--from_folder', action="store_true", default=False,
+                        help="Whether to apply pca before tsne or not (to speed up)...")
     parser.add_argument('--pca_dim', type=int, default=50, help="Number of components for pca...")
 
     args = parser.parse_args()
-    args.device = device
+    # args.device = device
     return args
 
 
@@ -80,15 +84,28 @@ def plot_visualization(vector_array, names, save_path):
 
 def store_tsne_vectors():
     args = parse_args()
-    ner_file_path, qas_file_path = args.ner_vector_file, args.qas_vector_file
+    ner_file_path, qas_file_path =args.ner_vector_file, args.qas_vector_file
     limit = int(args.limit)
     save_folder = args.save_folder
 
     ner_file_name = os.path.split(ner_file_path)[-1].split(".")[0]
     qas_file_name = os.path.split(qas_file_path)[-1].split(".")[0]
-
-    ner_feats = get_stored_features(ner_file_path)
-
+    ner_lengths = []
+    ner_names = []
+    if not args.from_folder:
+        print("Getting NER from {}".format(ner_file_path))
+        ner_feats = get_stored_features(ner_file_path)
+        ner_lengths.append(len(ner_feats))
+        ner_names.append(ner_file_name)
+    else:
+        ner_feats = []
+        for d in os.listdir(args.ner_vector_folder):
+            p = os.path.join(args.ner_vector_folder, d)
+            ner_feat = get_stored_features(ner_file_path)
+            ner_feats.extend(ner_feat)
+            ner_lengths.append(len(ner_feat))
+            ner_names.append(d.split(".")[0])
+        ner_feats = np.array(ner_feats)
     qas_feats = get_stored_features(qas_file_path)
     print("Ner feats shape: {}".format(ner_feats.shape))
     print("Qas feats shape: {}".format(qas_feats.shape))
@@ -116,20 +133,25 @@ def store_tsne_vectors():
         exp_name = "_".join(["_".join([k.replace("-", "_"), str(v)]) for k, v in config.items()])
         plot_save_path = os.path.join(save_folder, "tsne_visualization_{}.png".format(exp_name))
         print("Plot will be saved in {}".format(plot_save_path))
-
         tsne_vectors = tsne_generation(vectors, args, config=config)
-        ner_tsne = tsne_vectors[:ner_length]
-        qas_tsne = tsne_vectors[ner_length:]
 
+        ner_tsnes = []
+        prev = 0
+        for l in ner_lengths:
+            ner_tsnes.append(tsne_vectors[prev:prev + l])
+            prev = l
+        qas_tsne = tsne_vectors[ner_length:]
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
-        ner_save_path = os.path.join(save_folder, ner_file_name + "_" + exp_name + ".hdf5")
         qas_save_path = os.path.join(save_folder, qas_file_name + "_" + exp_name + ".hdf5")
-        with h5py.File(ner_save_path, "w") as h:
-            h["vectors"] = np.array(ner_tsne)
+        for i, ner_name in enumerate(ner_names):
+            ner_save_path = os.path.join(save_folder, ner_name + "_" + exp_name + ".hdf5")
+            with h5py.File(ner_save_path, "w") as h:
+                h["vectors"] = np.array(ner_tsnes[i])
         with h5py.File(qas_save_path, "w") as h:
             h["vectors"] = np.array(qas_tsne)
-        plot_visualization([ner_tsne, qas_tsne], ["ner", "qas"], plot_save_path)
+
+        plot_visualization(ner_tsnes + [qas_tsne], ner_names + ["qas"], plot_save_path)
 
 
 def main():
