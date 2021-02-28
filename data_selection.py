@@ -313,6 +313,12 @@ def parse_args():
         help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
     )
     parser.add_argument(
+        "--biobert_model_name",
+        default="dmis-lab/biobert-v1.1",
+        type=str,
+        help="The model checkpoint for weights initialization. Leave None if you want to train a model from scratch.",
+    )
+    parser.add_argument(
         "--init_bert",
         default=False,
         action="store_true",
@@ -450,16 +456,12 @@ class Similarity(nn.Module):
         if not os.path.isdir(self.args.output_dir):
             os.makedirs(self.args.output_dir)
         self.device = self.args.device
-        # try:
         if self.args.biobert_model_path is not None and not self.args.init_bert:
-            print("Trying to load from {} ".format(self.args.biobert_model_path))
-            print("Using Biobert Model: {} ".format(self.args.biobert_model_path))
-
-            self.bert_model = BertForPreTraining.from_pretrained(self.args.biobert_model_path,
-                                                                 from_tf=True, output_hidden_states=True)
-        # except:
-        # logging.info("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
-        # print("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
+            print("Trying to load from: {}".format(self.args.biobert_model_name))
+            self.bert_model = BertForTokenClassification.from_pretrained(self.args.biobert_model_name,
+                                                                         output_hidden_states=True)
+            self.bert_model.classifier = nn.Identity()
+            self.bert_tokenizer = BertTokenizer.from_pretrained(self.args.biobert_model_name)
         else:
             pretrained_bert_name = self.args.model_name_or_path
             if pretrained_bert_name is None:
@@ -468,10 +470,10 @@ class Similarity(nn.Module):
                 self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name, output_hidden_states=True)
             else:
                 self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
+            self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
 
-        # print(self.bert_model)
-        self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-        self.bert_out_dim = self.bert_model.bert.encoder.layer[11].output.dense.out_features
+
+        self.bert_out_dim = 768
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
@@ -924,6 +926,15 @@ def store_ner_subset(similarity, args, size, save_file_path):
     return similarity
 
 
+def store_ner_folder_vectors():
+    args = parse_args()
+    ner_folder = args.ner_root_folder
+    for ner_dataset in os.listdir(ner_folder):
+        p = os.path.join(ner_folder,ner_dataset)
+        args.ner_train_file = os.path.join(p,"ent_train.tsv")
+        similarity = Similarity()
+        store_ner_vectors(similarity, args)
+
 def store_vectors():
     args = parse_args()
     similarity = Similarity()
@@ -970,7 +981,8 @@ def generate_store_ner_subsets():
 
 def main():
     # generate_store_ner_subsets()
-    store_vectors()
+    # store_vectors()
+    store_ner_folder_vectors()
 
 if __name__ == "__main__":
     main()
