@@ -930,8 +930,9 @@ class BioMLT(nn.Module):
                 with torch.no_grad():
                     # outputs = self.bert_model(**bert_inputs)
                     qas_input, ner_output = self.get_qas_input(bert_inputs, batch)
-                    ner_labels.extend(ner_output[1])
-                    ner_tokens.extend(ner_output[0])
+                    if args.qas_with_ner:
+                        ner_labels.extend(ner_output[1])
+                        ner_tokens.extend(ner_output[0])
                     # squad_inputs["bert_outputs"] = outputs[-1][-2]
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
