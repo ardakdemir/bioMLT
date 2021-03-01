@@ -28,6 +28,7 @@ hyperparameters = {"perplexity": [25],
 ner_names = ["s800", "linnaeus", "BC4CHEMD", "NCBI-disease", "JNLPBA", "BC5CDR-disease", "BC2GM", "BC5CDR-chem"]
 qas_names = ["BioASQ-training8b"]
 
+
 def parse_args():
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # print("Working  on {}".format(device))
@@ -105,11 +106,13 @@ def store_tsne_vectors():
     else:
         ner_feats = []
         for d in os.listdir(args.ner_vector_folder):
+            print("Getting {} vectors".format(d))
             p = os.path.join(args.ner_vector_folder, d)
             ner_feat = get_stored_features(p)
             ner_feats.extend(ner_feat)
             ner_lengths.append(len(ner_feat))
             ner_names.append(d.split(".")[0])
+            print("Length of {} : {}".format(len(ner_feat)))
         ner_feats = np.array(ner_feats)
     qas_feats = get_stored_features(qas_file_path)
     print("Ner feats shape: {}".format(ner_feats.shape))
@@ -157,7 +160,6 @@ def store_tsne_vectors():
             h["vectors"] = np.array(qas_tsne)
 
         plot_visualization(ner_tsnes + [qas_tsne], ner_names + ["qas"], plot_save_path)
-
 
 
 def main():
