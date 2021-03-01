@@ -112,7 +112,7 @@ def store_tsne_vectors():
             ner_feats.extend(ner_feat)
             ner_lengths.append(len(ner_feat))
             ner_names.append(d.split(".")[0])
-            print("Length of {} : {}".format(len(ner_feats)))
+            print("Length of {} : {}".format(len(ner_feat)))
         ner_feats = np.array(ner_feats)
     qas_feats = get_stored_features(qas_file_path)
     print("Ner feats shape: {}".format(ner_feats.shape))
