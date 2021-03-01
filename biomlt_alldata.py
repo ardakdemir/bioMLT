@@ -43,6 +43,8 @@ exp_id = str(uuid.uuid4())[:4]
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute,
                                                                     x.second)
 
+
+bioasq_8b_counts = {'summary': 777, 'list': 644, 'yesno': 881, 'factoid': 941}
 exp_prefix = gettime()
 print("Time  {} ".format(exp_prefix))
 random_seed = 12345
