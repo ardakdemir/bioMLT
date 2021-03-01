@@ -22,6 +22,11 @@ from itertools import product
 hyperparameters = {"perplexity": np.linspace(5, 50, 10),
                    "learning_rate": np.linspace(10, 1000, 20)}
 
+hyperparameters = {"perplexity": [25],
+                   "learning_rate": [62]}
+
+ner_names = ["s800", "linnaeus", "BC4CHEMD", "NCBI-disease", "JNLPBA", "BC5CDR-disease", "BC2GM", "BC5CDR-chem"]
+qas_names = ["BioASQ-training8b"]
 
 def parse_args():
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -84,7 +89,7 @@ def plot_visualization(vector_array, names, save_path):
 
 def store_tsne_vectors():
     args = parse_args()
-    ner_file_path, qas_file_path =args.ner_vector_file, args.qas_vector_file
+    ner_file_path, qas_file_path = args.ner_vector_file, args.qas_vector_file
     limit = int(args.limit)
     save_folder = args.save_folder
 
@@ -101,7 +106,7 @@ def store_tsne_vectors():
         ner_feats = []
         for d in os.listdir(args.ner_vector_folder):
             p = os.path.join(args.ner_vector_folder, d)
-            ner_feat = get_stored_features(ner_file_path)
+            ner_feat = get_stored_features(p)
             ner_feats.extend(ner_feat)
             ner_lengths.append(len(ner_feat))
             ner_names.append(d.split(".")[0])
@@ -152,6 +157,7 @@ def store_tsne_vectors():
             h["vectors"] = np.array(qas_tsne)
 
         plot_visualization(ner_tsnes + [qas_tsne], ner_names + ["qas"], plot_save_path)
+
 
 
 def main():
