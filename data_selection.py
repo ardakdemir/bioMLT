@@ -608,8 +608,8 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                 token_type_ids = []
                 for i, inp_ids in enumerate(batch[0]):
                     print("Shape ",inp_ids.shape)
-                    pad_length = sum(inp_ids == 0)
-                    print( pad_length)
+                    pad_length = sum([1 if a else 0 for a in inp_ids == 0])
+                    print(pad_length)
                     l = len(inp_ids)-pad_length
                     input_ids.append(inp_ids[:l])
                     attention_mask.append(batch[1][:l])
