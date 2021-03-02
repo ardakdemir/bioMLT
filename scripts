@@ -154,4 +154,4 @@ bash bioMLT/qashier_all_submitter.sh qas_withner_2702_1052 neronly_all_2402 biob
 
 
 ## tSNE generation
-python bioMLT/tsne_generation.py --save_folder tsne_vis_0203 --limit 1000  --from_folder
+python bioMLT/tsne_generation.py --save_folder tsne_vis_0203 --limit 1000  --from_folder --with_pca
