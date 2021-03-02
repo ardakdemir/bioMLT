@@ -642,7 +642,10 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
-            bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
+            layers = [-2,-3,-4]
+            bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
+            print("Means shape ", bert_hiddens.shape)
+            # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
 
             # CLS-based approach
             cls_vector = bert_hiddens[:, 0, :]
