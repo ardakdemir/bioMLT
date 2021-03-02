@@ -138,7 +138,7 @@ python bioMLT/biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_st
 python bioMLT/biomlt_alldata.py    --qas_with_ner --crf  --ner_dataset_name BC5CDR-chem --mode qas --output_dir qaswithner_2202  --load_model_path trial_1502_2021/best_ner_model_on_BC5CDR-chem --load_ner_label_vocab_path trial_1502_2021/best_ner_model_on_BC5CDR-chem_vocab --max_seq_length 256 --init_ner_head --model_save_name best_qas_model_BC5CDR-chem
 
 ## Run QAS w/o NER 2702
-python bioMLT/biomlt_alldata.py  --mode qas --num_train_epochs 2 --output_dir qas_woner_2702   --max_seq_length 256 --model_save_name best_qas_model_woner --load_model
+python bioMLT/biomlt_alldata.py  --mode qas --num_train_epochs 2 --total_train_steps 200 --output_dir qas_woner_0203   --max_seq_length 256 --model_save_name best_qas_model_woner --load_model
 
 	# qsub version
 	qsub -N qasonly_2802 bioMLT/qasonly_submit.sh qasonly_2802_1011
@@ -151,3 +151,7 @@ python bioMLT/biomlt_alldata.py    --qas_with_ner --crf  --num_train_epochs 2 --
 
 ##QAS hier 2702
 bash bioMLT/qashier_all_submitter.sh qas_withner_2702_1052 neronly_all_2402 biobert_data/datasets/NER qaswithner2702
+
+
+## tSNE generation
+python bioMLT/tsne_generation.py --save_folder tsne_vis_0203 --limit 1000  --from_folder

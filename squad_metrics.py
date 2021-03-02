@@ -7,7 +7,6 @@ This file is expected to map question ID's to the model's predicted probability
 that a question is unanswerable.
 """
 
-
 import collections
 import json
 import logging
@@ -17,7 +16,6 @@ import string
 import numpy as np
 
 from transformers.tokenization_bert import BasicTokenizer
-
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +66,7 @@ def compute_f1(a_gold, a_pred):
     return f1
 
 
-def get_raw_scores(examples, preds, is_yes_no = False):
+def get_raw_scores(examples, preds, is_yes_no=False):
     """
     Computes the exact and f1 scores from the examples and the model predictions
     """
@@ -84,7 +82,6 @@ def get_raw_scores(examples, preds, is_yes_no = False):
                 gold_answers = [answer["text"] for answer in example.answers if normalize_answer(answer["text"])]
             except:
                 gold_answers = [answer for answer in example.answers[0]["text"] if normalize_answer(answer)]
-
 
         if not gold_answers:
             # For unanswerable questions, only correct answer is empty string
@@ -120,7 +117,7 @@ def make_eval_dict(exact_scores, f1_scores, qid_list=None):
                 ("f1", 100.0 * sum(f1_scores.values()) / total),
                 ("total", total),
             ])
-        
+
     else:
         total = len(qid_list)
         return collections.OrderedDict(
@@ -215,7 +212,7 @@ def find_all_best_thresh(main_eval, preds, exact_raw, f1_raw, na_probs, qid_to_h
     main_eval["best_f1_thresh"] = f1_thresh
 
 
-def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_threshold=1.0,is_yes_no = False):
+def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_threshold=1.0, is_yes_no=False):
     qas_id_to_has_answer = {example.qas_id: bool(example.answers) for example in examples}
     has_answer_qids = [qas_id for qas_id, has_answer in qas_id_to_has_answer.items() if has_answer]
     no_answer_qids = [qas_id for qas_id, has_answer in qas_id_to_has_answer.items() if not has_answer]
@@ -223,14 +220,14 @@ def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_
     if no_answer_probs is None:
         no_answer_probs = {k: 0.0 for k in preds}
 
-    exact, f1 = get_raw_scores(examples, preds, is_yes_no = is_yes_no)
+    exact, f1 = get_raw_scores(examples, preds, is_yes_no=is_yes_no)
 
     exact_threshold = apply_no_ans_threshold(
         exact, no_answer_probs, qas_id_to_has_answer, no_answer_probability_threshold
     )
     f1_threshold = apply_no_ans_threshold(f1, no_answer_probs, qas_id_to_has_answer, no_answer_probability_threshold)
 
-    evaluation = make_eval_dict(exact_threshold, f1_threshold,has_answer_qids)
+    evaluation = make_eval_dict(exact_threshold, f1_threshold, has_answer_qids)
 
     if has_answer_qids:
         has_ans_eval = make_eval_dict(exact_threshold, f1_threshold, qid_list=has_answer_qids)
@@ -296,7 +293,7 @@ def get_final_text(pred_text, orig_text, do_lower_case, verbose_logging=False):
     start_position = tok_text.find(pred_text)
     if start_position == -1:
         if verbose_logging:
-            #logger.info("Unable to find text: '%s' in '%s'" % (pred_text, orig_text))
+            # logger.info("Unable to find text: '%s' in '%s'" % (pred_text, orig_text))
             a = 5
 
         return orig_text
@@ -307,7 +304,7 @@ def get_final_text(pred_text, orig_text, do_lower_case, verbose_logging=False):
 
     if len(orig_ns_text) != len(tok_ns_text):
         if verbose_logging:
-            #logger.info("Length not equal after stripping spaces: '%s' vs '%s'", orig_ns_text, tok_ns_text)
+            # logger.info("Length not equal after stripping spaces: '%s' vs '%s'", orig_ns_text, tok_ns_text)
             a = 5
         return orig_text
 
@@ -339,7 +336,7 @@ def get_final_text(pred_text, orig_text, do_lower_case, verbose_logging=False):
             logger.info("Couldn't map end position")
         return orig_text
 
-    output_text = orig_text[orig_start_position : (orig_end_position + 1)]
+    output_text = orig_text[orig_start_position: (orig_end_position + 1)]
     return output_text
 
 
@@ -379,20 +376,20 @@ def _compute_softmax(scores):
 
 
 def compute_predictions_logits(
-    all_examples,
-    all_features,
-    all_results,
-    n_best_size,
-    max_answer_length,
-    do_lower_case,
-    output_prediction_file,
-    output_nbest_file,
-    output_null_log_odds_file,
-    verbose_logging,
-    version_2_with_negative,
-    null_score_diff_threshold,
-    tokenizer,
-    is_yes_no = False
+        all_examples,
+        all_features,
+        all_results,
+        n_best_size,
+        max_answer_length,
+        do_lower_case,
+        output_prediction_file,
+        output_nbest_file,
+        output_null_log_odds_file,
+        verbose_logging,
+        version_2_with_negative,
+        null_score_diff_threshold,
+        tokenizer,
+        is_yes_no=False
 ):
     """Write final predictions to the json file and log-odds of null if needed."""
     logger.info("Writing predictions to: %s" % (output_prediction_file))
@@ -467,11 +464,11 @@ def compute_predictions_logits(
                             )
                         )
             else:
-                #print("My  no yes entrypoint: ")
-                #print(result.start_logits)
-                #print(result.end_logits)
+                # print("My  no yes entrypoint: ")
+                # print(result.start_logits)
+                # print(result.end_logits)
                 ## NO is the 0 index
-                no_logit= result.start_logits
+                no_logit = result.start_logits
                 yes_logit = result.end_logits
                 prelim_predictions.append(
                     _PrelimPrediction(
@@ -504,7 +501,7 @@ def compute_predictions_logits(
         if not is_yes_no:
             prelim_predictions = sorted(prelim_predictions, key=lambda x: (x.start_logit + x.end_logit), reverse=True)
         else:
-            prelim_predictions = sorted(prelim_predictions, key=lambda x : max(x.start_logit,x.end_logit),reverse=True)
+            prelim_predictions = sorted(prelim_predictions, key=lambda x: max(x.start_logit, x.end_logit), reverse=True)
         _NbestPrediction = collections.namedtuple(  # pylint: disable=invalid-name
             "NbestPrediction", ["text", "start_logit", "end_logit"]
         )
@@ -517,10 +514,10 @@ def compute_predictions_logits(
                     break
                 feature = features[pred.feature_index]
                 if pred.start_index > 0:  # this is a non-null prediction
-                    tok_tokens = feature.tokens[pred.start_index : (pred.end_index + 1)]
+                    tok_tokens = feature.tokens[pred.start_index: (pred.end_index + 1)]
                     orig_doc_start = feature.token_to_orig_map[pred.start_index]
                     orig_doc_end = feature.token_to_orig_map[pred.end_index]
-                    orig_tokens = example.doc_tokens[orig_doc_start : (orig_doc_end + 1)]
+                    orig_tokens = example.doc_tokens[orig_doc_start: (orig_doc_end + 1)]
 
                     tok_text = tokenizer.convert_tokens_to_string(tok_tokens)
 
@@ -547,14 +544,14 @@ def compute_predictions_logits(
                 nbest.append(_NbestPrediction(text=final_text, start_logit=pred.start_logit, end_logit=pred.end_logit))
         else:
             for pred in prelim_predictions:
-                
-                #print("No logit {}  yes logit {}".format(pred.start_logit, pred.end_logit))
-                if pred.start_index==0:
+
+                # print("No logit {}  yes logit {}".format(pred.start_logit, pred.end_logit))
+                if pred.start_index == 0:
                     nbest.append(_NbestPrediction(text="no", start_logit=pred.start_logit, end_logit=0.0))
                 else:
                     nbest.append(_NbestPrediction(text="yes", start_logit=0, end_logit=pred.end_logit))
-            #nbest.append(_NbestPrediction(text="NO", start_logit=pred.start_logit, end_logit=0.0))
-            #nbest.append(_NbestPrediction(text="YES", start_logit=0.0, end_logit=pred.end_logit))
+            # nbest.append(_NbestPrediction(text="NO", start_logit=pred.start_logit, end_logit=0.0))
+            # nbest.append(_NbestPrediction(text="YES", start_logit=0.0, end_logit=pred.end_logit))
         # if we didn't include the empty option in the n-best, include it
         if version_2_with_negative and not is_yes_no:
             if "" not in seen_predictions:
@@ -593,7 +590,7 @@ def compute_predictions_logits(
         assert len(nbest_json) >= 1
 
         if not version_2_with_negative or is_yes_no:
-            all_predictions[example.qas_id] = [nbest_json[0]["text"],nbest_json[0]["probability"]]
+            all_predictions[example.qas_id] = [nbest_json[0]["text"], nbest_json[0]["probability"]]
         else:
             # predict "" iff the null score - the score of best non-null > threshold
             score_diff = score_null - best_non_null_entry.start_logit - (best_non_null_entry.end_logit)
@@ -621,19 +618,19 @@ def compute_predictions_logits(
 
 
 def compute_predictions_log_probs(
-    all_examples,
-    all_features,
-    all_results,
-    n_best_size,
-    max_answer_length,
-    output_prediction_file,
-    output_nbest_file,
-    output_null_log_odds_file,
-    start_n_top,
-    end_n_top,
-    version_2_with_negative,
-    tokenizer,
-    verbose_logging,
+        all_examples,
+        all_features,
+        all_results,
+        n_best_size,
+        max_answer_length,
+        output_prediction_file,
+        output_nbest_file,
+        output_null_log_odds_file,
+        start_n_top,
+        end_n_top,
+        version_2_with_negative,
+        tokenizer,
+        verbose_logging,
 ):
     """ XLNet write prediction logic (more complex than Bert's).
         Write final predictions to the json file and log-odds of null if needed.
@@ -736,10 +733,10 @@ def compute_predictions_log_probs(
             # final_text = paragraph_text[start_orig_pos: end_orig_pos + 1].strip()
 
             # Previously used Bert untokenizer
-            tok_tokens = feature.tokens[pred.start_index : (pred.end_index + 1)]
+            tok_tokens = feature.tokens[pred.start_index: (pred.end_index + 1)]
             orig_doc_start = feature.token_to_orig_map[pred.start_index]
             orig_doc_end = feature.token_to_orig_map[pred.end_index]
-            orig_tokens = example.doc_tokens[orig_doc_start : (orig_doc_end + 1)]
+            orig_tokens = example.doc_tokens[orig_doc_start: (orig_doc_end + 1)]
             tok_text = tokenizer.convert_tokens_to_string(tok_tokens)
 
             # Clean whitespace

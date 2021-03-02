@@ -147,7 +147,7 @@ def store_tsne_vectors():
         prev = 0
         for l in ner_lengths:
             ner_tsnes.append(tsne_vectors[prev:prev + l])
-            prev = l
+            prev = prev+l
         qas_tsne = tsne_vectors[ner_length:]
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
