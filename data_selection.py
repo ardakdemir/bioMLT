@@ -940,7 +940,7 @@ def store_vectors():
     args = parse_args()
     similarity = Similarity()
     store_qas_vectors(similarity, args)
-    store_ner_vectors(similarity, args)
+    store_ner_folder_vectors(similarity, args)
 
 def generate_store_ner_subsets():
     args = parse_args()
@@ -982,8 +982,8 @@ def generate_store_ner_subsets():
 
 def main():
     # generate_store_ner_subsets()
-    # store_vectors()
-    store_ner_folder_vectors()
+    store_vectors()
+    # store_ner_folder_vectors()
 
 if __name__ == "__main__":
     main()
