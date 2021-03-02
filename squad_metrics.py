@@ -230,7 +230,7 @@ def squad_evaluate(examples, preds, no_answer_probs=None, no_answer_probability_
     )
     f1_threshold = apply_no_ans_threshold(f1, no_answer_probs, qas_id_to_has_answer, no_answer_probability_threshold)
 
-    evaluation = make_eval_dict(exact_threshold, f1_threshold)
+    evaluation = make_eval_dict(exact_threshold, f1_threshold,has_answer_qids)
 
     if has_answer_qids:
         has_ans_eval = make_eval_dict(exact_threshold, f1_threshold, qid_list=has_answer_qids)
