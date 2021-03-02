@@ -614,6 +614,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     input_ids.append(inp_ids[:l])
                     attention_mask.append(batch[1][:l])
                     token_type_ids.append(batch[2][:l])
+                    
                 bert_inputs = {
                     "input_ids": torch.stack(input_ids).to(device),
                     "attention_mask": torch.stack(attention_mask).to(device),
