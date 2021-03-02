@@ -594,7 +594,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
         i = i + 1
         with torch.no_grad():
             if dataset_type == "qas":
-                batch = tuple(t.to(device) for t in batch)
+                # batch = tuple(t.to(device) for t in batch)
                 bert_inputs = {
                     "input_ids": batch[0],
                     "attention_mask": batch[1],
@@ -611,10 +611,11 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     input_ids.append(inp_ids[:-pad_length])
                     attention_mask.append(batch[1][:-pad_length])
                     token_type_ids.append(batch[2][:-pad_length])
+
                 bert_inputs = {
-                    "input_ids": torch.vstack(input_ids),
-                    "attention_mask": torch.vstack(attention_mask),
-                    "token_type_ids": torch.vstack(token_type_ids),
+                    "input_ids": torch.vstack(input_ids).to(device),
+                    "attention_mask": torch.vstack(attention_mask).to(device),
+                    "token_type_ids": torch.vstack(token_type_ids).to(device),
                 }
             elif dataset_type == "ner":
                 tokens, bert_batch_after_padding, data = batch
