@@ -607,9 +607,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                 attention_mask = []
                 token_type_ids = []
                 for i, inp_ids in enumerate(batch[0]):
-                    print("Shape ",inp_ids.shape)
                     pad_length = sum([1 if a else 0 for a in inp_ids == 0])
-                    print(pad_length)
                     l = len(inp_ids)-pad_length
                     input_ids.append(inp_ids[:l])
                     attention_mask.append(batch[1][i][:l])
@@ -619,8 +617,6 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     "attention_mask": torch.stack(attention_mask).to(device),
                     "token_type_ids": torch.stack(token_type_ids).to(device),
                 }
-                for k,v in bert_inputs.items():
-                    print(k,v.shape)
             elif dataset_type == "ner":
                 tokens, bert_batch_after_padding, data = batch
                 data = [d.to(device) for d in data]
@@ -644,7 +640,6 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
             # print("Output shape: {}".format(outputs[-1][0].shape))
             layers = [-2,-3,-4]
             bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
-            print("Means shape ", bert_hiddens.shape)
             # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
 
             # CLS-based approach
@@ -963,7 +958,7 @@ def store_vectors():
     args = parse_args()
     similarity = Similarity()
     store_qas_vectors(similarity, args)
-    store_ner_folder_vectors(similarity, args)
+    # store_ner_folder_vectors(similarity, args)
 
 
 def generate_store_ner_subsets():
