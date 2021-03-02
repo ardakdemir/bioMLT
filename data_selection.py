@@ -609,10 +609,10 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                 for i, inp_ids in enumerate(batch[0]):
                     pad_length = sum(inp_ids == 0)
                     l = len(inp_ids)-pad_length
-                    print(l,l pad_length)
+                    print(l, pad_length)
                     input_ids.append(inp_ids[:l])
                     attention_mask.append(batch[1][:l])
-                    token_type_ids.append(batch[2][:l])
+                    token_type_ids.append(batch[2][:l   ])
 
                 bert_inputs = {
                     "input_ids": torch.vstack(input_ids).to(device),
