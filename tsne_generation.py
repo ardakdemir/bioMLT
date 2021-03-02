@@ -108,7 +108,7 @@ def store_tsne_vectors():
         for d in os.listdir(args.ner_vector_folder):
             print("Getting {} vectors".format(d))
             p = os.path.join(args.ner_vector_folder, d)
-            ner_feat = get_stored_features(p)
+            ner_feat = get_stored_features(p)[:limit]
             ner_feats.extend(ner_feat)
             ner_lengths.append(len(ner_feat))
             ner_names.append(d.split(".")[0])
@@ -118,7 +118,7 @@ def store_tsne_vectors():
     print("Ner feats shape: {}".format(ner_feats.shape))
     print("Qas feats shape: {}".format(qas_feats.shape))
 
-    ner_feats = ner_feats[:limit]
+    # ner_feats = ner_feats[:limit]
     qas_feats = qas_feats[:limit]
 
     ner_length = len(ner_feats)
