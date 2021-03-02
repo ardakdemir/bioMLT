@@ -472,7 +472,6 @@ class Similarity(nn.Module):
                 self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
             self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
 
-
         self.bert_out_dim = 768
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
@@ -602,8 +601,21 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     "token_type_ids": batch[2],
                 }
                 bert2toks = batch[-1]
-                if i == 1:
-                    print("Input ids: {}".format(bert_inputs["input_ids"]))
+
+                # do not input padding part!!
+                input_ids = []
+                attention_mask = []
+                token_type_ids = []
+                for i, inp_ids in enumerate(batch[0]):
+                    pad_length = sum(inp_ids == 0)
+                    input_ids.append(inp_ids[:-pad_length])
+                    attention_mask.append(batch[1][:-pad_length])
+                    token_type_ids.append(batch[2][:-pad_length])
+                bert_inputs = {
+                    "input_ids": torch.vstack(input_ids),
+                    "attention_mask": torch.vstack(attention_mask),
+                    "token_type_ids": torch.vstack(token_type_ids),
+                }
             elif dataset_type == "ner":
                 tokens, bert_batch_after_padding, data = batch
                 data = [d.to(device) for d in data]
@@ -633,7 +645,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
             dataset_vector.extend(cls_vector.detach().cpu())
 
             # Mean-based approach
-            mean_vector = torch.mean(bert_hiddens[:,:, :],dim=1)
+            mean_vector = torch.mean(bert_hiddens[:, :, :], dim=1)
 
     dataset_vectors = torch.stack(dataset_vector)
 
@@ -891,7 +903,9 @@ def select_ner_subset(similarity, vectors, size=500):
 
 def write_subset_dataset(indices, sentences, labels, save_path):
     # Sometimes writes [SEP] at the end!!
-    s = "\n\n".join(["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i]) if l!=["[SEP]"]]) for i in indices])
+    s = "\n\n".join(
+        ["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i]) if l != ["[SEP]"]]) for i in
+         indices])
     with open(save_path, "w") as o:
         o.write(s)
 
@@ -931,16 +945,18 @@ def store_ner_folder_vectors():
     args = parse_args()
     ner_folder = args.ner_root_folder
     for ner_dataset in os.listdir(ner_folder):
-        p = os.path.join(ner_folder,ner_dataset)
-        args.ner_train_file = os.path.join(p,"ent_train.tsv")
+        p = os.path.join(ner_folder, ner_dataset)
+        args.ner_train_file = os.path.join(p, "ent_train.tsv")
         similarity = Similarity()
         store_ner_vectors(similarity, args)
+
 
 def store_vectors():
     args = parse_args()
     similarity = Similarity()
     store_qas_vectors(similarity, args)
     store_ner_folder_vectors(similarity, args)
+
 
 def generate_store_ner_subsets():
     args = parse_args()
@@ -984,6 +1000,7 @@ def main():
     # generate_store_ner_subsets()
     store_vectors()
     # store_ner_folder_vectors()
+
 
 if __name__ == "__main__":
     main()
