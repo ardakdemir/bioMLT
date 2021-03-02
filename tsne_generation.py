@@ -20,10 +20,10 @@ from sklearn.manifold import TSNE
 from itertools import product
 
 hyperparameters = {"perplexity": np.linspace(5, 50, 10),
-                   "learning_rate": np.linspace(10, 1000, 20)}
+                   "learning_rate": np.linspace(10, 1010, 20)}
 
-hyperparameters = {"perplexity": [25],
-                   "learning_rate": [62]}
+# hyperparameters = {"perplexity": [25],
+#                    "learning_rate": [62]}
 
 ner_names = ["s800", "linnaeus", "BC4CHEMD", "NCBI-disease", "JNLPBA", "BC5CDR-disease", "BC2GM", "BC5CDR-chem"]
 qas_names = ["BioASQ-training8b"]
