@@ -1824,6 +1824,8 @@ class BioMLT(nn.Module):
                 # outputs = self.bert_model(**bert_inputs)
 
                 qas_input, ner_output = self.get_qas_input(bert_inputs, batch)
+                if step == 0:
+                    print("NER Output: {}".format(ner_output))
                 # bert_outs_for_ner , lens = self._get_squad_to_ner_bert_batch_hidden(outputs[-1],batch[-1],device=device)
                 # print("BERT OUTS FOR NER {}".format(bert_outs_for_ner.shape))
                 # ner_outs = self.ner_head(bert_outs_for_ner)
