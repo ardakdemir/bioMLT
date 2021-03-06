@@ -12,7 +12,7 @@ do
   echo $ner_model_path
   echo $ner_vocab_path
   echo $task_name
-  #qsub -N $task_name bioMLT/qasonly_withload_submit.sh ${qas_output_dir} $ner_model_path $ner_vocab_path $name
+  qsub -N $task_name bioMLT/qasonly_withload_submit.sh ${qas_output_dir} $ner_model_path $ner_vocab_path $name
 done
 
 
