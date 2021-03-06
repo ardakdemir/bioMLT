@@ -608,7 +608,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                 token_type_ids = []
                 for i, inp_ids in enumerate(batch[0]):
                     pad_length = sum([1 if a else 0 for a in inp_ids == 0])
-                    l = len(inp_ids)-pad_length
+                    l = len(inp_ids) - pad_length
                     input_ids.append(inp_ids[:l])
                     attention_mask.append(batch[1][i][:l])
                     token_type_ids.append(batch[2][i][:l])
@@ -638,14 +638,14 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
-            layers = [-2,-3,-4]
+            layers = [-2, -3, -4]
             bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
             # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
 
             # CLS-based approach
             cls_vector = bert_hiddens[:, 0, :]
             # print("CLS vector shape: {}".format(cls_vector.shape))
-            dataset_vector.extend(cls_vector.detach().cpu())
+            # dataset_vector.extend(cls_vector.detach().cpu())
 
             # Mean-based approach
             mean_vector = torch.mean(bert_hiddens[:, :, :], dim=1)
@@ -701,7 +701,7 @@ def get_ner_vectors(similarity, args):
     if not hasattr(similarity, "ner_sentences"):
         print("Generating ner vectors and sentences")
         dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
-                             batch_size=128, crf=False)
+                             batch_size=256, crf=False)
         all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
@@ -957,8 +957,8 @@ def store_ner_folder_vectors():
 def store_vectors():
     args = parse_args()
     similarity = Similarity()
-    store_qas_vectors(similarity, args)
-    # store_ner_folder_vectors(similarity, args)
+    # store_qas_vectors(similarity, args)
+    store_ner_folder_vectors(similarity, args)
 
 
 def generate_store_ner_subsets():

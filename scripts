@@ -98,7 +98,7 @@ python  bioMLT/gather_multiple_qashier_results.py  qashier_initberts_1412_2021_
 python  bioMLT/gather_multiple_qashier_results.py  qashier_wopenalty_1712_
 
 
-#NER data seelection
+#NER data selection
 python bioMLT/data_selection.py --ner_root_folder biobert_data/datasets/NER_for_QAS_combinedonly --save_folder_pref subsets1612_0755
 qsub bioMLT/subset_generation_submit.sh biobert_data/datasets/NER_for_QAS_combinedonly	subsets_weighted_wopentaly_1712
 
