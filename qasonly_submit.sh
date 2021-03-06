@@ -1,5 +1,6 @@
 /usr/local/bin/nosh
 output_dir=${1}
+
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N qas_only_train
