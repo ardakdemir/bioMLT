@@ -645,7 +645,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
             # CLS-based approach
             cls_vector = bert_hiddens[:, 0, :]
             # print("CLS vector shape: {}".format(cls_vector.shape))
-            # dataset_vector.extend(cls_vector.detach().cpu())
+            dataset_vector.extend(cls_vector.detach().cpu())
 
             # Mean-based approach
             mean_vector = torch.mean(bert_hiddens[:, :, :], dim=1)
@@ -958,7 +958,7 @@ def store_vectors():
     args = parse_args()
     similarity = Similarity()
     # store_qas_vectors(similarity, args)
-    store_ner_folder_vectors(similarity, args)
+    store_ner_folder_vectors()
 
 
 def generate_store_ner_subsets():
