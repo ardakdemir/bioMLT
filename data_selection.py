@@ -638,7 +638,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
-            layers = [-2, -3, -4]
+            layers = [-1]
             bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
             # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
 
@@ -1001,8 +1001,8 @@ def generate_store_ner_subsets():
 
 def main():
     # generate_store_ner_subsets()
-    store_vectors()
-    # store_ner_folder_vectors()
+    # store_vectors()
+    store_ner_folder_vectors()
 
 
 if __name__ == "__main__":
