@@ -520,7 +520,7 @@ def hugging_parse_args():
     parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
     parser.add_argument(
-        "--num_train_epochs", default=10, type=int, help="Total number of training epochs to perform."
+        "--num_train_epochs", default=20, type=int, help="Total number of training epochs to perform."
     )
     parser.add_argument("--total_train_steps", default=-1, required=False, type=int,
                         help="Total number of training steps to perform.")
@@ -1932,7 +1932,8 @@ class BioMLT(nn.Module):
                     round(best_results[q], 3)) for q in ["list", "factoid", "yesno"]]) + "\n"
                 out.write(s)
 
-        experiment_log_path = os.path.join(self.args.output_dir, self.args.experiment_result_file)
+        experiment_result_file = "{}_{}".format(exp_name,self.args.experiment_result_file)
+        experiment_log_path = os.path.join(self.args.output_dir, experiment_result_file)
         with open(experiment_log_path, "w") as out:
             json.dump(experiment_log_dict,out)
 
