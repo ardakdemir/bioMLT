@@ -1241,6 +1241,7 @@ class BioMLT(nn.Module):
             type = "squad"
 
         types = self.qas_eval_datasets.keys()
+        print("Question types",types)
         nbest_files, pred_files = self.evaluate_qas(0, only_preds=True, types=types)
         if self.args.mode in ["ner", "joint_flat"]:
             self.eval_ner()
@@ -2591,13 +2592,14 @@ def checkSavedModel():
 
 def main():
     biomlt = BioMLT()
-    qa_types = ['factoid']
+    qa_types = ["factoid"]
     mode = biomlt.args.mode
 
     predict = biomlt.args.predict
     repeat = biomlt.args.repeat
     if mode == "qas":
         if predict:
+            qa_types = ['factoid', "yesno", "list"]
             biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=True)
             biomlt.run_test()
             # biomlt.load_train_data()

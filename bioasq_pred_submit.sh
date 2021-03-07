@@ -15,7 +15,7 @@ nbest_path='nbest_pred_'${sys_name}
 pred_path='pred_'${sys_name}
 #EVAL_PATH='/home/aakdemir/biobert_data/Evaluation-Measures'
 
-my_n2b_yesno_path='mytransformn2b_yesno.py'
+my_n2b_yesno_path='mytransform_n2b_yesno.py'
 my_n2b_list_path='mytransform_n2b_list.py'
 my_n2b_factoid_path='mytransform_n2b_factoid.py'
 #result_file='qas_result_'${model_save_name}
