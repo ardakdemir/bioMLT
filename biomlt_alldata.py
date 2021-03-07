@@ -105,7 +105,6 @@ def hugging_parse_args():
 
     parser = argparse.ArgumentParser()
 
-    # Required parameters
     parser.add_argument(
         "--load_model_path", default="key_models/mybiobert_finetunedsquad", type=str, required=False,
         help="The path to load the model to continue training."
@@ -134,6 +133,7 @@ def hugging_parse_args():
         "--only_loss_curve", default=False, action="store_true",
         help="If set, skips the evaluation, only for NER task"
     )
+
     parser.add_argument(
         "--patience", default=5, type=int,
         help="Number of consecutive evaluations without improvement to stop the training"
@@ -188,6 +188,13 @@ def hugging_parse_args():
     parser.add_argument(
         "--qas_train_result_file",
         default='qas_train_results.txt',
+        type=str,
+        required=False,
+        help="The output file where the model predictions on training set will be written.",
+    )
+    parser.add_argument(
+        "--experiment_result_file",
+        default='experiment_results.json',
         type=str,
         required=False,
         help="The output file where the model predictions on training set will be written.",
@@ -1922,6 +1929,12 @@ class BioMLT(nn.Module):
                     [str(round(best_results[q], 3)), str(round(best_exacts[q], 3))]) if q != "yesno" else str(
                     round(best_results[q], 3)) for q in ["list", "factoid", "yesno"]]) + "\n"
                 out.write(s)
+
+        experiment_log_path = os.path.join(self.args.output_dir, self.args.experiment_result_file)
+        with open(experiment_log_path, "w") as out:
+            json.dump(experiment_log_dict,out)
+            
+        return experiment_log_dict
 
     def pretrain_mlm(self):
         device = self.args.device
