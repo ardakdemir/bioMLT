@@ -138,10 +138,15 @@ python bioMLT/biomlt_alldata.py --qas_with_ner --crf --mode ner --total_train_st
 python bioMLT/biomlt_alldata.py    --qas_with_ner --crf  --ner_dataset_name BC5CDR-chem --mode qas --output_dir qaswithner_2202  --load_model_path trial_1502_2021/best_ner_model_on_BC5CDR-chem --load_ner_label_vocab_path trial_1502_2021/best_ner_model_on_BC5CDR-chem_vocab --max_seq_length 256 --init_ner_head --model_save_name best_qas_model_BC5CDR-chem
 
 ## Run QAS w/o NER 2702
-python bioMLT/biomlt_alldata.py  --mode qas --num_train_epochs 2 --total_train_steps 200 --output_dir qas_woner_0203   --max_seq_length 256 --model_save_name best_qas_model_woner --load_model
+python bioMLT/biomlt_alldata.py  --mode qas --num_train_epochs 2 --total_train_steps 200 --output_dir qas_woner_0603   --max_seq_length 256 --model_save_name best_qas_model_woner --load_model
 
 	# qsub version
 	qsub -N qasonly_2802 bioMLT/qasonly_submit.sh qasonly_2802_1011
+
+
+## Run QAS w/o NER but load NER trained model!!
+python bioMLT/biomlt_alldata.py   --init_ner_head --mode qas --ner_dataset_name BC5CDR-chem  --num_train_epochs 2 --total_train_steps 200 --output_dir qas_woner_0603   --max_seq_length 256 --model_save_name best_qas_model_woner_loadNER --load_model_path neronly_all_2402/best_ner_model_on_BC5CDR-chem --load_ner_label_vocab_path neronly_all_2402/best_ner_model_on_BC5CDR-chem_vocab
+
 
 #JNLPBA 2402
 python bioMLT/biomlt_alldata.py    --qas_with_ner --crf  --ner_dataset_name JNLPBA --mode qas --output_dir qaswithner_2402  --load_model_path trial_2402/best_ner_model_on_JNLPBA --load_ner_label_vocab_path trial_2402/best_ner_model_on_JNLPBA_vocab --max_seq_length 256 --init_ner_head  --model_save_name best_qas_model_JNLPBA
