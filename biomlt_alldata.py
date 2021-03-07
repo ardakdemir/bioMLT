@@ -729,9 +729,10 @@ class BioMLT(nn.Module):
         #     print(loaded)
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
-        print("Ner head after load")
-        for param in list(self.ner_head.parameters()):
-            print(param)
+        if hasattr(self,"ner_head"):
+            print("Ner head after load")
+            for param in list(self.ner_head.parameters()):
+                print(param)
 
     def save_all_model(self, save_path=None, weights=True):
         if self.args.model_save_name is None and save_path is None:
@@ -1933,7 +1934,7 @@ class BioMLT(nn.Module):
         experiment_log_path = os.path.join(self.args.output_dir, self.args.experiment_result_file)
         with open(experiment_log_path, "w") as out:
             json.dump(experiment_log_dict,out)
-            
+
         return experiment_log_dict
 
     def pretrain_mlm(self):

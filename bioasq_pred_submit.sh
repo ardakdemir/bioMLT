@@ -30,7 +30,6 @@ pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
 #$ -N bioasq_8b_predict
 
-echo $EVAL_PATH
 echo $BIOBERT_PATH
 echo $n2bfactoid_path
 echo $out_for_bioasq_eval
