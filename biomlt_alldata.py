@@ -43,7 +43,6 @@ exp_id = str(uuid.uuid4())[:4]
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute,
                                                                     x.second)
 
-
 bioasq_8b_counts = {'summary': 777, 'list': 644, 'yesno': 881, 'factoid': 941}
 exp_prefix = gettime()
 print("Time  {} ".format(exp_prefix))
@@ -618,11 +617,6 @@ class BioMLT(nn.Module):
         if not os.path.isdir(self.args.output_dir):
             os.makedirs(self.args.output_dir)
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_train_result_file)
-
-        if os.path.exists(qas_save_path):
-            with open(qas_save_path, "w") as o:
-                o.write("")
-
         self.device = self.args.device
         # try:
         if not self.args.init_bert:
@@ -1026,8 +1020,8 @@ class BioMLT(nn.Module):
             # print(predictions[k])
 
             results = squad_evaluate(examples, predictions, is_yes_no=True if type == "yesno" else False)
-            f1 = results['f1']
-            exact = results['exact']
+            f1 = round(results['f1'],3)
+            exact = round(results['exact'],3)
             total = results['total']
             print("RESULTS for {} : f1 {}  exact {} total {} ".format(type, f1, exact, total))
             logging.info("RESULTS for {}: f1 {} exact {} total {} ".format(type, f1, exact, total))
@@ -1684,7 +1678,7 @@ class BioMLT(nn.Module):
         args = hugging_parse_args()
         args.train_batch_size = self.args.batch_size
         self.load_qas_data(args, qa_types=qa_types)
-
+        experiment_log_dict = {}  # Contain everything related to the experiment and store in a json
         print("Is yes no ? {}".format(self.args.squad_yes_no))
         # train_dataset = squad_load_and_cache_examples(args,
         #                                              self.bert_tokenizer,
@@ -1769,6 +1763,7 @@ class BioMLT(nn.Module):
         print("Concat size {} yesno size {}".format(len(train_dataset), len(yesno_train_dataset)))
         prev = 0
         for epoch, _ in enumerate(train_iterator):
+            epoch_begin = time.time()
             total_loss = 0
             epoch_iterator = tqdm(train_dataloader, desc="Factoid Iteration")
             yesno_epoch_iterator = tqdm(yesno_dataloader, desc="yesno - Iteration")
@@ -1864,12 +1859,18 @@ class BioMLT(nn.Module):
                     logging.info("Saving checkpoint to {}".format(checkpoint_name))
                     self.save_all_model(checkpoint_name)
                     logging.info("Average loss after {} steps : {}".format(step + 1, total_loss / (step + 1)))
-
+            epoch_end = time.time()
+            train_epoch_time = round(epoch_end - epoch_begin, 3)
             print("Total loss {} for epoch {} ".format(total_loss, epoch))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
             f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types)
             # yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
-
+            experiment_log_dict[epoch] = {"f1s": f1s,
+                                          "exacts": exacts,
+                                          "totals": totals,
+                                          "total_loss": total_loss,
+                                          "train_epoch_time": train_epoch_time
+                                          }
             print("Sum of all f1s {} ".format(sum(f1s.values())))
             print("Sum of best results {} ".format(sum(best_results.values())))
             if sum(f1s.values()) > best_sum:
@@ -1896,10 +1897,12 @@ class BioMLT(nn.Module):
 
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
         latex_save_path = os.path.join(self.args.output_dir, self.args.qas_latex_table_file)
-        exp_name = "QAS_ONLY" if not self.args.qas_with_ner and self.args.ner_dataset_name is None else "QAS_hier_" + self.args.ner_dataset_name
+        exp_name = "QAS_ONLY" if not self.args.qas_with_ner and self.args.ner_dataset_name is None else "QAS_with_" + self.args.ner_dataset_name
         write_to_latex_table(exp_name, best_results, best_exacts, latex_save_path)
         # f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types, result_save_path=qas_save_path)
         print("Writing best results to {}".format(qas_save_path))
+        experiment_log_dict["test"] = {"best_f1s":best_results,
+                                       "best_exacts":best_exacts}
         if os.path.exists(qas_save_path):
             with open(qas_save_path, "a") as out:
                 s = exp_name
