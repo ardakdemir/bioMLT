@@ -234,7 +234,7 @@ def parse_args():
     )
     parser.add_argument(
         "--squad_train_factoid_file",
-        default="biobert_data/BioASQ-training8b/training8b_squadformat_train_factoid.json",
+        default="biobert_data/BioASQ-training9b/training9b_squadformat_train_factoid.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -249,7 +249,7 @@ def parse_args():
     )
     parser.add_argument(
         "--squad_train_yesno_file",
-        default="biobert_data/BioASQ-training8b/training8b_squadformat_train_yesno.json",
+        default="biobert_data/BioASQ-training9b/training9b_squadformat_train_yesno.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -264,7 +264,7 @@ def parse_args():
     )
     parser.add_argument(
         "--squad_train_list_file",
-        default="biobert_data/BioASQ-training8b/training8b_squadformat_train_list.json",
+        default="biobert_data/BioASQ-training9b/training9b_squadformat_train_list.json",
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
@@ -957,8 +957,8 @@ def store_ner_folder_vectors():
 def store_vectors():
     args = parse_args()
     similarity = Similarity()
-    # store_qas_vectors(similarity, args)
-    store_ner_folder_vectors()
+    store_qas_vectors(similarity, args)
+    # store_ner_folder_vectors()
 
 
 def generate_store_ner_subsets():
@@ -1002,7 +1002,7 @@ def generate_store_ner_subsets():
 def main():
     # generate_store_ner_subsets()
     # store_vectors()
-    store_ner_folder_vectors()
+    # store_ner_folder_vectors()
 
 
 if __name__ == "__main__":

@@ -160,3 +160,9 @@ bash bioMLT/qashier_all_submitter.sh qas_withner_2702_1052 neronly_all_2402 biob
 
 ## tSNE generation
 python bioMLT/tsne_generation.py --save_folder tsne_vis_0203 --limit 1000  --from_folder --with_pca
+
+
+
+
+#Bioasq predict simulation
+python bioMLT/biomlt_alldata.py  --mode qas --predict --load_model_path qasonly_withload_0703/best_qas_model_BC4CHEMD --nbest_path nbest_deneme_0703 --pred_path pred_deneme_0703 --squad_predict_factoid_file biobert_data/BioASQ-8b/BioASQ-task8bPhaseB-testset1_squadformat_test_factoid.json --squad_predict_list_file biobert_data/BioASQ-8b/BioASQ-task8bPhaseB-testset1_squadformat_test_list.json  --squad_predict_yesno_file biobert_data/BioASQ-8b/BioASQ-task8bPhaseB-testset1_squadformat_test_yesno.json
