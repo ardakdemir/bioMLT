@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-
+import subprocess
 
 
 ## adds snippets and empty ideal answers to summary type questions
@@ -63,6 +63,7 @@ def compare_predictions(pred_path,test_path,write=True):
     print("Saving final predictions to {}".format(save_path))
     with open(save_path,"w") as o:
         json.dump(my_json,o)
+    return save_path
 ## verifies number of questions 
 def verify_submission(myjson,test_batch):
     print("Verifying {}".format(myjson))
@@ -72,7 +73,14 @@ def verify_submission(myjson,test_batch):
     print("Gold number of questions ", len(test_json["questions"]))
     
 args = sys.argv
-
+save_folder = args[4]
 save_path = prepare_submit(args[1],args[2],args[3])
 verify_submission(save_path,args[3])
-compare_predictions(save_path,args[3])
+final_pred_json_path = compare_predictions(save_path,args[3])
+
+if not os.path.exists(save_folder):
+    os.makedirs(save_folder)
+
+cmd = "cp {} {}".format(final_pred_json_path,save_folder)
+subprocess.call(cmd,shell=True)
+print("Submission file stored inside: {}".format(save_folder))

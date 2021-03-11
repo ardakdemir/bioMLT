@@ -3,6 +3,7 @@ output_dir='save_dir'
 model_path=$1
 test_path=$2
 sys_name=$3
+save_folder=$4
 #test_num=$2
 #squad_train_file='../biobert_data/qas_train_split.json'
 #squad_eval_file='../biobert_data/qas_dev_split.json'
