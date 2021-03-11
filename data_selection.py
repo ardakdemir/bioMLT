@@ -1001,7 +1001,7 @@ def generate_store_ner_subsets():
 
 def main():
     # generate_store_ner_subsets()
-    # store_vectors()
+    store_vectors()
     # store_ner_folder_vectors()
 
 
