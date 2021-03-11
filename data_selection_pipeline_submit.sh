@@ -1,3 +1,6 @@
-#!/bin/bash
+/usr/local/bin/nosh
 
-# TO-DO
+
+model_path=$1
+test_path=$2
+sys_name=$3

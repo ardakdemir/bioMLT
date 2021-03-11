@@ -804,16 +804,17 @@ def get_topN_similar_single(target_model, source_vectors, N):
         zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
         zipped.sort(key=lambda x: x[1])
         indices, dists = list(zip(*zipped))
+        print("{} indices {} dists N: {}".format(len(indices),len(dists),N))
         my_inds = []
         i = 0
-        while len(my_inds) < N:
+        while len(my_inds) < N and i < len(indices):
             index = indices[i]
             if index not in used_indices:
                 my_inds.append(index)
             i = i + 1
         print("Length of my indices: {}".format(len(my_inds)))
         my_inds.sort()
-        print("My indices: {}".format(my_inds))
+        # print("My indices: {}".format(my_inds))
         used_indices.extend(my_inds)
         top_inds[l] = my_inds
         l = l + 1
@@ -940,7 +941,7 @@ def store_ner_subset(similarity, args, size, save_file_path):
     t = round(e - b, 3)
     print("Time to select ner subset of size {}: {}".format(size, t))
     print("Indices")
-    print(indices)
+    # print(indices)
     write_subset_dataset(indices, sentences, labels, save_file_path)
     return similarity
 
