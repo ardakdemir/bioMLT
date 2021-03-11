@@ -82,7 +82,7 @@ def parse_args():
     )
     parser.add_argument(
         "--ner_root_folder",
-        default='biobert_data/datasets/NER_for_QAS_combinedonly',
+        default='biobert_data/datasets/All-entities',
         type=str,
         required=False,
         help="The root folder containing all the ner datasets.",

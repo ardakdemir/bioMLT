@@ -8,8 +8,8 @@ sys_name=$3
 #squad_eval_file='../biobert_data/qas_dev_split.json'
 epoch_num=5
 bioasq_dataset_folder='/home/aakdemir/biobert_data/datasets/QA/BioASQ/'
-train_root='/home/aakdemir/biobert_data/BioASQ-training8b/'
-bioasq_8bfolder='/home/aakdemir/biobert_data/BioASQ-8b/'
+train_root='/home/aakdemir/biobert_data/BioASQ-training9b/'
+bioasq_9bfolder='/home/aakdemir/biobert_data/BioASQ-9b/'
 
 nbest_path='nbest_pred_'${sys_name}
 pred_path='pred_'${sys_name}
@@ -41,14 +41,17 @@ cd ~/bioMLT
 basename=$(basename ${test_path})
 dirname=$(dirname ${test_path})
 
+echo "Basename and Dirname"
+echo $basename
+echo $dirname
+
 load_model_path=${model_path}
 #rm $nbest_path
 echo "Loading model from "$load_model_path
 test_suff='_squadformat_test_'
 out_for_bioasq_eval='converted_'${sys_name}'_'${basename}
 out_json='merged_json_'${sys_name}'_'${basename}
-echo $basename
-echo $dirname
+
 python bioasq_squad_converter.py ${test_path} 'test'
 squad_predict_yesno_file=${dirname}'/'${basename}${test_suff}'yesno.json'
 squad_predict_list_file=${dirname}'/'${basename}${test_suff}'list.json'
