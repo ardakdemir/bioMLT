@@ -733,7 +733,8 @@ def load_store_qas_vectors():
     args = parse_args()
     vector_folder = args.vector_save_folder
     dataset_name = args.squad_train_factoid_file
-    save_path = os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5"
+    save_path = os.path.join(vector_folder,os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5")
+
     if os.path.exists(save_path):
         print("Found qas vectors previously stored...")
         vectors = load_vectors(file_path)
