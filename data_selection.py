@@ -737,7 +737,7 @@ def load_store_qas_vectors():
 
     if os.path.exists(save_path):
         print("Found qas vectors previously stored...")
-        vectors = load_vectors(file_path)
+        vectors = load_vectors(save_path)
         return vectors
     else:
         print("Qas vectors not found...")
