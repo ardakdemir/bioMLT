@@ -167,7 +167,10 @@ python bioMLT/tsne_generation.py --save_folder tsne_vis_0203 --limit 1000  --fro
 #Bioasq predict simulation
 python bioMLT/biomlt_alldata.py  --mode qas --predict --load_model_path qasonly_withload_0703/best_qas_model_BC4CHEMD --nbest_path nbest_deneme_0703 --pred_path pred_deneme_0703 --squad_predict_factoid_file biobert_data/BioASQ-8b/BioASQ-task8bPhaseB-testset1_squadformat_test_factoid.json --squad_predict_list_file biobert_data/BioASQ-8b/BioASQ-task8bPhaseB-testset1_squadformat_test_list.json  --squad_predict_yesno_file biobert_data/BioASQ-8b/BioASQ-task8bPhaseB-testset1_squadformat_test_yesno.json
 
+# Bioasq qsub version
+qsub bioasq_pred_submit.sh ../qasonly_9b_0803/best_qas_model_woner ../biobert_data/BioASQ-9b/BioASQ-task9bPhaseB-testset1 UTOKYO_qasonly qasonly_tb1_1103
+
 
 
 #Qsub qasonly with_load All-entities
-qsub -N bioMLT/qasonly_Allents_1103 qasonly_load_9b_20ep_0803_1 neronly_Allentities/best_ner_model_on_All-entities neronly_Allentities/best_ner_model_on_All-entities_vocab All-entities
+qsub -N bioMLT/qasonly_Allents_1103 qasonly_load_9b_20ep_1103_1 neronly_Allentities/best_ner_model_on_All-entities neronly_Allentities/best_ner_model_on_All-entities_vocab All-entities

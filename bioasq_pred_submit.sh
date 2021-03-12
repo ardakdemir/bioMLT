@@ -29,7 +29,7 @@ snippet_folder='Snippet-as-is'
 pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
 #$ -cwd
 #$ -l os7,v100=1,s_vmem=100G,mem_req=100G
-#$ -N bioasq_8b_predict
+#$ -N bioasq_9b_predict
 
 echo $BIOBERT_PATH
 echo $n2bfactoid_path
@@ -71,4 +71,4 @@ echo "Storing all intermediate files with prefix "${out_for_bioasq_eval}
 
 python merge_predictions.py ${out_for_bioasq_eval}  ${out_json}
 
-python prepare_submit_bioasq.py $sys_name ${out_json} ${test_path}
+python prepare_submit_bioasq.py $sys_name ${out_json} ${test_path} ${save_folder}
