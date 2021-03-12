@@ -32,7 +32,7 @@ model_dict = {"UTokyo_qasonly": {"model_path": "../qasonly_9b_0803/best_qas_mode
 
 
 def bioasq_pred_submitter():
-    args = parse_args
+    args = parse_args()
     test_path = args.test_path
     save_folder = args.save_folder
     path_to_script = args.path_to_script
@@ -40,6 +40,7 @@ def bioasq_pred_submitter():
         print("Submitting {} {} ".format(sys_name, model))
         model_path = model["model_path"]
         cmd = "qsub {} {} {} {} {}".format(path_to_script, model_path, test_path, sys_name, save_folder)
+        print("Calling: {}".format(cmd))
         subprocess.call(cmd, shell=True)
 
 
