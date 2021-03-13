@@ -1049,7 +1049,7 @@ def generate_store_ner_subsets():
     args = parse_args()
     similarity = Similarity()
     ner_root_folder = args.ner_root_folder
-    save_root_folder = args.save_root_foolder
+    save_root_folder = args.save_root_folder
     # save_root_folder = os.path.split(ner_root_folder)[0]
 
     # ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
@@ -1060,8 +1060,8 @@ def generate_store_ner_subsets():
     methods = ["topic-instance", "bert-instance"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
-        print("Generating subsets for {}...".format(folder_name))
         for method in methods:
+            print("Generating subsets for {} with {} ...".format(folder_name, method))
             generate_store_ner_subsets_single(similarity, args,
                                               save_root_folder, ner_dataset_name, ner_dataset_folder, subset_sizes,
                                               method)
