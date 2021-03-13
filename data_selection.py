@@ -979,7 +979,7 @@ def get_topN_cossimilar(source_vectors, target_vectors, max_size):
 def bert_instance_based_selection(similarity, vectors, sizes):
     print("bert-instance based selection")
 
-    qas_vectors = self.qas_vectors
+    qas_vectors = similarity.qas_vectors
 
     max_size = max(sizes)
     top_inds = get_topN_cossimilar(qas_vectors, vectors, max_size)
@@ -993,7 +993,7 @@ def bert_instance_based_selection(similarity, vectors, sizes):
 def bert_subset_based_selection(similarity, vectors, sizes):
     print("bert-instance based selection")
 
-    number_of_subsets = self.number_of_subsets
+    number_of_subsets = similarity.number_of_subsets
     indices = [i for i in range(len(vectors))]
 
     subset_indices = {}
@@ -1005,7 +1005,7 @@ def bert_subset_based_selection(similarity, vectors, sizes):
         subset_indices[s] = my_indices
         print("{} subsets of size {}".format(len(my_indices), s))
 
-    qas_vectors = self.qas_vectors
+    qas_vectors = similarity.qas_vectors
     all_inds_dict = {}
     for size in sizes:
         best_subset_index = np.argmax(
