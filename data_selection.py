@@ -530,7 +530,7 @@ class Similarity(nn.Module):
             return vectors
         else:
             print("Qas vectors not found...")
-            vectors = store_qas_vectors(similarity, args)
+            vectors = store_qas_vectors(self, args)
             return vectors
 
 
@@ -958,7 +958,8 @@ def topic_instance_based_selection(similarity, vectors, sizes):
     return all_inds_dict, similarity
 
 
-def get_topN_cossimilar(vec_list1,vec_list2,max_size):
+def get_topN_cossimilar(source_vectors,target_vectors, max_size):
+
     return [1,2,3]
 
 def bert_instance_based_selection(similarity, vectors, sizes):
