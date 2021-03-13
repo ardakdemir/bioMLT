@@ -683,6 +683,12 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 def get_qas_vocab(args):
     vocab = set()
     f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
+    root = os.path.split(f)[0]
+    vocab_file = os.path.join(root,"vocab.txt")
+    if os.path.exists(vocab_file):
+        print("Vocab exists in {}!".format(vocab_file))
+        vocab = open(vocab_file,"r").read().split("\n")
+        return vocab
     for file in [f, l, y]:
         print("Adding {} vocab...".format(file))
         d = json.load(open(file, "r"))
@@ -691,6 +697,8 @@ def get_qas_vocab(args):
                 vocab = vocab.union(set([x for x in qu["question"].split()]))
             c = q["context"]
             vocab = vocab.union(set([x for x in c.split()]))
+    with open(vocab_file,"w") as w:
+        w.write("\n".join(x for x in vocab))
     return vocab
 
 
