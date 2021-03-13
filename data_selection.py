@@ -1111,7 +1111,7 @@ def generate_store_ner_subsets():
         for method in methods:
             print("Generating subsets for {} with {} ...".format(folder_name, method))
             generate_store_ner_subsets_single(similarity, args,
-                                              save_root_folder, folder_name, ner_dataset_folder, subset_sizes,
+                                              save_root_folder, folder_name, ner_root_folder, subset_sizes,
                                               method)
 
 
