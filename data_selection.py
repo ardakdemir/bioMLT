@@ -40,6 +40,14 @@ pretrained_bert_name = 'bert-base-cased'
 cos_sim = lambda a, b: dot(a, b) / (norm(a) * norm(b))
 
 
+def get_vocab_similarity(voc_1, voc_2):
+    inter = voc_1.intersection(voc_2)
+    inter_len = len(inter)
+    voc_1_len = len(voc_1)
+    voc_2_len = len(voc_2)
+    return 2 * inter_len / (voc_1_len + voc_2_len)
+
+
 def parse_args():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Working  on {}".format(device))
@@ -483,6 +491,13 @@ class Similarity(nn.Module):
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
+        print("Generating qas vectors...")
+        qas_vectors = load_store_qas_vectors()
+        similarity.qas_vectors = qas_vectors
+        qas_vocab = get_qas_vocab(self.args)
+        print("QAS vocab contains {} words".format(len(qas_vocab)))
+        self.qas_vocab = qas_vocab
+
     def _get_bert_batch_hidden(self, hiddens, bert2toks, layers=[-2, -3, -4]):
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]), 0)
         batch_my_hiddens = []
@@ -664,10 +679,32 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     return dataset_vectors, sentences, labels
 
 
+def get_qas_vocab(args):
+    vocab = set()
+    f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
+    for file in in[f, l, y]:
+        print("Adding {} vocab...".format(vocab))
+        d = json.load(open(file, "r"))
+        for q in d["data"][0]["paragraphs"]:
+            for qu in q["qas"]:
+                vocab = vocab.union(set([x for x in qu["question"].split()]))
+            c = q["context"]
+            vocab = vocab.union(set([x for x in c.split()]))
+    return vocab
+
+
+def get_ner_vocab(ner_sentences):
+    vocab = set()
+    for sent in ner_sentences:
+        vocab = vocab.union(set(sent.split()))
+    return vocab
+
+
 def get_qas_vectors(similarity, args):
     qas_train_datasets = {}
     q_types = ["list", "yesno", "factoid"]
     all_vectors = []
+    vocab =
     for q in q_types:
         dataset, examples, feats = squad_load_and_cache_examples(args,
                                                                  similarity.bert_tokenizer,
@@ -910,7 +947,7 @@ def topic_based_selection(similarity, vectors, sizes):
     return all_inds_dict, similarity
 
 
-def select_ner_subsets(similarity, vectors, sizes, method_name=method_name):
+def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance"):
     """
         Complete this script to graduate from Ph.D
     :param vectors: list of BERT-based vector representations
@@ -954,6 +991,7 @@ def get_dataset_similarity_scores(similarity, ner_sentences):
     :param ner_sentences:
     :return:
     """
+
     sim_scores = {}
     return sim_scores
 
