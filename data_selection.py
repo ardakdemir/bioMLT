@@ -493,7 +493,7 @@ class Similarity(nn.Module):
         print("BERT output dim {}".format(self.bert_out_dim))
 
         print("Generating qas vectors...")
-        qas_vectors = load_store_qas_vectors()
+        qas_vectors = self.load_store_qas_vectors()
         self.qas_vectors = qas_vectors
         qas_vocab = get_qas_vocab(self.args)
         print("QAS vocab contains {} words".format(len(qas_vocab)))
@@ -517,6 +517,22 @@ class Similarity(nn.Module):
             sent_hiddens = torch.stack(my_hiddens)
             batch_my_hiddens.append(sent_hiddens)
         return torch.stack(batch_my_hiddens)
+
+    def load_store_qas_vectors(self):
+        args = parse_args()
+        vector_folder = args.vector_save_folder
+        dataset_name = args.squad_train_factoid_file
+        save_path = os.path.join(vector_folder, os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5")
+
+        if os.path.exists(save_path):
+            print("Found qas vectors previously stored...")
+            vectors = load_vectors(save_path)
+            return vectors
+        else:
+            print("Qas vectors not found...")
+            vectors = store_qas_vectors(similarity, args)
+            return vectors
+
 
     def _get_token_to_bert_predictions(self, predictions, bert2toks):
         # logging.info("Predictions shape {}".format(predictions.shape))
@@ -783,27 +799,12 @@ def multiple_clusters(vectors, k_start, k_end, algo="kmeans"):
     return models
 
 
-def load_store_qas_vectors():
-    args = parse_args()
-    vector_folder = args.vector_save_folder
-    dataset_name = args.squad_train_factoid_file
-    save_path = os.path.join(vector_folder, os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5")
-
-    if os.path.exists(save_path):
-        print("Found qas vectors previously stored...")
-        vectors = load_vectors(save_path)
-        return vectors
-    else:
-        print("Qas vectors not found...")
-        similarity = Similarity()
-        vectors = store_qas_vectors(similarity, args)
-        return vectors
 
 
 def train_qas_model(similarity):
     if not hasattr(similarity, "qas_vectors"):
         print("Generating qas vectors...")
-        qas_vectors = load_store_qas_vectors()
+        qas_vectors = similarity.load_store_qas_vectors()
         similarity.qas_vectors = qas_vectors
     else:
         print("Qas vectors are already generated...")
@@ -928,7 +929,7 @@ def get_topN_withpenalty(vectors, mean, precision, N, skip_list):
     return my_inds
 
 
-def topic_based_selection(similarity, vectors, sizes):
+def topic_instance_based_selection(similarity, vectors, sizes):
     if not hasattr(similarity, "qas_model"):
         best_model, similarity, clust_sizes = train_qas_model(similarity)
         similarity.qas_model = best_model
@@ -957,6 +958,25 @@ def topic_based_selection(similarity, vectors, sizes):
     return all_inds_dict, similarity
 
 
+def get_topN_cossimilar(vec_list1,vec_list2,max_size):
+    return [1,2,3]
+
+def bert_instance_based_selection(similarity, vectors, sizes):
+    print("bert-instance based selection")
+
+    qas_vectors = self.qas_vectors
+
+    max_size = max(sizes)
+    top_inds = get_topN_cossimilar(qas_vectors, vectors, max_size)
+
+    all_inds_dict = {}
+    for size in sizes:
+        all_inds = []
+        all_inds_dict[size] = all_inds
+    print("Not implemented yet...")
+    return all_inds_dict, similarity
+
+
 def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance"):
     """
         Complete this script to graduate from Ph.D
@@ -964,7 +984,7 @@ def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance")
     :return:  list of indices of the selected sentences for the given size
     """
     if method_name == "topic-instance":
-        all_inds_dict, similarity = topic_based_selection(similarity, vectors, sizes)
+        all_inds_dict, similarity = topic_instance_based_selection(similarity, vectors, sizes)
 
     return all_inds_dict, similarity
 
