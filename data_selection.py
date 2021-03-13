@@ -704,7 +704,6 @@ def get_qas_vectors(similarity, args):
     qas_train_datasets = {}
     q_types = ["list", "yesno", "factoid"]
     all_vectors = []
-    vocab =
     for q in q_types:
         dataset, examples, feats = squad_load_and_cache_examples(args,
                                                                  similarity.bert_tokenizer,
