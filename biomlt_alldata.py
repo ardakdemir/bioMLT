@@ -637,17 +637,13 @@ class BioMLT(nn.Module):
                                                                          output_hidden_states=True)
             self.bert_model.classifier = nn.Identity()
             self.bert_tokenizer = BertTokenizer.from_pretrained(self.args.biobert_model_name)
-        # except:
-        # logging.info("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
-        # print("Could not load biobert model loading from {}  ".format(pretrained_bert_name))
         else:
             pretrained_bert_name = self.args.model_name_or_path
             if pretrained_bert_name is None:
                 print("BERT model name should not be empty when init_model is given")
-            if self.args.mlm:
-                self.bert_model = BertForMaskedLM.from_pretrained(pretrained_bert_name, output_hidden_states=True)
-            else:
-                self.bert_model = BertForPreTraining.from_pretrained(pretrained_bert_name, output_hidden_states=True)
+            self.bert_model = BertForTokenClassification.from_pretrained(self.args.biobert_model_name,
+                                                                         output_hidden_states=True)
+            self.bert_model.classifier = nn.Identity()
             self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
 
         # print(self.bert_model)

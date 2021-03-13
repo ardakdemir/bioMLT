@@ -23,6 +23,12 @@ def parse_args():
     return args
 
 
+model_name_map = {"UTokyo_qasonly":"UoT_baseline",
+                  "UTokyo_load_All-entities":"UoT_allquestions",
+                  "UTokyo_load_BC5CDR-disease":"UoT_multitask_learn",
+                  "UTokyo_load_NCBI-disease":"UoT_bestfac",
+                  "UTokyo_load_s800":"UoT_bestyesno"}
+
 model_dict = {"UTokyo_qasonly": {"model_path": "../qasonly_9b_0803/best_qas_model_woner"},
               "UTokyo_load_All-entities": {"model_path": "../qasonly_load_9b_20ep_0803_1/best_qas_model_All-entities"},
               "UTokyo_load_NCBI-disease": {"model_path": "../qasonly_load_9b_20ep_0803_1/best_qas_model_NCBI-disease"},
