@@ -697,7 +697,7 @@ def get_qas_vocab(args):
                 vocab = vocab.union(set([x for x in qu["question"].split()]))
             c = q["context"]
             vocab = vocab.union(set([x for x in c.split()]))
-    with open(vocab_file,"w") as w:
+    with open(vocab_file,"w",encooding="utf-8") as w:
         w.write("\n".join(x for x in vocab))
     return vocab
 
