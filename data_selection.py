@@ -684,10 +684,10 @@ def get_qas_vocab(args):
     vocab = set()
     f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
     root = os.path.split(f)[0]
-    vocab_file = os.path.join(root, "vocab.json")
+    vocab_file = os.path.join(root, "vocab.txt")
     if os.path.exists(vocab_file):
         print("Vocab exists in {}!".format(vocab_file))
-        vocab = open(vocab_file, "r").read().split("\n")
+        vocab = open(vocab_file, "r", encoding="utf-8").read().split("\n")
         vocab = set(vocab)
         if len(vocab) > 100:
             return vocab
