@@ -684,10 +684,10 @@ def get_qas_vocab(args):
     vocab = set()
     f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
     root = os.path.split(f)[0]
-    vocab_file = os.path.join(root,"vocab.json")
+    vocab_file = os.path.join(root, "vocab.json")
     if os.path.exists(vocab_file):
         print("Vocab exists in {}!".format(vocab_file))
-        vocab = open(vocab_file,"r").read().split("\n")
+        vocab = open(vocab_file, "r").read().split("\n")
         vocab = set(vocab)
         if len(vocab) > 100:
             return vocab
@@ -699,7 +699,7 @@ def get_qas_vocab(args):
                 vocab = vocab.union(set([x for x in qu["question"].split()]))
             c = q["context"]
             vocab = vocab.union(set([x for x in c.split()]))
-    with open(vocab_file,"w",encoding="utf-8") as w:
+    with open(vocab_file, "w", encoding="utf-8") as w:
         w.write("\n".join(x for x in vocab))
     return vocab
 
@@ -1111,7 +1111,7 @@ def generate_store_ner_subsets():
         for method in methods:
             print("Generating subsets for {} with {} ...".format(folder_name, method))
             generate_store_ner_subsets_single(similarity, args,
-                                              save_root_folder, ner_dataset_name, ner_dataset_folder, subset_sizes,
+                                              save_root_folder, folder_name, ner_dataset_folder, subset_sizes,
                                               method)
 
 
