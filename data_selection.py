@@ -953,6 +953,7 @@ def topic_instance_based_selection(similarity, vectors, sizes):
             print("{} indices for {}. Clust size: {}. Top {} will be added..".format(len(v), k, clust_sizes[k], s))
             all_inds.extend(v[:s])
         all_inds.sort()
+        print("Top 5 inds",all_inds[:5])
         all_inds_dict[size] = all_inds
     return all_inds_dict, similarity
 
