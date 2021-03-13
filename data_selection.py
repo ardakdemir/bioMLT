@@ -974,7 +974,7 @@ def get_topN_cossimilar(source_vectors, target_vectors, max_size):
     e = time.time()
     t = round(e - b, 3)
     print("{} seconds for topN cos similar...".format(t))
-    return source_similarities[:max_size]
+    return [x[-1] for x in source_similarities[:max_size]]
 
 
 def bert_instance_based_selection(similarity, vectors, sizes):
