@@ -1147,8 +1147,6 @@ def generate_store_ner_subsets_single(similarity, args, save_folder,
             os.makedirs(f)
 
     similarity = store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, method_name=method_name)
-
-    args.ner_train_file = train_file_name
     print("NER file: {}".format(train_file_name))
     print("Save folder: {}".format(save_folder_path))
     file_names = ["ent_devel.tsv", "ent_test.tsv"]
