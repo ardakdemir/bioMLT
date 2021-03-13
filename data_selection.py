@@ -91,14 +91,14 @@ def parse_args():
     )
     parser.add_argument(
         "--ner_root_folder",
-        default='biobert_data/datasets/subsets_NER_1303/',
+        default='biobert_data/datasets/NER_1303/',
         type=str,
         required=False,
         help="The root folder containing all the ner datasets.",
     )
     parser.add_argument(
         "--save_root_folder",
-        default='biobert_data/datasets/NER_1303/',
+        default='biobert_data/datasets/subsets_NER_1303/',
         type=str,
         required=False,
         help="The root folder containing all the ner datasets.",
@@ -953,7 +953,7 @@ def topic_instance_based_selection(similarity, vectors, sizes):
             print("{} indices for {}. Clust size: {}. Top {} will be added..".format(len(v), k, clust_sizes[k], s))
             all_inds.extend(v[:s])
         all_inds.sort()
-        print("Top 5 inds",all_inds[:5])
+        print("Top 5 inds", all_inds[:5])
         all_inds_dict[size] = all_inds
     return all_inds_dict, similarity
 
@@ -1171,8 +1171,8 @@ def generate_store_ner_subsets():
     # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     ner_datasets = [ner_root_folder]
     print("Generate subsets for {} datasets".format(len(ner_datasets)))
-    subset_sizes = [100, 200, 300]
-    methods = ["topic-instance", "bert-instance","bert-subset"]
+    subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    methods = ["topic-instance", "bert-instance", "bert-subset"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
