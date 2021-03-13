@@ -684,11 +684,13 @@ def get_qas_vocab(args):
     vocab = set()
     f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
     root = os.path.split(f)[0]
-    vocab_file = os.path.join(root,"vocab.txt")
+    vocab_file = os.path.join(root,"vocab.json")
     if os.path.exists(vocab_file):
         print("Vocab exists in {}!".format(vocab_file))
         vocab = open(vocab_file,"r").read().split("\n")
-        return vocab
+        vocab = set(vocab)
+        if len(vocab) > 100:
+            return vocab
     for file in [f, l, y]:
         print("Adding {} vocab...".format(file))
         d = json.load(open(file, "r"))
@@ -1099,9 +1101,9 @@ def generate_store_ner_subsets():
     # save_root_folder = os.path.split(ner_root_folder)[0]
 
     # ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
-    print("Generate subsets for {} datasets".format(len(ner_datasets)))
     # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     ner_datasets = [ner_root_folder]
+    print("Generate subsets for {} datasets".format(len(ner_datasets)))
     subset_sizes = [100, 200, 300]
     methods = ["topic-instance", "bert-instance"]
     for dataset_name in ner_datasets:
