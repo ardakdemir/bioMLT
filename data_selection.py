@@ -723,8 +723,7 @@ def get_qas_vocab(args):
 def get_ner_vocab(ner_sentences):
     vocab = set()
     for sent in ner_sentences:
-        print(sent)
-        vocab = vocab.union(set(sent.split()))
+        vocab = vocab.union(set([x for x in sent]))
     return vocab
 
 
@@ -1176,7 +1175,7 @@ def generate_store_ner_subsets():
     ner_datasets = [ner_root_folder]
     print("Generate subsets for {} datasets".format(len(ner_datasets)))
     subset_sizes = [100, 200, 300]
-    methods = ["topic-instance", "bert-instance"]
+    methods = ["topic-instance", "bert-instance","bert-subset"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
