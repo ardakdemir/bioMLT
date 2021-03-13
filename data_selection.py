@@ -682,7 +682,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 def get_qas_vocab(args):
     vocab = set()
     f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
-    for file in in[f, l, y]:
+    for file in [f, l, y]:
         print("Adding {} vocab...".format(vocab))
         d = json.load(open(file, "r"))
         for q in d["data"][0]["paragraphs"]:
