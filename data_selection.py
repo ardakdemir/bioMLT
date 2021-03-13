@@ -1010,7 +1010,8 @@ def bert_subset_based_selection(similarity, vectors, sizes):
         best_subset_index = np.argmax(
             [get_average_similarity_score([vectors[i] for i in indices], qas_vectors) for indices in
              subset_indices[size]])
-        print("Best index for {}: {} size : {}".format(size, best_subset_index,len(subset_indices[size][best_subset_index])))
+        print("Best index for {}: {} size : {}".format(size, best_subset_index,
+                                                       len(subset_indices[size][best_subset_index])))
         all_inds_dict[size] = subset_indices[size][best_subset_index]
 
     return all_inds_dict, similarity
@@ -1063,8 +1064,12 @@ def get_dataset_similarity_scores(similarity, ner_sentences):
     :param ner_sentences:
     :return:
     """
+    ner_vocab = get_ner_vocab(ner_sentences)
+    print("NER dataset contains {} words".format(len(ner_vocab)))
+    vocab_sim = get_vocab_similarity(self.qas_vocab, ner_vocab)
 
-    sim_scores = {}
+    print("Vocab similarity: {}".format(vocab_sim))
+    sim_scores = {"vocab_similarity": vocab_sim}
     return sim_scores
 
 
@@ -1089,6 +1094,7 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
         save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
         ner_sentences = [sentences[i] for i in indices]
 
+        # similarity scores
         sim_scores = get_dataset_similarity_scores(similarity, ner_sentences)
 
         # write subset dataset
@@ -1140,13 +1146,14 @@ def generate_store_ner_subsets_single(similarity, args, save_folder,
             os.makedirs(f)
 
     similarity = store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, method_name=method_name)
-    if not os.path.exists(save_folder_path):
-        os.makedirs(save_folder_path)
+
     args.ner_train_file = train_file_name
     print("NER file: {}".format(train_file_name))
     print("Save folder: {}".format(save_folder_path))
     file_names = ["ent_devel.tsv", "ent_test.tsv"]
     for size, f in zip(sizes, save_folder_paths):
+        if not os.path.exists(f):
+            os.makedirs(f)
         for file_name in file_names:
             file_path = os.path.join(ner_dataset_folder, file_name)
             save_path = os.path.join(f, file_name)
