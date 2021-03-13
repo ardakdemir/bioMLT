@@ -1094,6 +1094,7 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
     print("Time to select ner subsets of sizes {}: {}".format(sizes, t))
     for size, indices in indices_dict.items():
         save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
+        print(indices)
         ner_sentences = [sentences[i] for i in indices]
 
         # similarity scores
