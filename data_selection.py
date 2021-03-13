@@ -82,7 +82,14 @@ def parse_args():
     )
     parser.add_argument(
         "--ner_root_folder",
-        default='biobert_data/datasets/All-entities',
+        default='biobert_data/datasets/NER_1303/dummy_ner_dataset',
+        type=str,
+        required=False,
+        help="The root folder containing all the ner datasets.",
+    )
+    parser.add_argument(
+        "--save_root_folder",
+        default='biobert_data/datasets/NER_1303/',
         type=str,
         required=False,
         help="The root folder containing all the ner datasets.",
@@ -733,7 +740,7 @@ def load_store_qas_vectors():
     args = parse_args()
     vector_folder = args.vector_save_folder
     dataset_name = args.squad_train_factoid_file
-    save_path = os.path.join(vector_folder,os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5")
+    save_path = os.path.join(vector_folder, os.path.split(dataset_name)[0].split("/")[-1] + ".hdf5")
 
     if os.path.exists(save_path):
         print("Found qas vectors previously stored...")
@@ -804,7 +811,7 @@ def get_topN_similar_single(target_model, source_vectors, N):
         zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
         zipped.sort(key=lambda x: x[1])
         indices, dists = list(zip(*zipped))
-        print("{} indices {} dists N: {}".format(len(indices),len(dists),N))
+        print("{} indices {} dists N: {}".format(len(indices), len(dists), N))
         my_inds = []
         i = 0
         while len(my_inds) < N and i < len(indices):
@@ -874,12 +881,7 @@ def get_topN_withpenalty(vectors, mean, precision, N, skip_list):
     return my_inds
 
 
-def select_ner_subset(similarity, vectors, size=500):
-    """
-        Complete this script to graduate from Ph.D
-    :param vectors: list of BERT-based vector representations
-    :return:  list of indices of the selected sentences for the given size
-    """
+def topic_based_selection(similarity, vectors, sizes):
     if not hasattr(similarity, "qas_model"):
         best_model, similarity, clust_sizes = train_qas_model(similarity)
         similarity.qas_model = best_model
@@ -891,19 +893,33 @@ def select_ner_subset(similarity, vectors, size=500):
 
     print("Best model has {} clusters".format(num_clusters))
     print("Clust sizes: {}".format(clust_sizes))
-    # top_inds = get_topN_similar_single_iterative_penalize(best_model, vectors, size)
-    top_inds = get_topN_similar_single(best_model, vectors, size)
-    all_inds = []
+    max_size = max(sizes)
+    top_inds = get_topN_similar_single(best_model, vectors, max_size)
+
     total_size = sum(clust_sizes.values())
-    for k, v in top_inds.items():
-        ratio = clust_sizes[k] / total_size
-        s = int(size * ratio)
-        print("{} indices for {}. Clust size: {}. Top {} will be added..".format(len(v), k, clust_sizes[k], s))
-        all_inds.extend(v[:s])
-    all_inds.sort()
-    print("All final indices.")
-    print(all_inds)
-    return all_inds, similarity
+    all_inds_dict = {}
+    for size in sizes:
+        all_inds = []
+        for k, v in top_inds.items():
+            ratio = clust_sizes[k] / total_size
+            s = int(size * ratio)
+            print("{} indices for {}. Clust size: {}. Top {} will be added..".format(len(v), k, clust_sizes[k], s))
+            all_inds.extend(v[:s])
+        all_inds.sort()
+        all_inds_dict[size] = all_inds
+    return all_inds_dict, similarity
+
+
+def select_ner_subsets(similarity, vectors, sizes, method_name=method_name):
+    """
+        Complete this script to graduate from Ph.D
+    :param vectors: list of BERT-based vector representations
+    :return:  list of indices of the selected sentences for the given size
+    """
+    if method_name == "topic-instance":
+        all_inds_dict, similarity = topic_based_selection(similarity, vectors, sizes)
+
+    return all_inds_dict, similarity
 
 
 def write_subset_dataset(indices, sentences, labels, save_path):
@@ -928,21 +944,62 @@ def store_ner_vectors(similarity, args):
         h["vectors"] = np.array(vectors)
 
 
-def store_ner_subset(similarity, args, size, save_file_path):
+def get_dataset_similarity_scores(similarity, ner_sentences):
+    """
+
+        Shared Voc. Bert/BioBERT-based similarity
+        Topic distribution similarity??
+        Coccurring entity ratio??
+    :param similarity:
+    :param ner_sentences:
+    :return:
+    """
+    sim_scores = {}
+    return sim_scores
+
+
+def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, method_name="topic-instance"):
+    save_folder_paths = {size: os.path.join(save_folder, "{}_{}_{}".format(method_name, size, ner_dataset_name))
+                         for size in sizes}
+
     b = time.time()
     similarity, vectors, sentences, labels = get_ner_vectors(similarity, args)
+    print("Number of sentences: {}".format(len(sentences)))
+    print("Shape of vectors: {}".format(vectors.shape))
     e = time.time()
     t = round(e - b, 3)
     print("Time to get ner vectors: {}".format(t))
     b = time.time()
-    indices, similarity = select_ner_subset(similarity, vectors, size)
+    indices_dict, similarity = select_ner_subsets(similarity, vectors, sizes, method_name=method_name)
     print("Selected {} indices in total.".format(len(indices)))
     e = time.time()
     t = round(e - b, 3)
-    print("Time to select ner subset of size {}: {}".format(size, t))
-    print("Indices")
-    # print(indices)
-    write_subset_dataset(indices, sentences, labels, save_file_path)
+    print("Time to select ner subsets of sizes {}: {}".format(sizes, t))
+    for size, indices in indices_dict.items():
+        save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
+        ner_sentences = [sentences[i] for i in indices]
+
+        sim_scores = get_dataset_similarity_scores(similarity, ner_sentences)
+
+        # write subset dataset
+        write_subset_dataset(indices, sentences, labels, save_file_path)
+
+        # store ner vectors of this subset
+        exp_name = os.path.split(save_folder_paths[size])[-1]
+        vector_file_path = os.path.join(save_folder_paths[size], "{}.hdf5".format(exp_name))
+        my_vectors = np.array([vectors[i] for i in indices])
+        print("My vectors shape: {}".format(my_vectors.shape))
+        with h5py.File(vector_file_path, "w") as h:
+            h["vectors"] = my_vectors
+
+        ## Store metadata
+        metadata_path = os.path.join(save_folder_paths[size], "metadata.json")
+        metadata = {"indices": indices,
+                    "method_name": method_name,
+                    "folder_name": save_folder_paths[size],
+                    "similarity_scores": sim_scores}
+        with open(metadata_path, "w") as w:
+            json.dump(metadata, w)
     return similarity
 
 
@@ -963,42 +1020,51 @@ def store_vectors():
     # store_ner_folder_vectors()
 
 
+def generate_store_ner_subsets_single(similarity, args, save_folder,
+                                      ner_dataset_name, ner_dataset_folder,
+                                      sizes, method_name):
+    save_folder_paths = [os.path.join(save_folder, "{}_{}_{}".format(method_name, size, ner_dataset_name)) for size in
+                         sizes]
+    for f in save_folder_paths:
+        if not os.path.exists(f):
+            os.makedirs(f)
+
+    similarity = store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, method_name=method_name)
+    if not os.path.exists(save_folder_path):
+        os.makedirs(save_folder_path)
+    args.ner_train_file = train_file_name
+    print("NER file: {}".format(train_file_name))
+    print("Save folder: {}".format(save_folder_path))
+    file_names = ["ent_devel.tsv", "ent_test.tsv"]
+    for size, f in zip(sizes, save_folder_paths):
+        for file_name in file_names:
+            file_path = os.path.join(ner_dataset_folder, file_name)
+            save_path = os.path.join(f, file_name)
+            small_dataset = get_small_dataset(file_path, size=size)
+            with open(save_path, "w") as w:
+                w.write(small_dataset)
+
+
 def generate_store_ner_subsets():
     args = parse_args()
     similarity = Similarity()
     ner_root_folder = args.ner_root_folder
+    save_root_folder = args.save_root_foolder
+    # save_root_folder = os.path.split(ner_root_folder)[0]
 
-    save_root_folder = os.path.split(ner_root_folder)[0]
-    ner_root_name = os.path.split(ner_root_folder)[-1]
-    save_folder_pref = args.save_folder_pref
-
-    ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
+    # ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
     print("Generate subsets for {} datasets".format(len(ner_datasets)))
-    ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
-    # store_ner_vectors(similarity, args)
-    # store_qas_vectors(similarity,args)
-    subset_sizes = [5000, 10000,20000]
+    # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
+    ner_datasets = [ner_root_folder]
+    subset_sizes = [100, 200, 300]
+    methods = ["topic-instance", "bert-instance"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         print("Generating subsets for {}...".format(folder_name))
-        for s in subset_sizes:
-            save_folder_path = os.path.join(save_root_folder, "{}_{}_{}".format(save_folder_pref, ner_root_name, s),
-                                            folder_name)
-            if not os.path.exists(save_folder_path):
-                os.makedirs(save_folder_path)
-            save_file_path = os.path.join(save_folder_path, "ent_train.tsv")
-            train_file_name = os.path.join(dataset_name, "ent_train.tsv")
-            args.ner_train_file = train_file_name
-            print("NER file: {}".format(train_file_name))
-            print("Save folder: {}".format(save_folder_path))
-            similarity = store_ner_subset(similarity, args, s, save_file_path)
-            file_names = ["ent_devel.tsv", "ent_test.tsv"]
-            for file_name in file_names:
-                file_path = os.path.join(dataset_name, file_name)
-                save_path = os.path.join(save_folder_path, file_name)
-                small_dataset = get_small_dataset(file_path, size=1000)
-                with open(save_path, "w") as w:
-                    w.write(small_dataset)
+        for method in methods:
+            generate_store_ner_subsets_single(similarity, args,
+                                              save_root_folder, ner_dataset_name, ner_dataset_folder, subset_sizes,
+                                              method)
 
 
 def main():
