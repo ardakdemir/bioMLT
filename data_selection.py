@@ -489,6 +489,7 @@ class Similarity(nn.Module):
             self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
 
         self.bert_out_dim = 768
+        self.number_of_subsets = 10
         self.args.bert_output_dim = self.bert_out_dim
         print("BERT output dim {}".format(self.bert_out_dim))
 
@@ -532,7 +533,6 @@ class Similarity(nn.Module):
             print("Qas vectors not found...")
             vectors = store_qas_vectors(self, args)
             return vectors
-
 
     def _get_token_to_bert_predictions(self, predictions, bert2toks):
         # logging.info("Predictions shape {}".format(predictions.shape))
@@ -799,8 +799,6 @@ def multiple_clusters(vectors, k_start, k_end, algo="kmeans"):
     return models
 
 
-
-
 def train_qas_model(similarity):
     if not hasattr(similarity, "qas_vectors"):
         print("Generating qas vectors...")
@@ -958,9 +956,24 @@ def topic_instance_based_selection(similarity, vectors, sizes):
     return all_inds_dict, similarity
 
 
-def get_topN_cossimilar(source_vectors,target_vectors, max_size):
+def get_average_similarity_score(source_vectors, target_vectors):
+    b = time.time()
+    source_similarities = [max([cos_sim(s, t) for t in target_vectors]) for i, s in enumerate(source_vectors)]
+    e = time.time()
+    t = round(e - b, 3)
+    print("{} seconds for average sim score".format(t))
+    return sum(source_similarities) / len(source_similarities)
 
-    return [1,2,3]
+
+def get_topN_cossimilar(source_vectors, target_vectors, max_size):
+    b = time.time()
+    source_similarities = [(max([cos_sim(s, t) for t in target_vectors]), i) for i, s in enumerate(source_vectors)]
+    source_similarities.sort(key=lambda x: x[0], reverse=True)
+    e = time.time()
+    t = round(e - b, 3)
+    print("{} seconds for topN cos similar...".format(t))
+    return source_similarities[:max_size]
+
 
 def bert_instance_based_selection(similarity, vectors, sizes):
     print("bert-instance based selection")
@@ -972,9 +985,34 @@ def bert_instance_based_selection(similarity, vectors, sizes):
 
     all_inds_dict = {}
     for size in sizes:
-        all_inds = []
-        all_inds_dict[size] = all_inds
-    print("Not implemented yet...")
+        all_inds_dict[size] = top_inds[:size]
+    return all_inds_dict, similarity
+
+
+def bert_subset_based_selection(similarity, vectors, sizes):
+    print("bert-instance based selection")
+
+    number_of_subsets = self.number_of_subsets
+    indices = [i for i in range(len(vectors))]
+
+    subset_indices = {}
+    for s in sizes:
+        my_indices = []
+        for _ in range(number_of_subsets):
+            np.random.shuffle(indices)
+            my_indices.append(indices[:s])
+        subset_indices[s] = my_indices
+        print("{} subsets of size {}".format(len(my_indices), s))
+
+    qas_vectors = self.qas_vectors
+    all_inds_dict = {}
+    for size in sizes:
+        best_subset_index = np.argmax(
+            [get_average_similarity_score([vectors[i] for i in indices], qas_vectors) for indices in
+             subset_indices[size]])
+        print("Best index for {}: {} size : {}".format(size, best_subset_index,len(subset_indices[size][best_subset_index])))
+        all_inds_dict[size] = subset_indices[size][best_subset_index]
+
     return all_inds_dict, similarity
 
 
@@ -986,7 +1024,10 @@ def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance")
     """
     if method_name == "topic-instance":
         all_inds_dict, similarity = topic_instance_based_selection(similarity, vectors, sizes)
-
+    elif method_name == "bert-instance":
+        all_inds_dict, similarity = bert_instance_based_selection(similarity, vectors, sizes)
+    elif method_name == "bert-subset":
+        all_inds_dict, similarity = bert_subset_based_selection(similarity, vectors, sizes)
     return all_inds_dict, similarity
 
 
@@ -1040,7 +1081,7 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
     print("Time to get ner vectors: {}".format(t))
     b = time.time()
     indices_dict, similarity = select_ner_subsets(similarity, vectors, sizes, method_name=method_name)
-    print("Selected {} indices in total.".format(len(indices)))
+    print("Selected {} indices in total.".format(len(indices_dict)))
     e = time.time()
     t = round(e - b, 3)
     print("Time to select ner subsets of sizes {}: {}".format(sizes, t))
@@ -1131,7 +1172,7 @@ def generate_store_ner_subsets():
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
             print("Generating subsets for {} with {} ...".format(folder_name, method))
-            args.ner_train_file = os.path.join(ner_root_folder,"ent_train.tsv")
+            args.ner_train_file = os.path.join(ner_root_folder, "ent_train.tsv")
             generate_store_ner_subsets_single(similarity, args,
                                               save_root_folder, folder_name, ner_root_folder, subset_sizes,
                                               method)
