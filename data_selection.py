@@ -684,7 +684,7 @@ def get_qas_vocab(args):
     vocab = set()
     f, l, y = args.squad_train_factoid_file, args.squad_train_list_file, args.squad_train_yesno_file
     for file in [f, l, y]:
-        print("Adding {} vocab...".format(vocab))
+        print("Adding {} vocab...".format(file))
         d = json.load(open(file, "r"))
         for q in d["data"][0]["paragraphs"]:
             for qu in q["qas"]:
