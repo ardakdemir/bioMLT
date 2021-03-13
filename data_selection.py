@@ -1067,7 +1067,7 @@ def get_dataset_similarity_scores(similarity, ner_sentences):
     """
     ner_vocab = get_ner_vocab(ner_sentences)
     print("NER dataset contains {} words".format(len(ner_vocab)))
-    vocab_sim = get_vocab_similarity(self.qas_vocab, ner_vocab)
+    vocab_sim = get_vocab_similarity(similarity.qas_vocab, ner_vocab)
 
     print("Vocab similarity: {}".format(vocab_sim))
     sim_scores = {"vocab_similarity": vocab_sim}
