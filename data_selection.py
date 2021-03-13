@@ -723,6 +723,7 @@ def get_qas_vocab(args):
 def get_ner_vocab(ner_sentences):
     vocab = set()
     for sent in ner_sentences:
+        print(sent)
         vocab = vocab.union(set(sent.split()))
     return vocab
 
@@ -776,6 +777,7 @@ def get_ner_vectors(similarity, args):
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
         similarity.ner_sentences = ner_sentences
+        print(similarity.ner_sentences[0])
         similarity.ner_labels = ner_labels
     else:
         print("Ner vectors are already generated")
