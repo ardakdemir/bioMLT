@@ -1110,6 +1110,7 @@ def generate_store_ner_subsets():
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
             print("Generating subsets for {} with {} ...".format(folder_name, method))
+            args.ner_train_file = os.path.join(ner_root_folder,"ent_train.tsv")
             generate_store_ner_subsets_single(similarity, args,
                                               save_root_folder, folder_name, ner_root_folder, subset_sizes,
                                               method)
