@@ -91,7 +91,7 @@ def parse_args():
     )
     parser.add_argument(
         "--ner_root_folder",
-        default='biobert_data/datasets/NER_1303/dummy_ner_dataset',
+        default='biobert_data/datasets/subsets_NER_1303/',
         type=str,
         required=False,
         help="The root folder containing all the ner datasets.",
@@ -992,7 +992,7 @@ def bert_instance_based_selection(similarity, vectors, sizes):
 
 
 def bert_subset_based_selection(similarity, vectors, sizes):
-    print("bert-instance based selection")
+    print("bert-subset based selection")
 
     number_of_subsets = similarity.number_of_subsets
     indices = [i for i in range(len(vectors))]
@@ -1094,7 +1094,6 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
     print("Time to select ner subsets of sizes {}: {}".format(sizes, t))
     for size, indices in indices_dict.items():
         save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
-        print(indices)
         ner_sentences = [sentences[i] for i in indices]
 
         # similarity scores
