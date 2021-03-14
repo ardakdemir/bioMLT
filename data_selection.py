@@ -90,7 +90,7 @@ def parse_args():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
-        "--ner_root_folder",
+        "ƒfolder",
         default='biobert_data/datasets/NER_1303/',
         type=str,
         required=False,
@@ -1031,6 +1031,12 @@ def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance")
         all_inds_dict, similarity = bert_instance_based_selection(similarity, vectors, sizes)
     elif method_name == "bert-subset":
         all_inds_dict, similarity = bert_subset_based_selection(similarity, vectors, sizes)
+    elif method_name == "random":
+        indices = [i for i in range(len(vectors))]
+        all_inds_dict = {}
+        for size in sizes:
+            np.random.shuffle(indices)
+            all_inds_dict[size] = indices[:size]
     return all_inds_dict, similarity
 
 
@@ -1056,7 +1062,20 @@ def store_ner_vectors(similarity, args):
         h["vectors"] = np.array(vectors)
 
 
-def get_dataset_similarity_scores(similarity, ner_sentences):
+def get_bert_similarity(source_vectors, target_vectors):
+    """
+        To speed-up calculation, we select 100 vectors (T) from target randomly and get max([cos_sim(s,t') for t' in T])
+    """
+    sims = []
+    sample_size = 100
+    for s in source_vectors:
+        np.random.shuffle(target_vectors)
+        my_sim = max([cos_sim(s, t) for t in target_vectors[:sample_size]])
+        sims.append(my_sim)
+    return sum(sims) / len(sims)
+
+
+def get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors):
     """
 
         Shared Voc. Bert/BioBERT-based similarity
@@ -1066,12 +1085,24 @@ def get_dataset_similarity_scores(similarity, ner_sentences):
     :param ner_sentences:
     :return:
     """
+
+    # Vocab similarity
     ner_vocab = get_ner_vocab(ner_sentences)
     print("NER dataset contains {} words".format(len(ner_vocab)))
     vocab_sim = get_vocab_similarity(similarity.qas_vocab, ner_vocab)
-
     print("Vocab similarity: {}".format(vocab_sim))
-    sim_scores = {"vocab_similarity": vocab_sim}
+
+    # Bert-based similarity
+    b = time.time()
+    target_vectors = similarity.qas_vectors
+    bert_sim = get_bert_similarity(ner_vectors, target_vectors)
+    e = time.time()
+    t = round(e - b, 3)
+    print("Bert similarity calculated in {} seconds...".format(t))
+        
+
+    sim_scores = {"vocab_similarity": vocab_sim,
+                  "bert_similarity": bert_sim}
     return sim_scores
 
 
@@ -1083,21 +1114,29 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
     similarity, vectors, sentences, labels = get_ner_vectors(similarity, args)
     print("Number of sentences: {}".format(len(sentences)))
     print("Shape of vectors: {}".format(vectors.shape))
+    logging.info("Number of sentences: {}".format(len(sentences)))
+    logging.info("Shape of vectors: {}".format(vectors.shape))
+
     e = time.time()
     t = round(e - b, 3)
+    logging.info("Time to get ner vectors: {}".format(t))
     print("Time to get ner vectors: {}".format(t))
+
     b = time.time()
     indices_dict, similarity = select_ner_subsets(similarity, vectors, sizes, method_name=method_name)
+    logging.info("Selected {} indices in total.".format(len(indices_dict)))
     print("Selected {} indices in total.".format(len(indices_dict)))
+
     e = time.time()
     t = round(e - b, 3)
+    logging.info("Time to select ner subsets of sizes {}: {}".format(sizes, t))
     print("Time to select ner subsets of sizes {}: {}".format(sizes, t))
     for size, indices in indices_dict.items():
         save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
         ner_sentences = [sentences[i] for i in indices]
 
         # similarity scores
-        sim_scores = get_dataset_similarity_scores(similarity, ner_sentences)
+        sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, vectors)
 
         # write subset dataset
         write_subset_dataset(indices, sentences, labels, save_file_path)
@@ -1106,6 +1145,7 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
         exp_name = os.path.split(save_folder_paths[size])[-1]
         vector_file_path = os.path.join(save_folder_paths[size], "{}.hdf5".format(exp_name))
         my_vectors = np.array([vectors[i] for i in indices])
+        logging.info("My vectors shape: {}".format(my_vectors.shape))
         print("My vectors shape: {}".format(my_vectors.shape))
         with h5py.File(vector_file_path, "w") as h:
             h["vectors"] = my_vectors
@@ -1146,7 +1186,7 @@ def generate_store_ner_subsets_single(similarity, args, save_folder,
     for f in save_folder_paths:
         if not os.path.exists(f):
             os.makedirs(f)
-
+    logging.info("\n\n=== GENERATING SUBSETS FOR {} ===\n\n".format(method_name))
     similarity = store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, method_name=method_name)
     file_names = ["ent_devel.tsv", "ent_test.tsv"]
     for size, f in zip(sizes, save_folder_paths):
@@ -1170,16 +1210,21 @@ def generate_store_ner_subsets():
     # ner_datasets = list(filter(lambda x: os.path.isdir(os.path.join(ner_root_folder, x)), os.listdir(ner_root_folder)))
     # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     ner_datasets = [ner_root_folder]
-    print("Generate subsets for {} datasets".format(len(ner_datasets)))
+    print("Generate subsets for {} datasets...".format(len(ner_datasets)))
     subset_sizes = [1000, 2000, 5000, 10000, 20000]
-    methods = ["topic-instance", "bert-instance", "bert-subset"]
+    # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
+    methods = ["random"]
+
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
             print("Generating subsets for {} with {} ...".format(folder_name, method))
             args.ner_train_file = os.path.join(ner_root_folder, "ent_train.tsv")
             generate_store_ner_subsets_single(similarity, args,
-                                              save_root_folder, folder_name, ner_root_folder, subset_sizes,
+                                              save_root_folder,
+                                              folder_name,
+                                              ner_root_folder,
+                                              subset_sizes,
                                               method)
 
 
