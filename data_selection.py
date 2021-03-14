@@ -42,7 +42,7 @@ cos_sim = lambda a, b: dot(a, b) / (norm(a) * norm(b))
 
 
 def cos_sim(a, b):
-    if type(a) == numpy.ndarray:
+    if type(a) == np.ndarray:
         return dot(a, b) / (norm(a) * norm(b))
     elif type(a) == torch.Tensor:
         return torch.dot(a, b) / (torch.norm(a) * torch.norm(b))
