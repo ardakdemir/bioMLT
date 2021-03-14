@@ -1180,8 +1180,10 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
         ner_sentences = [sentences[i] for i in indices]
         ner_vectors = [vectors[i] for i in indices]
         print("{} ner vectors and {} ner sentences...".format(len(ner_vectors), len(ner_sentences)))
+
+
         # similarity scores
-        sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors)
+        # sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors)
 
         # write subset dataset
         write_subset_dataset(indices, sentences, labels, save_file_path)
@@ -1199,8 +1201,8 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
         metadata_path = os.path.join(save_folder_paths[size], "metadata.json")
         metadata = {"indices": indices,
                     "method_name": method_name,
-                    "folder_name": save_folder_paths[size],
-                    "similarity_scores": sim_scores}
+                    "folder_name": save_folder_paths[size]}
+
         with open(metadata_path, "w") as w:
             json.dump(metadata, w)
     return similarity
