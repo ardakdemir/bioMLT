@@ -867,7 +867,7 @@ def get_topN_similar_single(target_model, source_vectors, N):
         prec = torch.tensor(prec).to(DEVICE)
         if type(source_vectors) != torch.Tensor:
             source_vectors = torch.tensor(source_vectors)
-        source_vectors = source_vectors.to(DEVIEC)
+        source_vectors = source_vectors.to(DEVICE)
         mah_dists = [mahalanobis_distance(v, mean, prec) for v in source_vectors]
         zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
         zipped.sort(key=lambda x: x[1])
