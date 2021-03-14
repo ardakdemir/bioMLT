@@ -504,7 +504,7 @@ class Similarity(nn.Module):
 
         print("Generating qas vectors...")
         qas_vectors = self.load_store_qas_vectors()
-        self.qas_vectors = qas_vectors[:150]
+        self.qas_vectors = qas_vectors
         qas_vocab = get_qas_vocab(self.args)
         print("QAS vocab contains {} words".format(len(qas_vocab)))
         self.qas_vocab = qas_vocab
@@ -818,6 +818,7 @@ def train_qas_model(similarity):
         print("Qas vectors are already generated...")
         qas_vectors = similarity.qas_vectors
 
+    clustering_begin = time.time()
     k_start = 2
     k_finish = 7
     print("Training gm model on qas vectors!")
@@ -835,6 +836,9 @@ def train_qas_model(similarity):
     labels = best_model.predict(qas_vectors)
     clust_sizes = Counter(labels)
     print("Size of each cluster: {}".format(clust_sizes))
+    clustering_end = time.time()
+    clustering_time = round(clustering_end-clustering_begin,3)
+    print("{} seconds for qas topic model training".format(clustering_time))
     return best_model, similarity, clust_sizes
 
 
