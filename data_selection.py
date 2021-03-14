@@ -459,7 +459,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
     parser.add_argument('--ner_train_file', type=str,
-                        default='biobert_data/datasets/NER_for_QAS_combinedonly/All-entities/ent_train.tsv',
+                        default='biobert_data/datasets/NER_1303/All-entities/ent_train.tsv',
                         help='training file for ner')
     parser.add_argument('--ner_dev_file', type=str, default='ner_data/all_entities_test.tsv',
                         help='development file for ner')
@@ -1256,10 +1256,10 @@ def generate_store_ner_subsets():
     # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     ner_datasets = [ner_root_folder]
     print("Generate subsets for {} datasets...".format(len(ner_datasets)))
-    # subset_sizes = [1000, 2000, 5000, 10000, 20000]
-    subset_sizes = [10,20,30]
-    methods = ["random","topic-instance", "bert-instance", "bert-subset"]
-    # methods = ["random","topic-in"]
+    subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    # subset_sizes = [10,20,30]
+    # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
+    methods = ["random"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
@@ -1274,12 +1274,12 @@ def generate_store_ner_subsets():
 
 
 def main():
-    # generate_store_ner_subsets()
+    generate_store_ner_subsets()
 
 
-    args = parse_args()
-    similarity = Similarity()
-    store_ner_vectors(similarity, args)
+    # args = parse_args()
+    # similarity = Similarity()
+    # store_ner_vectors(similarity, args)
     # store_vectors()
     # store_ner_folder_vectors()
 
