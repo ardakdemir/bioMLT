@@ -504,7 +504,7 @@ class Similarity(nn.Module):
 
         print("Generating qas vectors...")
         qas_vectors = self.load_store_qas_vectors()
-        self.qas_vectors = qas_vectors
+        self.qas_vectors = qas_vectors[:150]
         qas_vocab = get_qas_vocab(self.args)
         print("QAS vocab contains {} words".format(len(qas_vocab)))
         self.qas_vocab = qas_vocab
@@ -817,6 +817,7 @@ def train_qas_model(similarity):
     else:
         print("Qas vectors are already generated...")
         qas_vectors = similarity.qas_vectors
+
     k_start = 2
     k_finish = 7
     print("Training gm model on qas vectors!")
@@ -863,7 +864,7 @@ def get_topN_similar_single(target_model, source_vectors, N):
     l = 0
     used_indices = []
     for mean, prec in zip(target_model.means_, target_model.precisions_):
-        
+
         mah_dists = [mahalanobis_distance(v, mean, prec) for v in source_vectors]
         zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
         zipped.sort(key=lambda x: x[1])
@@ -1091,6 +1092,7 @@ def store_ner_vectors(similarity, args):
     if not os.path.exists(vector_folder):
         os.makedirs(vector_folder)
     dataset_path = os.path.join(vector_folder, dataset_name)
+    print("Saving features to: {}".format(dataset_path))
     with h5py.File(dataset_path, "w") as h:
         h["vectors"] = np.array(vectors)
 
@@ -1269,6 +1271,7 @@ def generate_store_ner_subsets():
 
 def main():
     generate_store_ner_subsets()
+    store_ner_vectors(similarity, args)
     # store_vectors()
     # store_ner_folder_vectors()
 
