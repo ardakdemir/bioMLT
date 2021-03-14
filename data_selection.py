@@ -38,6 +38,8 @@ from reader import TrainingInstance, BertPretrainReader, MyTextDataset, mask_tok
 
 pretrained_bert_name = 'bert-base-cased'
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 cos_sim = lambda a, b: dot(a, b) / (norm(a) * norm(b))
 
 
@@ -861,6 +863,11 @@ def get_topN_similar_single(target_model, source_vectors, N):
     l = 0
     used_indices = []
     for mean, prec in zip(target_model.means_, target_model.precisions_):
+        mean = torch.tensor(mean).to(DEVICE)
+        prec = torch.tensor(prec).to(DEVICE)
+        if type(source_vectors) != torch.Tensor:
+            source_vectors = torch.tensor(source_vectors)
+        source_vectors = source_vectors.to(DEVIEC)
         mah_dists = [mahalanobis_distance(v, mean, prec) for v in source_vectors]
         zipped = list(zip([i for i in range(len(mah_dists))], mah_dists))
         zipped.sort(key=lambda x: x[1])
@@ -967,11 +974,24 @@ def topic_instance_based_selection(similarity, vectors, sizes):
 
 def get_average_similarity_score(source_vectors, target_vectors):
     b = time.time()
+    ## Move to GPU for faster computation
+    if not type(source_vectors) == torch.Tensor:
+        source_vectors = torch.tensor(source_vectors)
+    if not type(target_vectors) == torch.Tensor:
+        target_vectors = torch.tensor(target_vectors)
+    target_vectors = target_vectors.to(DEVICE)
+    source_vectors = source_vectors.to(DEVICE)
+
     source_similarities = [max([cos_sim(s, t) for t in target_vectors]) for i, s in enumerate(source_vectors)]
+    for i in tqdm(range(len(source_vectors))):
+        s = source_vectors[i]
+        max_sim = max([cos_sim(s, t) for t in target_vectors])
+        source_similarities.append(max_sim)
+    print("Length of source similarities: {}\n\n".format(len(source_similarities)))
     e = time.time()
     t = round(e - b, 3)
     print("{} seconds for average sim score".format(t))
-    return sum(source_similarities) / len(source_similarities)
+    return sum(source_similarities).detach().cpu().item() / len(source_similarities)
 
 
 def get_topN_cossimilar(source_vectors, target_vectors, max_size):
@@ -1088,7 +1108,7 @@ def get_bert_similarity(source_vectors, target_vectors):
     for i in tqdm(range(len(source_vectors)), desc="Bert Similarity"):
         s = source_vectors[i]
         np.random.shuffle(target_vectors)
-        my_sim = max([cos_sim(s, t) for t in target_vectors[:sample_size]])
+        my_sim = max([cos_sim(s, t) for t in target_vectors[:sample_size]]).detach().cpu().item()
         sims.append(my_sim)
     return sum(sims) / len(sims)
 
