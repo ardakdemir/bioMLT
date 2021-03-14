@@ -1068,7 +1068,8 @@ def get_bert_similarity(source_vectors, target_vectors):
     """
     sims = []
     sample_size = 100
-    for s in source_vectors:
+    for i in tqdm(range(len(source_vectors)),desc="Bert Similarity"):
+        s = source_vectors[i]
         np.random.shuffle(target_vectors)
         my_sim = max([cos_sim(s, t) for t in target_vectors[:sample_size]])
         sims.append(my_sim)
@@ -1095,7 +1096,10 @@ def get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors):
     # Bert-based similarity
     b = time.time()
     print("Getting BERT similarity")
-    target_vectors = similarity.qas_vectors
+    target_vectors = torch.tensor(similarity.qas_vectors)
+    target_vectors = target_vectors.to(similarity.device)
+    ner_vectors = torch.tensor(ner_vectors)
+    ner_vectors = ner_vectors.to(similarity.device)
     bert_sim = get_bert_similarity(ner_vectors, target_vectors)
     print("BERT similarity: {}".format(bert_sim))
     e = time.time()
