@@ -1256,9 +1256,8 @@ def generate_store_ner_subsets():
     print("Generate subsets for {} datasets...".format(len(ner_datasets)))
     # subset_sizes = [1000, 2000, 5000, 10000, 20000]
     subset_sizes = [10,20,30]
-    # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
-    methods = ["random"]
-
+    methods = ["random","topic-instance", "bert-instance", "bert-subset"]
+    # methods = ["random","topic-in"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
