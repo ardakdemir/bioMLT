@@ -999,7 +999,7 @@ def get_topN_cossimilar(source_vectors, target_vectors, max_size):
     source_similarities = []
     for i in tqdm(range(len(source_vectors)), desc="TopN cossimilar"):
         s = source_vectors[i]
-        source_similarities.append((max([cos_sim(s, t) for t in target_vectors]), i))
+        source_similarities.append((max([cos_sim(s, t) for t in target_vectors]).detach().cpu().item(), i))
     source_similarities.sort(key=lambda x: x[0], reverse=True)
     e = time.time()
     t = round(e - b, 3)
@@ -1254,7 +1254,8 @@ def generate_store_ner_subsets():
     # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     ner_datasets = [ner_root_folder]
     print("Generate subsets for {} datasets...".format(len(ner_datasets)))
-    subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    # subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    subset_sizes = [10,20,30]
     # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
     methods = ["random"]
 
