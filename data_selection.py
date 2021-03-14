@@ -41,6 +41,13 @@ pretrained_bert_name = 'bert-base-cased'
 cos_sim = lambda a, b: dot(a, b) / (norm(a) * norm(b))
 
 
+def cos_sim(a, b):
+    if type(a) == numpy.ndarray:
+        return dot(a, b) / (norm(a) * norm(b))
+    elif type(a) == torch.Tensor:
+        return torch.dot(a, b) / (torch.norm(a) * torch.norm(b))
+
+
 def get_vocab_similarity(voc_1, voc_2):
     inter = voc_1.intersection(voc_2)
     inter_len = len(inter)
@@ -969,7 +976,10 @@ def get_average_similarity_score(source_vectors, target_vectors):
 
 def get_topN_cossimilar(source_vectors, target_vectors, max_size):
     b = time.time()
-    source_similarities = [(max([cos_sim(s, t) for t in target_vectors]), i) for i, s in enumerate(source_vectors)]
+    source_similarities = []
+    for i in tqdm(range(len(source_vectors)), desc="TopN cossimilar"):
+        s = source_vectors[i]
+        source_similarities.append((max([cos_sim(s, t) for t in target_vectors]), i))
     source_similarities.sort(key=lambda x: x[0], reverse=True)
     e = time.time()
     t = round(e - b, 3)
@@ -983,8 +993,15 @@ def bert_instance_based_selection(similarity, vectors, sizes):
     qas_vectors = similarity.qas_vectors
 
     max_size = max(sizes)
-    top_inds = get_topN_cossimilar(qas_vectors, vectors, max_size)
 
+    ## Move to GPU for faster computation
+    if not type(qas_vectors) == torch.Tensor:
+        qas_vectors = torch.tensor(qas_vectors)
+    if not type(vectors) == torch.Tensor:
+        vectors = torch.tensor(vectors)
+    qas_vectors = qas_vectors.to(similarity.device)
+    vectors = vectors.to(similarity.device)
+    top_inds = get_topN_cossimilar(qas_vectors, vectors, max_size)
     all_inds_dict = {}
     for size in sizes:
         all_inds_dict[size] = top_inds[:size]
@@ -1068,7 +1085,7 @@ def get_bert_similarity(source_vectors, target_vectors):
     """
     sims = []
     sample_size = 100
-    for i in tqdm(range(len(source_vectors)),desc="Bert Similarity"):
+    for i in tqdm(range(len(source_vectors)), desc="Bert Similarity"):
         s = source_vectors[i]
         np.random.shuffle(target_vectors)
         my_sim = max([cos_sim(s, t) for t in target_vectors[:sample_size]])
@@ -1106,7 +1123,6 @@ def get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors):
     t = round(e - b, 3)
     print("Bert similarity calculated in {} seconds...".format(t))
 
-
     sim_scores = {"vocab_similarity": vocab_sim,
                   "bert_similarity": bert_sim}
     return sim_scores
@@ -1141,7 +1157,7 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
         save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
         ner_sentences = [sentences[i] for i in indices]
         ner_vectors = [vectors[i] for i in indices]
-        print("{} ner vectors and {} ner sentences...".format(len(ner_vectors),len(ner_sentences)))
+        print("{} ner vectors and {} ner sentences...".format(len(ner_vectors), len(ner_sentences)))
         # similarity scores
         sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors)
 
