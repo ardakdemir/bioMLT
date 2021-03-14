@@ -91,7 +91,7 @@ def parse_args():
     )
     parser.add_argument(
         "--ner_root_folder",
-        default='biobert_data/datasets/NER_1303/',
+        default='biobert_data/datasets/NER_1303/All-entities',
         type=str,
         required=False,
         help="The root folder containing all the ner datasets.",
@@ -1094,8 +1094,10 @@ def get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors):
 
     # Bert-based similarity
     b = time.time()
+    print("Getting BERT similarity")
     target_vectors = similarity.qas_vectors
     bert_sim = get_bert_similarity(ner_vectors, target_vectors)
+    print("BERT similarity: {}".format(bert_sim))
     e = time.time()
     t = round(e - b, 3)
     print("Bert similarity calculated in {} seconds...".format(t))
@@ -1134,9 +1136,10 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
     for size, indices in indices_dict.items():
         save_file_path = os.path.join(save_folder_paths[size], "ent_train.tsv")
         ner_sentences = [sentences[i] for i in indices]
-
+        ner_vectors = [vectors[i] for i in indices]
+        print("{} ner vectors and {} ner sentences...".format(len(ner_vectors),len(ner_sentences)))
         # similarity scores
-        sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, vectors)
+        sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors)
 
         # write subset dataset
         write_subset_dataset(indices, sentences, labels, save_file_path)
