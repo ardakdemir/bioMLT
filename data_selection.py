@@ -90,7 +90,7 @@ def parse_args():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
-        "ƒfolder",
+        "--ner_root_folder",
         default='biobert_data/datasets/NER_1303/',
         type=str,
         required=False,
@@ -1099,7 +1099,7 @@ def get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors):
     e = time.time()
     t = round(e - b, 3)
     print("Bert similarity calculated in {} seconds...".format(t))
-        
+
 
     sim_scores = {"vocab_similarity": vocab_sim,
                   "bert_similarity": bert_sim}
