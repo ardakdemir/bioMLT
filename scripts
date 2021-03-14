@@ -143,6 +143,8 @@ python bioMLT/biomlt_alldata.py  --mode qas --num_train_epochs 2 --total_train_s
 	# qsub version
 	qsub -N qasonly_2802 bioMLT/qasonly_submit.sh qasonly_2802_1011
 
+## Run NER only Qsub 1303
+
 
 ## Run QAS w/o NER but load NER trained model!!
 python bioMLT/biomlt_alldata.py   --init_ner_head --mode qas --ner_dataset_name BC5CDR-chem  --num_train_epochs 2 --total_train_steps 200 --output_dir qas_woner_0603   --max_seq_length 256 --model_save_name best_qas_model_woner_loadNER --load_model_path neronly_all_2402/best_ner_model_on_BC5CDR-chem --load_ner_label_vocab_path neronly_all_2402/best_ner_model_on_BC5CDR-chem_vocab
@@ -174,3 +176,11 @@ qsub bioasq_pred_submit.sh ../qasonly_9b_0803/best_qas_model_woner ../biobert_da
 
 #Qsub qasonly with_load All-entities
 qsub -N bioMLT/qasonly_Allents_1103 qasonly_load_9b_20ep_1103_1 neronly_Allentities/best_ner_model_on_All-entities neronly_Allentities/best_ner_model_on_All-entities_vocab All-entities
+
+
+
+
+
+## Data selection CLI toy-data
+
+python3 bioMLT/data_selection.py --
