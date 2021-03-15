@@ -1182,7 +1182,6 @@ class BioMLT(nn.Module):
         ner_head = self.ner_head if task_index is None else self.ner_heads[task_index]
         reader = self.ner_reader if task_index is None else self.ner_readers[task_index]
         loss = -1
-        logging.info("BERT HIDDEN SHape {}".format(bert_hiddens.shape))
         if predict:
             all_preds = []
             out_logits, loss = ner_head(bert_hiddens, ner_inds, pred=predict)
@@ -2332,13 +2331,13 @@ class BioMLT(nn.Module):
                     loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
                 except Exception as e:
                     logging.info("Exception {} occurred...".format(str(e)))
-                    logging.info("Tokens : {} length: {}".format(tokens,len(tokens)))
+                    logging.info("Tokens : {} length: {}".format(tokens,len(tokens[0])))
                     logging.info("BERT OUTPUT SHAPE : {}".format(outputs[-1][-1].shape))
                     logging.info("Took inds shape : {}".format(tok_inds.shape))
 
                     logging.info("Data shape: {}".format(bert_batch_ids.shape))
                     logging.info("Sent lens: {}".format(sent_lens))
-                    
+
                 loss.backward()
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()

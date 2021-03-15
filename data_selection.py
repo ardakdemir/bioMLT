@@ -680,9 +680,16 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     # print("Tokens: {}".format(toks))
                     # print("Labels: {}".format(my_labels))
                     # print("# tokens: {}  # labels: {}".format(len(toks), len(my_labels)))
-                    sentence = toks[1:len(toks) - 1]
+                    sentence = []
+                    my_labs = []
+                    for t,l in zip(toks[1:],my_labels[1:]):
+                        if t == "[PAD]" or t == "[SEP]":
+                            break
+                        else:
+                            sentence.append(t)
+                            my_labs.append(l)
                     sentences.append(sentence)
-                    labels.append(my_labels[1:len(toks) - 1])
+                    labels.append(my_labs)
 
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
@@ -1079,6 +1086,7 @@ def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance")
 
 
 def write_subset_dataset(indices, sentences, labels, save_path):
+
     # Sometimes writes [SEP] at the end!!
     s = "\n\n".join(
         ["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i]) if l != ["[SEP]"]]) for i in
