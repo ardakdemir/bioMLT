@@ -1321,7 +1321,9 @@ class BioMLT(nn.Module):
         print("Train: {}".format(len(self.ner_reader)))
         print("Dev: {}".format(len(self.ner_dev_reader)))
         print("Test: {}".format(len(self.ner_eval_reader)))
+        print("Label vocab: {}".format(self.args.ner_label_vocab))
 
+        
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
         self.load_ner_data()
