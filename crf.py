@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence
 import torch
-
+import logging
 from nerreader import PAD, UNK, START_TAG, END_TAG, PAD_IND, END_IND, START_IND, UNK_IND
 
 
