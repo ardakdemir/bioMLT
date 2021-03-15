@@ -101,6 +101,9 @@ class CRFLoss(nn.Module):
         ## kurguluyorum
         for i in range(1, scores.size()[1]):
             batch_size_t = sum([1 if lengths[x] > i else 0 for x in range(lengths.size()[0])])
+            logging.info("batch_size_t", batch_size_t)
+            logging.info("scores",scores)
+            logging.info("forward_scores",forward_scores)
             forward_scores[:batch_size_t] = \
                 self._log_sum_exp(scores[:batch_size_t, i, :, :] \
                                   + forward_scores[:batch_size_t].unsqueeze(1), dim=2)
