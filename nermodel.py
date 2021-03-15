@@ -68,7 +68,6 @@ class NerModel(nn.Module):
         out_logits = self.classifier(batch)
         batch_size = batch.shape[0]
         shape = batch.shape
-        print(self.eval_iter,self.iter)
         if self.dropout and not pred:
             out_logits = self.dropout(out_logits)
         # print(out_logits.shape)
