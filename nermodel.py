@@ -14,6 +14,8 @@ class NerModel(nn.Module):
     def __init__(self, args):
         super(NerModel, self).__init__()
         self.args = args
+        self.iter = 0
+        self.eval_iter = 0
         self.input_dims = args.bert_output_dim
         if not hasattr(self.args, "ner_label_dim") or self.args.ner_label_dim == -1:
             self.label_dim = len(args.ner_label_vocab)
@@ -71,13 +73,15 @@ class NerModel(nn.Module):
         # print(out_logits.shape)
         # print(labels.shape)a
         if pred:
+            self.eval_iter += 1
             if labels is not None:
                 loss = -1
                 if self.args.crf:
                     lengths = torch.sum((labels >= self.num_labels), axis=1)
-                    # print("Labels: {}".format(labels))
-                    # print("Lengths: {}".format(lengths))
-                    # print("Out logits shape: {}".format(out_logits.shape))
+                    if self.eval_iter == 1:
+                        print("Labels: {}".format(labels))
+                        print("Lengths: {}".format(lengths))
+                        print("Out logits shape: {}".format(out_logits.shape))
                     loss = self.loss(out_logits, labels, lengths)
                 else:
                     loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
@@ -88,6 +92,10 @@ class NerModel(nn.Module):
         if labels is not None:
             ## view tehlikeli bir hareket!!!!
             if self.args.crf:
+                if self.iter == 1:
+                    print("Labels: {}".format(labels))
+                    print("Lengths: {}".format(lengths))
+                    print("Out logits shape: {}".format(out_logits.shape))
                 lengths = torch.sum((labels >= self.num_labels), axis=1)
                 loss = self.loss(out_logits, labels, lengths)
             else:
@@ -95,5 +103,5 @@ class NerModel(nn.Module):
             if loss_aver:
                 loss = loss / batch_size
             return loss, out_logits
-
+        self.iter += 1
         return out_logits
