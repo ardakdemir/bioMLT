@@ -74,7 +74,7 @@ class NerModel(nn.Module):
             if labels is not None:
                 loss = -1
                 if self.args.crf:
-                    lengths = torch.sum((labels > self.num_labels), axis=1)
+                    lengths = torch.sum((labels >= self.num_labels), axis=1)
                     print("Labels: {}".format(labels))
                     print("Lengths: {}".format(lengths))
                     print("Out logits shape: {}".format(out_logits.shape))
@@ -88,7 +88,7 @@ class NerModel(nn.Module):
         if labels is not None:
             ## view tehlikeli bir hareket!!!!
             if self.args.crf:
-                lengths = torch.sum((labels > self.num_labels), axis=1)
+                lengths = torch.sum((labels >= self.num_labels), axis=1)
                 loss = self.loss(out_logits, labels, lengths)
             else:
                 loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
