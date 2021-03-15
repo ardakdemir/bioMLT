@@ -2,7 +2,7 @@
 
 ner_folder=${1}
 qas_output_dir=${2}
-bioner_names=("linnaeus" "BC5CDR-disease" "BC4CHEMD" "BC5CDR-chem" "NCBI-disease" "JNLPBA" "s800" "BC2GM","All-entities")
+bioner_names=("linnaeus" "BC5CDR-disease" "BC4CHEMD" "BC5CDR-chem" "NCBI-disease" "JNLPBA" "s800" "BC2GM" "All-entities")
 
 for name in "${bioner_names[@]}"
 do
