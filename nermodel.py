@@ -75,7 +75,6 @@ class NerModel(nn.Module):
         # print(labels.shape)a
         if pred:
             self.eval_iter += 1
-            print("Increased here")
             if labels is not None:
                 loss = -1
                 if self.args.crf:
