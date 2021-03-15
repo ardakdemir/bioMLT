@@ -139,6 +139,7 @@ def group_into_batch(dataset, batch_size):
         if current_len > batch_size:
             # print(current)
             current, lens = pad_trunc_nerdata_batch(current, max_len)
+            print(lens)
             batched_dataset.append(current)
             sentence_lens.append(lens)
             current = []
