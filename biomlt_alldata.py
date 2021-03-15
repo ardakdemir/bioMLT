@@ -2512,7 +2512,17 @@ class BioMLT(nn.Module):
                 continue
             # bert_hiddens = self._get_bert_batch_hidden(outputs[-1],bert2toks)
             # loss, out_logits =  self.ner_head(bert_hiddens,ner_inds)
-            preds, ner_inds, loss = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True)
+            try:
+                preds, ner_inds, loss = self.get_ner(outputs[-1], bert2toks, ner_inds, predict=True)
+            except Exception as e:
+                logging.info("Exception {} occurred...".format(str(e)))
+                logging.info("Tokens : {} length: {}".format(tokens, len(tokens[0])))
+                logging.info("BERT OUTPUT SHAPE : {}".format(outputs[-1][-1].shape))
+                logging.info("Took inds shape : {}".format(tok_inds.shape))
+
+                logging.info("Data shape: {}".format(bert_batch_ids.shape))
+                logging.info("Sent lens: {}".format(sent_lens))
+                raise Exception(str(e))
             tokens_ = tokens[-1]
             eval_loss = eval_loss + loss
             l = len(tokens_)

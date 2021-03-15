@@ -889,7 +889,6 @@ def get_topN_similar_single(target_model, source_vectors, N):
                 my_inds.append(index)
             i = i + 1
         print("Length of my indices: {}".format(len(my_inds)))
-        my_inds.sort()
         # print("My indices: {}".format(my_inds))
         used_indices.extend(my_inds)
         top_inds[l] = my_inds
@@ -974,7 +973,7 @@ def topic_instance_based_selection(similarity, vectors, sizes):
             s = int(size * ratio)
             print("{} indices for {}. Clust size: {}. Top {} will be added..".format(len(v), k, clust_sizes[k], s))
             all_inds.extend(v[:s])
-        all_inds.sort()
+        # all_inds.sort()
         print("Top 5 inds", all_inds[:5])
         all_inds_dict[size] = all_inds
     return all_inds_dict, similarity
@@ -1268,8 +1267,8 @@ def generate_store_ner_subsets():
     print("Generate subsets for {} datasets...".format(len(ner_datasets)))
     subset_sizes = [1000, 2000, 5000, 10000, 20000]
     # subset_sizes = [10,20,30]
-    # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
-    methods = ["random"]
+    methods = ["random","topic-instance", "bert-instance", "bert-subset"]
+    # methods = ["random"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:

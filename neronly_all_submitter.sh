@@ -11,7 +11,7 @@ fi
 datasets=$(ls ${ner_data_folder})
 # Fix the dataset for now
 echo $datasets
-target=0
+
 for target_fd in $datasets
 do
     echo $target_fd
