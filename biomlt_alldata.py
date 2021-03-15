@@ -2339,7 +2339,7 @@ class BioMLT(nn.Module):
 
                     logging.info("Data shape: {}".format(bert_batch_ids.shape))
                     logging.info("Sent lens: {}".format(sent_lens))
-
+                logging.info("Loss: {}".format(loss.item()))
                 loss.backward()
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
