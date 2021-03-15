@@ -1321,7 +1321,7 @@ class BioMLT(nn.Module):
         print("Train: {}".format(len(self.ner_reader)))
         print("Dev: {}".format(len(self.ner_dev_reader)))
         print("Test: {}".format(len(self.ner_eval_reader)))
-        print("Label vocab: {}".format(self.args.ner_label_vocab.l2.ind))
+        print("Label vocab: {}".format(self.args.ner_label_vocab.l2ind))
 
 
     ## training a flat model (multi-task learning hard-sharing)
