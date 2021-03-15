@@ -78,10 +78,6 @@ class NerModel(nn.Module):
                 loss = -1
                 if self.args.crf:
                     lengths = torch.sum((labels > self.num_labels), axis=1)
-                    if self.eval_iter == 1:
-                        print("Labels: {}".format(labels))
-                        print("Lengths: {}".format(lengths))
-                        print("Out logits shape: {}".format(out_logits.shape))
                     loss = self.loss(out_logits, labels, lengths)
                 else:
                     loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))
@@ -94,10 +90,6 @@ class NerModel(nn.Module):
             self.iter += 1
             if self.args.crf:
                 lengths = torch.sum((labels > self.num_labels), axis=1)
-                if self.iter == 1:
-                    print("Labels: {}".format(labels))
-                    print("Lengths: {}".format(lengths))
-                    print("Out logits shape: {}".format(out_logits.shape))
                 loss = self.loss(out_logits, labels, lengths)
             else:
                 loss = self.loss(out_logits.view(-1, self.output_dim), labels.view(-1))

@@ -375,9 +375,6 @@ class DataReader:
         return 0
 
     def get_1d_targets(self, targets):
-        if self.iter == 0:
-            print(self.l2ind, START_TAG, len(self.l2ind))
-            self.iter += 1
         prev_tag = self.l2ind[START_TAG]
         tagset_size = self.num_cats
         targets_1d = []
