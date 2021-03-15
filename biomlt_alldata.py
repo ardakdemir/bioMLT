@@ -1182,6 +1182,7 @@ class BioMLT(nn.Module):
         ner_head = self.ner_head if task_index is None else self.ner_heads[task_index]
         reader = self.ner_reader if task_index is None else self.ner_readers[task_index]
         loss = -1
+        logging.info("BERT HIDDEN SHape {}".format(bert_hiddens.shape))
         if predict:
             all_preds = []
             out_logits, loss = ner_head(bert_hiddens, ner_inds, pred=predict)
