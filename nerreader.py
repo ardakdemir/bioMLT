@@ -133,6 +133,9 @@ def group_into_batch(dataset, batch_size):
         current.append(x)
         max_len = max(len(x), max_len)  ##
         current_len += len(x)
+        if len(x) > 200:
+            logging.info("Length {}".format(len(x)))
+            logging.info(x)
         if current_len > batch_size:
             # print(current)
             current, lens = pad_trunc_nerdata_batch(current, max_len)
@@ -305,6 +308,8 @@ class DataReader:
             sent.append(end_tags)
             new_dataset.append([root] + sent)
             # new_dataset.append(sent)
+        elif len(sent) > 200:
+            cropped_long_sentence += 1
         print("Number of sentences : {} ".format(len(new_dataset)))
         print("Cropped long sentences for {}  : {} ".format(self.file_path, cropped_long_sentence))
         # print(new_dataset)

@@ -583,7 +583,7 @@ def hugging_parse_args():
     parser.add_argument("--t_total", default=5000, type=int, help="Total number of training steps")
     parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
     parser.add_argument('--ner_batch_size',
-                        type=int, default=50, help='NER Batch size token based (not sentence)')
+                        type=int, default=100, help='NER Batch size token based (not sentence)')
     parser.add_argument('--eval_batch_size', type=int, default=12, help='Batch size')
     # parser.add_argument('--block_size', type=int, default=128, help='Block size')
     # parser.add_argument('--epoch_num', type=int, default=1, help='Number of epochs')
@@ -2331,10 +2331,13 @@ class BioMLT(nn.Module):
                     loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
                 except Exception as e:
                     logging.info("Exception {} occurred...".format(str(e)))
-                    logging.info("Tokens : {}".format(tokens))
+                    logging.info("Tokens : {} length: {}".format(tokens,len(tokens)))
+                    logging.info("BERT OUTPUT SHAPE : {}".format(outputs[-1][-1].shape))
+                    logging.info("Took inds shape : {}".format(tok_inds.shape))
+
                     logging.info("Data shape: {}".format(bert_batch_ids.shape))
                     logging.info("Sent lens: {}".format(sent_lens))
-                    continue 
+                    continue
                 loss.backward()
                 self.ner_head.optimizer.step()
                 self.bert_optimizer.step()
