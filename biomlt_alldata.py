@@ -1310,6 +1310,7 @@ class BioMLT(nn.Module):
         self.ner_eval_reader.l2ind = self.ner_reader.l2ind
         self.ner_eval_reader.word2ind = self.ner_reader.word2ind
         self.ner_eval_reader.vocab_size = self.ner_reader.vocab_size
+        self.ner_eval_reader.num_cats = self.ner_reader.num_cats
 
         # Dev
         print("Reading NER dev data from: {}".format(self.args.ner_dev_file))
@@ -1323,6 +1324,7 @@ class BioMLT(nn.Module):
         self.ner_dev_reader.l2ind = self.ner_reader.l2ind
         self.ner_dev_reader.word2ind = self.ner_reader.word2ind
         self.ner_dev_reader.vocab_size = self.ner_reader.vocab_size
+        self.ner_dev_reader.num_cats = self.ner_reader.num_cats
 
         print("Dataset sizes")
         print("Train: {}".format(len(self.ner_reader)))
