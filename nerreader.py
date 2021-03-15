@@ -200,6 +200,7 @@ class DataReader:
         self.for_eval = for_eval
         self.file_path = file_path
         self.crf = crf  # Generate 2-d labels
+        self.iter = 0
         if self.crf:
             print("Generating 2-d labels")
         self.task_name = task_name
