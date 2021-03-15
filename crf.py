@@ -102,7 +102,6 @@ class CRFLoss(nn.Module):
         logging.info("Scores shape: {}".format(scores.shape))
         logging.info("Scores size: {}".format(scores.size()))
         logging.info("Lenghts: {}".format(lengths))
-
         for i in range(1, scores.size()[1]):
             batch_size_t = sum([1 if lengths[x] > i else 0 for x in range(lengths.size()[0])])
             logging.info("batch_size_t: {}".format(batch_size_t))
