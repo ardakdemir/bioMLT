@@ -99,6 +99,10 @@ class CRFLoss(nn.Module):
         forward_scores[:batch_size] = scores[:, 0, :, START_IND]
         ## forward score unsqueeze 2ydi 1 yaptim cunku ilk index next tag olarak
         ## kurguluyorum
+        logging.info("Scores shape: {}".format(scores.shape))
+        logging.info("Scores size: {}".format(scores.size()))
+        logging.info("Lenghts: {}".format(lengths))
+
         for i in range(1, scores.size()[1]):
             batch_size_t = sum([1 if lengths[x] > i else 0 for x in range(lengths.size()[0])])
             logging.info("batch_size_t: {}".format(batch_size_t))
