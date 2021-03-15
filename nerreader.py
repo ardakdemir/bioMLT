@@ -182,7 +182,7 @@ def pad_trunc(sent, max_len, pad_len, pad_ind):
 
 def ner_document_reader(file_path, sent_len=None):
     document = ""
-    print("Readdinng {}".format(file_path) )
+    print("Readdinng {}".format(file_path))
     with open(file_path, "r") as f:
         f = f.read()
         doc = f.split("\n\n")
@@ -263,7 +263,7 @@ class DataReader:
             for word in sent:
                 try:
                     a = word[0]
-                except :
+                except:
                     print("Problem during vocab reading")
                     print("Sentence: {}".format(sent))
                     print("Word: {}".format(word))
@@ -374,6 +374,9 @@ class DataReader:
         return 0
 
     def get_1d_targets(self, targets):
+        if self.iter == 0:
+            print(self.l2ind, START_TAG, len(self.l2ind))
+            self.iter += 1
         prev_tag = self.l2ind[START_TAG]
         tagset_size = self.num_cats
         targets_1d = []
@@ -417,8 +420,8 @@ class DataReader:
         ner_inds = []
         tokens = []
         for x in batch:
-            data = list(zip(*x)) ##unzip the batch
-            toks,labels = data[0],data[-1]
+            data = list(zip(*x))  ##unzip the batch
+            toks, labels = data[0], data[-1]
             tokens.append(toks)
             # pos_inds.append(self.pos_vocab.map(poss))
             tok_inds.append(self.word_vocab.map(toks))

@@ -1307,6 +1307,9 @@ class BioMLT(nn.Module):
             eval_file_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
         self.ner_eval_reader.label_vocab = self.args.ner_label_vocab
+        self.ner_eval_reader.l2ind = self.ner_reader.l2ind
+        self.ner_eval_reader.word2ind = self.ner_reader.word2ind
+        self.ner_eval_reader.vocab_size = self.ner_reader.vocab_size
 
         # Dev
         print("Reading NER dev data from: {}".format(self.args.ner_dev_file))
@@ -1315,7 +1318,11 @@ class BioMLT(nn.Module):
         self.ner_dev_reader = DataReader(
             dev_file_path, "NER", tokenizer=self.bert_tokenizer,
             batch_size=self.args.ner_batch_size, for_eval=True, crf=self.args.crf)
+
         self.ner_dev_reader.label_vocab = self.args.ner_label_vocab
+        self.ner_dev_reader.l2ind = self.ner_reader.l2ind
+        self.ner_dev_reader.word2ind = self.ner_reader.word2ind
+        self.ner_dev_reader.vocab_size = self.ner_reader.vocab_size
 
         print("Dataset sizes")
         print("Train: {}".format(len(self.ner_reader)))

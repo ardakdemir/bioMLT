@@ -79,7 +79,7 @@ class NerModel(nn.Module):
             if labels is not None:
                 loss = -1
                 if self.args.crf:
-                    lengths = torch.sum((labels >= self.num_labels), axis=1)
+                    lengths = torch.sum((labels > self.num_labels), axis=1)
                     if self.eval_iter == 1:
                         print("Labels: {}".format(labels))
                         print("Lengths: {}".format(lengths))
@@ -95,7 +95,7 @@ class NerModel(nn.Module):
             ## view tehlikeli bir hareket!!!!
             self.iter += 1
             if self.args.crf:
-                lengths = torch.sum((labels >= self.num_labels), axis=1)
+                lengths = torch.sum((labels > self.num_labels), axis=1)
                 if self.iter == 1:
                     print("Labels: {}".format(labels))
                     print("Lengths: {}".format(lengths))
