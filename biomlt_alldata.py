@@ -641,7 +641,7 @@ class BioMLT(nn.Module):
             pretrained_bert_name = self.args.model_name_or_path
             if pretrained_bert_name is None:
                 print("BERT model name should not be empty when init_model is given")
-            self.bert_model = BertForTokenClassification.from_pretrained(self.args.biobert_model_name,
+            self.bert_model = BertForTokenClassification.from_pretrained(pretrained_bert_name,
                                                                          output_hidden_states=True)
             self.bert_model.classifier = nn.Identity()
             self.bert_tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
@@ -725,7 +725,7 @@ class BioMLT(nn.Module):
         #     print(loaded)
         my_dict.update(pretrained_dict)
         self.load_state_dict(my_dict)
-        if hasattr(self,"ner_head"):
+        if hasattr(self, "ner_head"):
             print("Ner head after load")
             for param in list(self.ner_head.parameters()):
                 print(param)
@@ -1025,8 +1025,8 @@ class BioMLT(nn.Module):
             # print(predictions[k])
 
             results = squad_evaluate(examples, predictions, is_yes_no=True if type == "yesno" else False)
-            f1 = round(results['f1'],3)
-            exact = round(results['exact'],3)
+            f1 = round(results['f1'], 3)
+            exact = round(results['exact'], 3)
             total = results['total']
             print("RESULTS for {} : f1 {}  exact {} total {} ".format(type, f1, exact, total))
             logging.info("RESULTS for {}: f1 {} exact {} total {} ".format(type, f1, exact, total))
@@ -1237,7 +1237,7 @@ class BioMLT(nn.Module):
             type = "squad"
 
         types = self.qas_eval_datasets.keys()
-        print("Question types",types)
+        print("Question types", types)
         nbest_files, pred_files = self.evaluate_qas(0, only_preds=True, types=types)
         if self.args.mode in ["ner", "joint_flat"]:
             self.eval_ner()
@@ -1331,7 +1331,6 @@ class BioMLT(nn.Module):
         print("Dev: {}".format(len(self.ner_dev_reader)))
         print("Test: {}".format(len(self.ner_eval_reader)))
         print("Label vocab: {}".format(self.args.ner_label_vocab.w2ind))
-
 
     ## training a flat model (multi-task learning hard-sharing)
     def train_qas_ner(self):
@@ -1918,8 +1917,8 @@ class BioMLT(nn.Module):
         write_to_latex_table(exp_name, best_results, best_exacts, latex_save_path)
         # f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types, result_save_path=qas_save_path)
         print("Writing best results to {}".format(qas_save_path))
-        experiment_log_dict["test"] = {"best_f1s":best_results,
-                                       "best_exacts":best_exacts}
+        experiment_log_dict["test"] = {"best_f1s": best_results,
+                                       "best_exacts": best_exacts}
         if os.path.exists(qas_save_path):
             with open(qas_save_path, "a") as out:
                 s = exp_name
@@ -1939,10 +1938,10 @@ class BioMLT(nn.Module):
                     round(best_results[q], 3)) for q in ["list", "factoid", "yesno"]]) + "\n"
                 out.write(s)
 
-        experiment_result_file = "{}_{}".format(exp_name,self.args.experiment_result_file)
+        experiment_result_file = "{}_{}".format(exp_name, self.args.experiment_result_file)
         experiment_log_path = os.path.join(self.args.output_dir, experiment_result_file)
         with open(experiment_log_path, "w") as out:
-            json.dump(experiment_log_dict,out)
+            json.dump(experiment_log_dict, out)
 
         return experiment_log_dict
 
@@ -2342,7 +2341,7 @@ class BioMLT(nn.Module):
                     loss, out_logits = self.get_ner(outputs[-1], bert2toks, ner_inds)
                 except Exception as e:
                     logging.info("Exception {} occurred...".format(str(e)))
-                    logging.info("Tokens : {} length: {}".format(tokens,len(tokens[0])))
+                    logging.info("Tokens : {} length: {}".format(tokens, len(tokens[0])))
                     logging.info("BERT OUTPUT SHAPE : {}".format(outputs[-1][-1].shape))
                     logging.info("Took inds shape : {}".format(tok_inds.shape))
 
@@ -2506,7 +2505,7 @@ class BioMLT(nn.Module):
         all_truths = []
         eval_loss = 0
 
-        for i, batch in enumerate(tqdm(dataset,desc="NER Evaluation...")):
+        for i, batch in enumerate(tqdm(dataset, desc="NER Evaluation...")):
             tokens, bert_batch_after_padding, data = batch
             data = [d.to(self.device) for d in data]
             sent_lens, masks, tok_inds, ner_inds, \
