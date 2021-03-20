@@ -521,6 +521,8 @@ def hugging_parse_args():
         help="Number of updates steps to accumulate before performing a backward/update pass.",
     )
     parser.add_argument("--learning_rate", default=5e-6, type=float, help="The initial learning rate for Adam.")
+    parser.add_argument("--lr_decat", default=0.95, type=float, help="The initial learning rate for Adam.")
+
     parser.add_argument("--weight_decay", default=0.0, type=float, help="Weight decay if we apply some.")
     parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
@@ -2325,7 +2327,7 @@ class BioMLT(nn.Module):
         grads = []
         step = 0
         total_loss = 0
-        self.lr_schedulers = [StepLR(x,step_size = 1, gamma = 0.9) for x in [self.bert_optimizer,self.ner_head.optimizer]]
+        self.lr_schedulers = [StepLR(x,step_size = 1, gamma = self.args.lr_decay) for x in [self.bert_optimizer,self.ner_head.optimizer]]
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
