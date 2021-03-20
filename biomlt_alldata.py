@@ -2325,7 +2325,7 @@ class BioMLT(nn.Module):
         grads = []
         step = 0
         total_loss = 0
-        self.lr_scheduler = StepLR([self.bert_optimizer,self.ner_head.optimizer],step_size = 1, gamma = 0.9)
+        self.lr_schedulers = [StepLR(x,step_size = 1, gamma = 0.9) for x in [self.bert_optimizer,self.ner_head.optimizer]]
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
@@ -2398,7 +2398,8 @@ class BioMLT(nn.Module):
             if not self.args.only_loss_curve and patience > self.args.patience:
                 print("Stopping training early with patience : {}".format(patience))
                 break
-            self.lr_scheduler.step()
+            for scheduler in self.lr_schedulers:
+                scheduler.step()
 
         print("Average losses")
         print(avg_ner_losses)
