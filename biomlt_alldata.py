@@ -39,6 +39,11 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import uuid
 
+# Where to add a new import
+from torch.optim.lr_scheduler import StepLR
+
+
+
 pretrained_bert_name = 'bert-base-cased'
 exp_id = str(uuid.uuid4())[:4]
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute,
@@ -2320,10 +2325,12 @@ class BioMLT(nn.Module):
         grads = []
         step = 0
         total_loss = 0
+        self.lr_scheduler = StepLR([self.bert_optimizer,self.ner_head.optimizer],step_size = 1, gamma = 0.9)
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
             self.ner_head.train()
+
             # eval_interval = len(self.ner_reader)
             for i in tqdm(range(eval_interval), desc="Training"):
                 self.bert_optimizer.zero_grad()
@@ -2357,7 +2364,6 @@ class BioMLT(nn.Module):
                 losses_for_learning_curve.append(total_loss / step)
 
             avg_ner_loss = ner_loss / eval_interval
-
             print("Average ner training loss : {}".format(avg_ner_loss))
             avg_ner_losses.append(avg_ner_loss)
             if j in epoch_for_grad_intervals:
@@ -2392,6 +2398,8 @@ class BioMLT(nn.Module):
             if not self.args.only_loss_curve and patience > self.args.patience:
                 print("Stopping training early with patience : {}".format(patience))
                 break
+            self.lr_scheduler.step()
+
         print("Average losses")
         print(avg_ner_losses)
         print("Test losses")
