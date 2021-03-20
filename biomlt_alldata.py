@@ -2330,7 +2330,9 @@ class BioMLT(nn.Module):
             ner_loss = 0
             self.bert_model.train()
             self.ner_head.train()
-
+            for param in self.ner_head.optimizer.param_groups:
+                print("Epoch {} Current lr : {}".format(j,param['lr']))
+                logging.info("Current lr : {}".format(param['lr']))
             # eval_interval = len(self.ner_reader)
             for i in tqdm(range(eval_interval), desc="Training"):
                 self.bert_optimizer.zero_grad()
