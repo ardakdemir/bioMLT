@@ -42,8 +42,6 @@ import uuid
 # Where to add a new import
 from torch.optim.lr_scheduler import StepLR
 
-
-
 pretrained_bert_name = 'bert-base-cased'
 exp_id = str(uuid.uuid4())[:4]
 gettime = lambda x=datetime.datetime.now(): "{}_{}_{}_{}_{}".format(x.month, x.day, x.hour, x.minute,
@@ -1784,6 +1782,13 @@ class BioMLT(nn.Module):
         print("weights before training !!")
         print(self.qas_head.qa_outputs.weight[-10:])
         print("Concat size {} yesno size {}".format(len(train_dataset), len(yesno_train_dataset)))
+
+        self.lr_schedulers = [StepLR(x, step_size=1, gamma=self.args.lr_decay) for x in
+                              [self.bert_optimizer, self.qas_head.optimizer, self.yesno_optimizer]]
+        if hasattr(self, "ner_head") and self.args.qas_with_ner:
+            self.lr_schedulers.append(StepLR(self.ner_head.optimizer, step_size=1, gamma=self.args.lr_decay))
+            self.lr_schedulers.append(StepLR(self.ner_embed_optimizer, step_size=1, gamma=self.args.lr_decay))
+
         prev = 0
         for epoch, _ in enumerate(train_iterator):
             epoch_begin = time.time()
@@ -1917,7 +1922,8 @@ class BioMLT(nn.Module):
                     logging.info("Saving best model for {} questions with {} f1  to {}".format(q, f1,
                                                                                                save_name))
                     self.save_all_model(save_name)
-
+            for scheduler in self.lr_schedulers:
+                scheduler.step()
         qas_save_path = os.path.join(self.args.output_dir, self.args.qas_result_file)
         latex_save_path = os.path.join(self.args.output_dir, self.args.qas_latex_table_file)
         exp_name = "QAS_ONLY" if not self.args.qas_with_ner and self.args.ner_dataset_name is None else "QAS_with_" + self.args.ner_dataset_name
@@ -2327,17 +2333,18 @@ class BioMLT(nn.Module):
         grads = []
         step = 0
         total_loss = 0
-        self.lr_schedulers = [StepLR(x,step_size = 1, gamma = self.args.lr_decay) for x in [self.bert_optimizer,self.ner_head.optimizer]]
+        self.lr_schedulers = [StepLR(x, step_size=1, gamma=self.args.lr_decay) for x in
+                              [self.bert_optimizer, self.ner_head.optimizer]]
         for j in tqdm(range(epoch_num), desc="Epochs"):
             ner_loss = 0
             self.bert_model.train()
             self.ner_head.train()
             for param in self.ner_head.optimizer.param_groups:
-                print("Epoch {} Current lr : {}".format(j,param['lr']))
+                print("Epoch {} Current lr : {}".format(j, param['lr']))
                 logging.info("Current lr : {}".format(param['lr']))
                 break
             for param in self.bert_optimizer.param_groups:
-                print("Epoch {} Current lr : {}".format(j,param['lr']))
+                print("Epoch {} Current lr : {}".format(j, param['lr']))
                 logging.info("Current lr : {}".format(param['lr']))
                 break
             # eval_interval = len(self.ner_reader)
