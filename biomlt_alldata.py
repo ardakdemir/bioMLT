@@ -1892,7 +1892,7 @@ class BioMLT(nn.Module):
 
             logging.info("Epoch qas size: {} total loss: {}".format(epoch_size,total_loss))
             avg_loss = total_loss/epoch_size
-            total_losses.append(avg_loss)
+            train_losses.append(avg_loss)
             epoch_end = time.time()
             train_epoch_time = round(epoch_end - epoch_begin, 3)
             print("Total loss {} for epoch {} ".format(total_loss, epoch))
