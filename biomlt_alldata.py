@@ -1878,7 +1878,7 @@ class BioMLT(nn.Module):
                 #
                 #         print("Weights value: {}".format(weight))
                 total_loss += loss.item()
-                epoch_size +=batch.size()[0]
+                epoch_size +=batch[0].size()[0]
                 # Never
                 if step % 500 == 501:
                     print("Loss {} ".format(loss.item()))
