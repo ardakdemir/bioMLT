@@ -682,7 +682,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
                     # print("# tokens: {}  # labels: {}".format(len(toks), len(my_labels)))
                     sentence = []
                     my_labs = []
-                    for t,l in zip(toks[1:],my_labels[1:]):
+                    for t, l in zip(toks[1:], my_labels[1:]):
                         if t == "[PAD]" or t == "[SEP]":
                             break
                         else:
@@ -844,7 +844,7 @@ def train_qas_model(similarity):
     clust_sizes = Counter(labels)
     print("Size of each cluster: {}".format(clust_sizes))
     clustering_end = time.time()
-    clustering_time = round(clustering_end-clustering_begin,3)
+    clustering_time = round(clustering_end - clustering_begin, 3)
     print("{} seconds for qas topic model training".format(clustering_time))
     return best_model, similarity, clust_sizes
 
@@ -1085,7 +1085,6 @@ def select_ner_subsets(similarity, vectors, sizes, method_name="topic-instance")
 
 
 def write_subset_dataset(indices, sentences, labels, save_path):
-
     # Sometimes writes [SEP] at the end!!
     s = "\n\n".join(
         ["\n".join(["{}\t{}".format(s, l) for s, l in zip(sentences[i], labels[i]) if l != ["[SEP]"]]) for i in
@@ -1188,7 +1187,6 @@ def store_ner_subsets(similarity, args, sizes, save_folder, ner_dataset_name, me
         ner_vectors = [vectors[i] for i in indices]
         print("{} ner vectors and {} ner sentences...".format(len(ner_vectors), len(ner_sentences)))
 
-
         # similarity scores
         # sim_scores = get_dataset_similarity_scores(similarity, ner_sentences, ner_vectors)
 
@@ -1265,10 +1263,12 @@ def generate_store_ner_subsets():
     # ner_datasets = [os.path.join(ner_root_folder, x) for x in ner_datasets]
     ner_datasets = [ner_root_folder]
     print("Generate subsets for {} datasets...".format(len(ner_datasets)))
-    subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    # subset_sizes = [1000, 2000, 5000, 10000, 20000]
+    subset_sizes = [100, 200]
     # subset_sizes = [10,20,30]
-    methods = ["random","topic-instance", "bert-instance", "bert-subset"]
+    # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
     # methods = ["random"]
+    methods = ["bert-instance","random"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
@@ -1284,7 +1284,6 @@ def generate_store_ner_subsets():
 
 def main():
     generate_store_ner_subsets()
-
 
     # args = parse_args()
     # similarity = Similarity()
