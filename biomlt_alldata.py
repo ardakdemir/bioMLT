@@ -1696,6 +1696,7 @@ class BioMLT(nn.Module):
         qa_types = ["yesno", "factoid", "list"]
         device = self.args.device
         print("My device: {}".format(device))
+
         args = hugging_parse_args()
         args.train_batch_size = self.args.batch_size
         self.load_qas_data(args, qa_types=qa_types)
@@ -1757,7 +1758,8 @@ class BioMLT(nn.Module):
         epochs_trained = 0
         best_result = 0
         best_sum = 0
-
+        train_losses = []
+        test_losses = []
         epoch_num = int(self.args.num_train_epochs)
         total_steps = self.args.total_train_steps
         steps_per_epoch = -1
@@ -1793,15 +1795,15 @@ class BioMLT(nn.Module):
         for epoch, _ in enumerate(train_iterator):
             epoch_begin = time.time()
             total_loss = 0
-            epoch_iterator = tqdm(train_dataloader, desc="Factoid Iteration")
-            yesno_epoch_iterator = tqdm(yesno_dataloader, desc="yesno - Iteration")
+            epoch_size = 0
+            epoch_iterator = tqdm(train_dataloader, desc="Factoid - Iteration")
+            yesno_epoch_iterator = tqdm(yesno_dataloader, desc="Yes/No - Iteration")
             self.bert_model.train()
             self.qas_head.train()
             self.yesno_head.train()
             self.yesno_loss.train()
             if hasattr(self, "ner_head"):
                 self.ner_head.train()
-
             yes_size = len(yesno_train_dataset)
             fact_size = len(train_dataset)
             yes_rat = yes_size / (yes_size + fact_size)
@@ -1876,7 +1878,7 @@ class BioMLT(nn.Module):
                 #
                 #         print("Weights value: {}".format(weight))
                 total_loss += loss.item()
-
+                epoch_size +=batch.size()[0]
                 # Never
                 if step % 500 == 501:
                     print("Loss {} ".format(loss.item()))
@@ -1887,6 +1889,10 @@ class BioMLT(nn.Module):
                     logging.info("Saving checkpoint to {}".format(checkpoint_name))
                     self.save_all_model(checkpoint_name)
                     logging.info("Average loss after {} steps : {}".format(step + 1, total_loss / (step + 1)))
+
+            logging.info("Epoch qas size: {} total loss: {}".format(epoch_size,total_loss))
+            avg_loss = total_loss/epoch_size
+            total_losses.append(avg_loss)
             epoch_end = time.time()
             train_epoch_time = round(epoch_end - epoch_begin, 3)
             print("Total loss {} for epoch {} ".format(total_loss, epoch))
@@ -1932,6 +1938,8 @@ class BioMLT(nn.Module):
         print("Writing best results to {}".format(qas_save_path))
         experiment_log_dict["test"] = {"best_f1s": best_results,
                                        "best_exacts": best_exacts}
+        loss_plot_path = os.path.join(self.args.output_dir,"{}_lossplot.png".format(exp_name))
+        plot_arrays([train_losses], loss_plot_path, x_title="Epoch", y_title="loss", names=["train"], title="Average loss at each epoch")
         if os.path.exists(qas_save_path):
             with open(qas_save_path, "a") as out:
                 s = exp_name
