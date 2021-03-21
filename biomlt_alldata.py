@@ -891,6 +891,8 @@ class BioMLT(nn.Module):
         self.yesno_head.eval()
         ner_labels = []
         ner_tokens = []
+        total_loss = 0
+        total_size = 0
         if hasattr(self, "ner_head"):
             self.ner_head.eval()
         if self.args.model_save_name is None:
@@ -945,8 +947,12 @@ class BioMLT(nn.Module):
                     # logging.info("Bert out shape {}".format(bert_out.shape))
                     qas_out = self.get_qas(qas_input,
                                            batch,
-                                           eval=True,
+                                           eval=only_preds,
                                            type=type)
+                    if not only_preds:
+                        loss, qas_out = qas_out
+                        total_loss += loss.item()
+                        total_size += qas_out.shape[0]
                     example_indices = batch[3]
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
@@ -1057,7 +1063,14 @@ class BioMLT(nn.Module):
             for t in types:
                 s = "{}\t{}\t{}\t{}\n".format(model_name, t, f1s[t], exacts[t])
                 o.write(s)
-        return f1s, exacts, totals
+
+        # Test-loss
+        if not only_preds:
+            avg_test_loss = round(total_loss / total_size, 3)
+        else:
+            avg_test_loss = 0
+
+        return f1s, exacts, totals, avg_test_loss
 
     def predict_qas(self, batch):
         ## batch_size = 1
@@ -1759,6 +1772,7 @@ class BioMLT(nn.Module):
         best_result = 0
         best_sum = 0
         train_losses = []
+        dev_losses = []
         test_losses = []
         epoch_num = int(self.args.num_train_epochs)
         total_steps = self.args.total_train_steps
@@ -1878,7 +1892,7 @@ class BioMLT(nn.Module):
                 #
                 #         print("Weights value: {}".format(weight))
                 total_loss += loss.item()
-                epoch_size +=batch[0].size()[0]
+                epoch_size += batch[0].size()[0]
                 # Never
                 if step % 500 == 501:
                     print("Loss {} ".format(loss.item()))
@@ -1890,19 +1904,21 @@ class BioMLT(nn.Module):
                     self.save_all_model(checkpoint_name)
                     logging.info("Average loss after {} steps : {}".format(step + 1, total_loss / (step + 1)))
 
-            logging.info("Epoch qas size: {} total loss: {}".format(epoch_size,total_loss))
-            avg_loss = total_loss/epoch_size
+            logging.info("Epoch qas size: {} total loss: {}".format(epoch_size, total_loss))
+            avg_loss = total_loss / epoch_size
             train_losses.append(avg_loss)
             epoch_end = time.time()
             train_epoch_time = round(epoch_end - epoch_begin, 3)
             print("Total loss {} for epoch {} ".format(total_loss, epoch))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
-            f1s, exacts, totals = self.evaluate_qas(epoch, types=qa_types)
+            f1s, exacts, totals,dev_loss = self.evaluate_qas(epoch, types=qa_types)
+            dev_losses.append(dev_loss)
             # yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
             experiment_log_dict[epoch] = {"f1s": f1s,
                                           "exacts": exacts,
                                           "totals": totals,
-                                          "total_loss": total_loss,
+                                          "dev_loss": dev_loss,
+                                          "train_loss": total_loss,
                                           "train_epoch_time": train_epoch_time
                                           }
             print("Sum of all f1s {} ".format(sum(f1s.values())))
@@ -1938,8 +1954,9 @@ class BioMLT(nn.Module):
         print("Writing best results to {}".format(qas_save_path))
         experiment_log_dict["test"] = {"best_f1s": best_results,
                                        "best_exacts": best_exacts}
-        loss_plot_path = os.path.join(self.args.output_dir,"{}_lossplot.png".format(exp_name))
-        plot_arrays([train_losses], loss_plot_path, x_title="Epoch", y_title="loss", names=["train"], title="Average loss at each epoch")
+        loss_plot_path = os.path.join(self.args.output_dir, "{}_lossplot.png".format(exp_name))
+        plot_arrays([train_losses,dev_losses], loss_plot_path, x_title="Epoch", y_title="loss", names=["train","dev"],
+                    title="Average loss at each epoch")
         if os.path.exists(qas_save_path):
             with open(qas_save_path, "a") as out:
                 s = exp_name
