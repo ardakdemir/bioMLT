@@ -945,13 +945,18 @@ class BioMLT(nn.Module):
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                     # logging.info("Bert out shape {}".format(bert_out.shape))
+                    print("Question type: {}".format(type))
+
                     qas_out = self.get_qas(qas_input,
                                            batch,
                                            eval=only_preds,
                                            type=type)
+                    print("QAS dev loss: {}".format(qas_out[0]))
+                    print("QAS out shape: {}".format(qas_out[1].shape))
+
                     if not only_preds:
                         loss, qas_out = qas_out
-                        total_loss += loss.item()
+                        total_loss += loss.detach().cpu().item()
                         total_size += qas_out.shape[0]
                     example_indices = batch[3]
                 for i, example_index in enumerate(example_indices):
@@ -1128,7 +1133,6 @@ class BioMLT(nn.Module):
         if type in ['factoid', 'list']:
             qas_outputs = self.qas_head(**squad_inputs)
         elif type == 'yesno':
-
             ##!!!  CLS TOKEN  !!! ##
             yes_no_logits = self.yesno_head(bert_output[:, 0])
 
