@@ -1623,7 +1623,7 @@ class BioMLT(nn.Module):
         if 'yesno' in qa_types:
             skip_list = []
             qas_eval_datasets['yesno'], qas_eval_examples['yesno'], qas_eval_features[
-                'yesno'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
+                'yesno'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=for_pred, output_examples=True,
                                                          yes_no=True, type='yesno')
             skip_list = [example.qas_id for example in qas_eval_examples['yesno']]
             print("Will try to skip {} examples".format(len(skip_list)))
@@ -1644,7 +1644,7 @@ class BioMLT(nn.Module):
             print("Yesno train examples")
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
-                'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
+                'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=for_pred, output_examples=True,
                                                         yes_no=False, type='list')
             skip_list = [example.qas_id for example in qas_eval_examples['list']]
             print("Will try to skip {} examples".format(len(skip_list)))
@@ -1657,7 +1657,7 @@ class BioMLT(nn.Module):
 
         if 'factoid' in qa_types:
             qas_eval_datasets['factoid'], qas_eval_examples['factoid'], qas_eval_features[
-                'factoid'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True,
+                'factoid'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=for_pred,
                                                            output_examples=True, yes_no=True, type='factoid')
             skip_list = [example.qas_id for example in qas_eval_examples['factoid']]
             print("Will try to skip {} examples".format(len(skip_list)))
