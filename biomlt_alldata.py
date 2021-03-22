@@ -946,7 +946,7 @@ class BioMLT(nn.Module):
 
                     # bert_out = self._get_squad_bert_batch_hidden(outputs[-1])
                     # logging.info("Bert out shape {}".format(bert_out.shape))
-                    print("Question type: {}".format(type))
+                    # print("Question type: {}".format(type))
                     qas_out = self.get_qas(qas_input,
                                            batch,
                                            eval=only_preds,
@@ -963,7 +963,7 @@ class BioMLT(nn.Module):
 
                         total_size += batch[0].shape[0]
                 example_indices = batch[3] if args.predict else batch[-1]
-                print(example_indices)
+                # print(example_indices)
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
                     unique_id = int(eval_feature.unique_id)
