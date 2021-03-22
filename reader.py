@@ -279,6 +279,7 @@ def my_squad_convert_examples_to_features(
     example_index = 0
 
     print("Number of features {} generated from {} examples ".format(len(features), len(examples)))
+
     for example_features in tqdm(features, total=len(features), desc="add example index and unique id"):
         if not example_features:
             continue

@@ -357,6 +357,7 @@ def squad_convert_examples_to_features(
                 all_cls_index,
                 all_p_mask,
                 all_is_impossible,
+                all_example_index
             )
 
         return features, dataset
