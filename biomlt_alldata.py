@@ -958,7 +958,7 @@ class BioMLT(nn.Module):
                         loss, qas_out = qas_out
                         total_loss += loss.detach().cpu().item()
                         total_size += qas_out.shape[0]
-                    example_indices = batch[3] if args.predict else batch[-1]
+                example_indices = batch[3] if args.predict else batch[-1]
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
                     unique_id = int(eval_feature.unique_id)
