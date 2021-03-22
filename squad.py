@@ -584,6 +584,7 @@ class SquadProcessor(DataProcessor):
                                     start_position_character = 1 if answer_text == "yes" else 0
                                 else:
                                     answers = qa["answers"]
+                                    answer = qa["answers"][0]
                                     answer_text = answer["text"]
                                     start_position_character = answer["answer_start"]
                     example = SquadExample(
