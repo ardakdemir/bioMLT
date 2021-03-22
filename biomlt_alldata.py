@@ -1624,7 +1624,7 @@ class BioMLT(nn.Module):
         if 'yesno' in qa_types:
             skip_list = []
             qas_eval_datasets['yesno'], qas_eval_examples['yesno'], qas_eval_features[
-                'yesno'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=for_pred, output_examples=True,
+                'yesno'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
                                                          yes_no=True, type='yesno')
             skip_list = [example.qas_id for example in qas_eval_examples['yesno']]
             print("Will try to skip {} examples".format(len(skip_list)))
@@ -1645,7 +1645,7 @@ class BioMLT(nn.Module):
             print("Yesno train examples")
         if 'list' in qa_types:
             qas_eval_datasets['list'], qas_eval_examples['list'], qas_eval_features[
-                'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=for_pred, output_examples=True,
+                'list'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True, output_examples=True,
                                                         yes_no=False, type='list')
             skip_list = [example.qas_id for example in qas_eval_examples['list']]
             print("Will try to skip {} examples".format(len(skip_list)))
@@ -1658,7 +1658,7 @@ class BioMLT(nn.Module):
 
         if 'factoid' in qa_types:
             qas_eval_datasets['factoid'], qas_eval_examples['factoid'], qas_eval_features[
-                'factoid'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=for_pred,
+                'factoid'] = squad_load_and_cache_examples(args, self.bert_tokenizer, evaluate=True,
                                                            output_examples=True, yes_no=True, type='factoid')
             skip_list = [example.qas_id for example in qas_eval_examples['factoid']]
             print("Will try to skip {} examples".format(len(skip_list)))
@@ -1916,7 +1916,7 @@ class BioMLT(nn.Module):
             train_epoch_time = round(epoch_end - epoch_begin, 3)
             print("Total loss {} for epoch {} ".format(total_loss, epoch))
             print("Epoch {} is finished, moving to evaluation ".format(epoch))
-            f1s, exacts, totals,dev_loss = self.evaluate_qas(epoch, types=qa_types)
+            f1s, exacts, totals, dev_loss = self.evaluate_qas(epoch, types=qa_types)
             dev_losses.append(dev_loss)
             # yes_f1, yes_exact, yes_total  = self.evaluate_qas(epoch,type='yesno')
             experiment_log_dict[epoch] = {"f1s": f1s,
@@ -1960,7 +1960,7 @@ class BioMLT(nn.Module):
         experiment_log_dict["test"] = {"best_f1s": best_results,
                                        "best_exacts": best_exacts}
         loss_plot_path = os.path.join(self.args.output_dir, "{}_lossplot.png".format(exp_name))
-        plot_arrays([train_losses,dev_losses], loss_plot_path, x_title="Epoch", y_title="loss", names=["train","dev"],
+        plot_arrays([train_losses, dev_losses], loss_plot_path, x_title="Epoch", y_title="loss", names=["train", "dev"],
                     title="Average loss at each epoch")
         if os.path.exists(qas_save_path):
             with open(qas_save_path, "a") as out:

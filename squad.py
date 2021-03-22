@@ -542,6 +542,7 @@ class SquadProcessor(DataProcessor):
 
 
     def _create_examples(self, input_data, set_type, only_data = False,is_yes_no = False):
+        print("\n\nI entered my _create_exaamples!!\n\n")
         is_training = set_type == "train"
         examples = []
         yes_no_counts = []
@@ -583,7 +584,8 @@ class SquadProcessor(DataProcessor):
                                     start_position_character = 1 if answer_text == "yes" else 0
                                 else:
                                     answers = qa["answers"]
-
+                                    answer_text = answer["text"]
+                                    start_position_character = answer["answer_start"]
                     example = SquadExample(
                         qas_id=qas_id,
                         question_text=question_text,

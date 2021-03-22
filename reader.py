@@ -477,7 +477,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             processor = SquadV1Processor()
             if evaluate:
                 processor.dev_file = args.squad_predict_file
-                print("Reading from {} {} ".format(input_dir, args.squad_predict_file))
+                print("\n\n===EVALUATE=== Reading from {} {} ".format(input_dir, args.squad_predict_file))
                 examples = processor.get_dev_examples(input_dir,
                                                       filename=args.squad_predict_file,
                                                       only_data=True if args.predict else False,
@@ -497,7 +497,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
 
         # Skip list
         print("{} examples before skip".format(len(examples)))
-        examples = list(filter(lambda x: x.qas_id not in skip_list,examples))
+        examples = list(filter(lambda x: x.qas_id not in skip_list, examples))
         print("{} examples after skip".format(len(examples)))
 
         # get squad examples
@@ -935,6 +935,7 @@ def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args):
     # The rest of the time (10% of the time) we keep the masked input tokens unchanged
     return inputs, labels
 
+
 def load_cached_dataset(cached_features_file):
     features_and_dataset = torch.load(cached_features_file)
     features, dataset, examples = (
@@ -944,7 +945,8 @@ def load_cached_dataset(cached_features_file):
     )
     return dataset, examples
 
+
 if __name__ == "__main__":
     file_name = "data_cache/cached_training8b_squadformat_train_yesno_train_bert-base-cased_256_0.txt"
-    dataset,examples = load_cached_dataset(file_name)
+    dataset, examples = load_cached_dataset(file_name)
     print("{} examples in total".format(len(examples)))
