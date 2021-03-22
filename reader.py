@@ -308,8 +308,9 @@ def my_squad_convert_examples_to_features(
         all_is_impossible = torch.tensor([f.is_impossible for f in features], dtype=torch.float)
         all_squad_bert2tokens = torch.tensor([squad_bert2tokens(f.input_ids, tokenizer) for f in features],
                                              dtype=torch.long)
+        all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
+
         if not is_training:
-            all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
             dataset = TensorDataset(
                 all_input_ids, all_attention_masks, all_token_type_ids, all_example_index, all_cls_index, all_p_mask,
                 all_squad_bert2tokens
