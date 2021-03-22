@@ -909,6 +909,7 @@ class BioMLT(nn.Module):
             examples = self.qas_eval_examples[type]
             features = self.qas_eval_features[type]
             print("Size of the test dataset {}".format(len(qas_eval_dataset)))
+            print("Features0 : {}".format(features[0]))
             eval_sampler = SequentialSampler(qas_eval_dataset)
             eval_dataloader = DataLoader(qas_eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
             logger.info("Evaluation {} started for {} type questions ".format(ind, type))
@@ -961,7 +962,7 @@ class BioMLT(nn.Module):
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
                     unique_id = int(eval_feature.unique_id)
-                    print("Unique id: {}".format(unique_id))
+                    print("Unique id: {} Example index: {}".format(unique_id, example_index))
                     if type == 'yesno':
                         output = qas_out[i, :].detach().cpu().numpy()
                         yesno_logit = output
