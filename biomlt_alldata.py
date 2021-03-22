@@ -954,7 +954,7 @@ class BioMLT(nn.Module):
                     # print("QAS dev loss: {}".format(qas_out[0].detach().cpu()))
                     if not only_preds:
                         loss = qas_out[0]
-                        qas_out = qas_out[1:] if type!="yesno" else qas_out[1]
+                        qas_out = qas_out[1:] if type != "yesno" else qas_out[1]
                         total_loss += loss.detach().cpu().item()
                         # if type=="yesno":
                         #     print("QAS OUT YESNO", qas_out.detach().cpu())
@@ -1080,7 +1080,7 @@ class BioMLT(nn.Module):
             avg_test_loss = round(total_loss / total_size, 3)
         else:
             avg_test_loss = 0
-
+        print("\nEpoch: {} Average test loss: {}\n".format(ind, avg_test_loss))
         return f1s, exacts, totals, avg_test_loss
 
     def predict_qas(self, batch):
