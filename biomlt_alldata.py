@@ -952,10 +952,9 @@ class BioMLT(nn.Module):
                                            eval=only_preds,
                                            type=type)
                     # print("QAS dev loss: {}".format(qas_out[0].detach().cpu()))
-                    print("QAS out shape: {}".format(qas_out[1].detach().cpu().shape))
-                    print("QAS out: {}".format([x.detach().cpu() for x in qas_out]))
                     if not only_preds:
-                        loss, qas_out = qas_out
+                        loss, qas_out = qas_out[0]
+                        qas_out = qas_out[1:]
                         total_loss += loss.detach().cpu().item()
                         total_size += qas_out.shape[0]
                 example_indices = batch[3] if args.predict else batch[-1]
@@ -963,7 +962,7 @@ class BioMLT(nn.Module):
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
                     unique_id = int(eval_feature.unique_id)
-                    print("Unique id: {} Example index: {}".format(unique_id, example_index))
+                    # print("Unique id: {} Example index: {}".format(unique_id, example_index))
                     if type == 'yesno':
                         output = qas_out[i, :].detach().cpu().numpy()
                         yesno_logit = output
