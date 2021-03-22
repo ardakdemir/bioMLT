@@ -512,7 +512,7 @@ def squad_load_and_cache_examples(args, tokenizer, evaluate=False, output_exampl
             max_seq_length=args.max_seq_length,
             doc_stride=args.doc_stride,
             max_query_length=args.max_query_length,
-            is_training=not evaluate,
+            is_training=not args.predict,
             return_dataset="pt",
             is_yes_no=yes_no
         )

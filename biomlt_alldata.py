@@ -949,7 +949,7 @@ class BioMLT(nn.Module):
 
                     batch = [x.detach().cpu() for x in batch]
                     for a in batch:
-                        print(a,a.shape)
+                        print(a, a.shape)
                     qas_out = self.get_qas(qas_input,
                                            batch,
                                            eval=only_preds,
@@ -2683,7 +2683,7 @@ def main():
     if mode == "qas":
         if predict:
             qa_types = ['factoid', "yesno", "list"]
-            biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=True)
+            biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=predict)
             biomlt.run_test()
             # biomlt.load_train_data()
         else:
@@ -2693,7 +2693,7 @@ def main():
         checkSavedModel()
     elif mode == "joint_flat":
         if predict:
-            biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=True)
+            biomlt.load_qas_data(biomlt.args, qa_types=qa_types, for_pred=predict)
             biomlt.run_test()
         else:
             biomlt.train_qas_ner()
