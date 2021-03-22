@@ -16,7 +16,7 @@ from tqdm import tqdm
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 
-from bioMLT.squad import *
+from my_squad import *
 
 random_seed = 12345
 rng = random.Random(random_seed)
