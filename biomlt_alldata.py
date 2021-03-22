@@ -956,12 +956,12 @@ class BioMLT(nn.Module):
                         loss = qas_out[0]
                         qas_out = qas_out[1:] if type!="yesno" else qas_out[1]
                         total_loss += loss.detach().cpu().item()
-                        if type=="yesno":
-                            print("QAS OUT YESNO", qas_out.detach().cpu())
-                        else:
-                            print("QAS OUT 0 FACTOID", qas_out[0].detach().cpu())
+                        # if type=="yesno":
+                        #     print("QAS OUT YESNO", qas_out.detach().cpu())
+                        # else:
+                        #     print("QAS OUT 0 FACTOID", qas_out[0].detach().cpu())
 
-                        total_size += qas_out.shape[0]
+                        total_size += batch[0].shape[0]
                 example_indices = batch[3] if args.predict else batch[-1]
                 print(example_indices)
                 for i, example_index in enumerate(example_indices):
