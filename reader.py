@@ -288,6 +288,7 @@ def my_squad_convert_examples_to_features(
             example_feature.unique_id = unique_id
             new_features.append(example_feature)
             unique_id += 1
+            print("Unique id ", unique_id)
         example_index += 1
     print("Number of features {} generated from {} examples after for loop".format(len(new_features), len(examples)))
     features = new_features
