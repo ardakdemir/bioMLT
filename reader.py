@@ -289,7 +289,7 @@ def my_squad_convert_examples_to_features(
             example_feature.unique_id = unique_id
             new_features.append(example_feature)
             unique_id += 1
-            print("Unique id ", unique_id)
+            # print("Unique id ", unique_id)
         example_index += 1
     print("Number of features {} generated from {} examples after for loop".format(len(new_features), len(examples)))
     features = new_features
@@ -328,6 +328,7 @@ def my_squad_convert_examples_to_features(
                     all_p_mask,
                     all_is_impossible,
                     all_squad_bert2tokens,
+                    all_example_index
                 )
             else:
                 all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
@@ -348,6 +349,7 @@ def my_squad_convert_examples_to_features(
                     all_p_mask,
                     all_is_impossible,
                     all_squad_bert2tokens,
+                    all_example_index
                 )
 
         print("Just before returning squad f  {} d {}".format(len(features), len(dataset)))
