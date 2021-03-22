@@ -952,8 +952,8 @@ class BioMLT(nn.Module):
                                            eval=only_preds,
                                            type=type)
                     # print("QAS dev loss: {}".format(qas_out[0].detach().cpu()))
-                    # print("QAS out shape: {}".format(qas_out[1].detach().cpu().shape))
-
+                    print("QAS out shape: {}".format(qas_out[1].detach().cpu().shape))
+                    print("QAS out: {}".format([x.detach().cpu() for x in qas_out]))
                     if not only_preds:
                         loss, qas_out = qas_out
                         total_loss += loss.detach().cpu().item()
