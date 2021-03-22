@@ -403,6 +403,7 @@ def compute_predictions_logits(
     print("How many results are here {} ".format(len(all_results)))
     for result in all_results:
         unique_id_to_result[result.unique_id] = result
+
     print("Unique ids in results dict {} ".format(len(unique_id_to_result)))
     _PrelimPrediction = collections.namedtuple(  # pylint: disable=invalid-name
         "PrelimPrediction", ["feature_index", "start_index", "end_index", "start_logit", "end_logit"]

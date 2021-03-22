@@ -962,6 +962,7 @@ class BioMLT(nn.Module):
                 for i, example_index in enumerate(example_indices):
                     eval_feature = features[example_index.item()]
                     unique_id = int(eval_feature.unique_id)
+                    print("Unique id: {}".format(unique_id))
                     if type == 'yesno':
                         output = qas_out[i, :].detach().cpu().numpy()
                         yesno_logit = output
