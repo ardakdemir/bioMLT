@@ -947,12 +947,15 @@ class BioMLT(nn.Module):
                     # logging.info("Bert out shape {}".format(bert_out.shape))
                     print("Question type: {}".format(type))
 
+                    batch = [x.detach().cpu() for x in batch]
+                    for a in batch:
+                        print(a,a.shape)
                     qas_out = self.get_qas(qas_input,
                                            batch,
                                            eval=only_preds,
                                            type=type)
-                    print("QAS dev loss: {}".format(qas_out[0]))
-                    print("QAS out shape: {}".format(qas_out[1].shape))
+                    print("QAS dev loss: {}".format(qas_out[0].detach().cpu()))
+                    print("QAS out shape: {}".format(qas_out[1].detach().cpu().shape))
 
                     if not only_preds:
                         loss, qas_out = qas_out

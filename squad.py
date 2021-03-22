@@ -421,7 +421,8 @@ class SquadProcessor(DataProcessor):
     train_file = None
     dev_file = None
     
-
+    def __init__(self):
+        print("\n\nInitializing My Squad Processor\n\n")
     def _get_example_from_tensor_dict(self, tensor_dict, evaluate=False):
         if not evaluate:
             answer = tensor_dict["answers"]["text"][0].numpy().decode("utf-8")
