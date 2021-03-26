@@ -29,12 +29,12 @@ model_name_map = {"UTokyo_qasonly":"UoT_baseline",
                   "UTokyo_load_NCBI-disease":"UoT_bestfac",
                   "UTokyo_load_s800":"UoT_bestyesno"}
 
-model_dict = {"UTokyo_qasonly": {"model_path": "../qasonly_9b_0803/best_qas_model_woner"},
-              "UTokyo_load_All-entities": {"model_path": "../qasonly_load_9b_20ep_0803_1/best_qas_model_All-entities"},
-              "UTokyo_load_NCBI-disease": {"model_path": "../qasonly_load_9b_20ep_0803_1/best_qas_model_NCBI-disease"},
-              "UTokyo_load_s800": {"model_path": "../qasonly_load_9b_20ep_0803_1/best_qas_model_s800"},
-              "UTokyo_load_BC5CDR-disease": {
-                  "model_path": "../qasonly_load_9b_20ep_0803_1/best_qas_model_BC5CDR-disease"}}
+model_dict = {"UTokyo_qasonly": {"model_path": "../qaswithload_bioberts_1603/best_qas_model_woner"},
+              "UTokyo_load_All-entities": {"model_path": "../qaswithload_bioberts_1603/best_qas_model_All-entities"},
+              "UTokyo_load_NCBI-disease": {"model_path": "../qaswithload_bioberts_1603/best_qas_model_linnaeus"},# best full-dataset
+              "UTokyo_load_s800": {"model_path": "../qaswithload_bioberts_1603/best_qas_model_bert-instance_1000_All-entities"}, ## with subset
+              "UTokyo_load_BC5CDR-disease": { ## with subset-selection
+                  "model_path": "../qaswithload_bioberts_1603/best_qas_model_bert-instance_2000_All-entities"}} # cuz- best yesno
 
 
 def bioasq_pred_submitter():
