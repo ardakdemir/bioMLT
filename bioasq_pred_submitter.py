@@ -7,7 +7,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--test_path", default="../biobert_data/BioASQ-9b/BioASQ-task9bPhaseB-testset1", type=str, required=False,
+        "--test_path", default="../biobert_data/BioASQ-9b/BioASQ-task9bPhaseB-testset2", type=str, required=False,
         help="The path to load the model to continue training."
     )
     parser.add_argument(
