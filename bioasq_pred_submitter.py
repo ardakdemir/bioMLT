@@ -11,7 +11,7 @@ def parse_args():
         help="The path to load the model to continue training."
     )
     parser.add_argument(
-        "--save_folder", default="../bioasq_tb1", type=str, required=False,
+        "--save_folder", default="../bioasq_tb2_2603", type=str, required=False,
         help="The path to save the predictions"
     )
     parser.add_argument(
