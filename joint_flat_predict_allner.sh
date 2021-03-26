@@ -3,7 +3,7 @@ output_dir_pref=${1}
 model_pref=${2}
 
 EVAL_PATH='biobert_data/Evaluation-Measures'
-my_n2b_yesno_path='bioMLT/mytransformn2b_yesno.py'
+my_n2b_yesno_path='bioMLT/mytransform_n2b_yesno.py'
 my_n2b_list_path='bioMLT/mytransform_n2b_list.py'
 my_n2b_factoid_path='bioMLT/mytransform_n2b_factoid.py'
 out_for_bioasq_eval='input_for_bioasq'

@@ -14,7 +14,7 @@ out_for_bioasq_eval='input_for_bioasq'
 #pretrained_biobert_model_path='../biobert_data/biobert-squadv1.1_pretrained'
 pretrained_biobert_model_path='biobert_data/biobert_v1.1_pubmed'
 
-my_n2b_yesno_path='bioMLT/mytransformn2b_yesno.py'
+my_n2b_yesno_path='bioMLT/mytransform_n2b_yesno.py'
 my_n2b_list_path='bioMLT/mytransform_n2b_list.py'
 my_n2b_factoid_path='bioMLT/mytransform_n2b_factoid.py'
 #$ -cwd
