@@ -28,7 +28,7 @@ snippet_folder='Snippet-as-is'
 #pretrained_biobert_model_path='../biobert_data/biobert-squadv1.1_pretrained'
 pretrained_biobert_model_path='../biobert_data/biobert_v1.1_pubmed'
 #$ -cwd
-#$ -l v100,os7,s_vmem=100G,mem_req=100G
+#$ -l v100=1,os7,s_vmem=100G,mem_req=100G
 #$ -N bioasq_9b_predict
 
 echo $BIOBERT_PATH
