@@ -790,7 +790,7 @@ def load_vectors(file_path, dim=768):
 
 def get_ner_vectors(similarity, args):
     ner_file_path = args.ner_train_file
-    length_limit = ags.ner_length_limit
+    length_limit = args.ner_length_limit
     if not hasattr(similarity, "ner_sentences"):
         print("Generating ner vectors and sentences")
         dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
