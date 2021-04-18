@@ -149,6 +149,13 @@ def parse_args():
         help="The index of the target ner task (inside the eval files)",
     )
     parser.add_argument(
+        "--ner_length_limit",
+        type=int,
+        default=5,
+        required=False,
+        help="The min length of a ner sentence to be considered.",
+    )
+    parser.add_argument(
         "--ner_train_files",
         default=["a", "b"],
         nargs="*",
@@ -783,11 +790,12 @@ def load_vectors(file_path, dim=768):
 
 def get_ner_vectors(similarity, args):
     ner_file_path = args.ner_train_file
-
+    length_limit = ags.ner_length_limit
     if not hasattr(similarity, "ner_sentences"):
         print("Generating ner vectors and sentences")
         dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
-                             batch_size=256, crf=False)
+                             batch_size=256, crf=False, length_limit=length_limit)
+        print("Total number of sentences: {}".format(len(dataset.dataset)))
         all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
@@ -1268,7 +1276,7 @@ def generate_store_ner_subsets():
     # subset_sizes = [10,20,30]
     # methods = ["random","topic-instance", "bert-instance", "bert-subset"]
     # methods = ["random"]
-    methods = ["bert-instance","random"]
+    methods = ["bert-instance", "random"]
     for dataset_name in ner_datasets:
         folder_name = os.path.split(dataset_name)[-1]
         for method in methods:
@@ -1283,13 +1291,13 @@ def generate_store_ner_subsets():
 
 
 def main():
-    generate_store_ner_subsets()
+    # generate_store_ner_subsets()
 
     # args = parse_args()
     # similarity = Similarity()
     # store_ner_vectors(similarity, args)
     # store_vectors()
-    # store_ner_folder_vectors()
+    store_ner_folder_vectors()
 
 
 if __name__ == "__main__":

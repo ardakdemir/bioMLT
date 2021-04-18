@@ -196,7 +196,7 @@ def ner_document_reader(file_path, sent_len=None):
 
 class DataReader:
 
-    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False):
+    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False,length_limit=0):
         self.for_eval = for_eval
         self.file_path = file_path
         self.crf = crf  # Generate 2-d labels
@@ -205,6 +205,7 @@ class DataReader:
             print("Generating 2-d labels")
         self.task_name = task_name
         self.batch_size = batch_size
+        self.length_limit = length_limit
         self.dataset, self.orig_idx, self.label_counts = self.get_dataset()
         print("Dataset size : {}".format(len(self.dataset)))
         print("NER Label Counts: {}".format(self.label_counts))
@@ -289,7 +290,7 @@ class DataReader:
         end_tags = [END_TAG for x in range(len(first_line))]
         for line in dataset:
             if len(line.strip()) == 0:
-                if len(sent) > 0:
+                if len(sent) > self.length_limit:
                     sent.append(end_tags)
                     if len(sent) > 2 and len(sent) < 200:
                         new_dataset.append([root] + sent)
@@ -297,6 +298,8 @@ class DataReader:
                         cropped_long_sentence += 1
                     # new_dataset.append(sent)
                     sent = []
+                else:
+                    sent = [] #Ignore very short sentences
             else:
                 if len(line.strip()) < 2:
                     continue
@@ -305,7 +308,7 @@ class DataReader:
                     row[0] = row[0].replace("\ufeff", "")
                     sent.append(row)
                     label_counts.update([row[-1]])
-        if len(sent) > 2 and len(sent) < 200:
+        if len(sent) > self.length_limit and len(sent) < 200:
             sent.append(end_tags)
             new_dataset.append([root] + sent)
             # new_dataset.append(sent)
