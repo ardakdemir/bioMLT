@@ -151,7 +151,7 @@ def parse_args():
     parser.add_argument(
         "--ner_length_limit",
         type=int,
-        default=5,
+        default=10,
         required=False,
         help="The min length of a ner sentence to be considered.",
     )

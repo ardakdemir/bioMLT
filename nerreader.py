@@ -7,7 +7,7 @@ from transformers import BertTokenizer
 # from parser.parsereader import bert2token, pad_trunc_batch
 from vocab import Vocab, VOCAB_PREF
 from utils import sort_dataset, unsort_dataset
-
+from data_cleaner import data_reader
 PAD = "[PAD]"
 START_TAG = "[CLS]"
 END_TAG = "[SEP]"
@@ -109,6 +109,16 @@ def pad_trunc_batch(batch, max_len, pad=PAD, pad_ind=PAD_IND, bert=False, b2t=Fa
             padded_batch.append(padded_sent)
     return padded_batch, sent_lens
 
+def sents2batches(dataset,batch_size):
+
+    batched_dataset = []
+    sentence_lens = []
+    current_len = 0
+    i = 0
+
+    ## they are already in sorted order
+    current = []
+    return dataset, [len(x.preprocessed.split(" ")) for x in dataset]
 
 def group_into_batch(dataset, batch_size):
     """
@@ -476,8 +486,171 @@ class DataReader:
         return tokens, bert_batch_after_padding, data
 
 
+
+class NerDataReader:
+
+    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False,length_limit=0):
+        self.for_eval = for_eval
+        self.file_path = file_path
+        self.crf = crf  # Generate 2-d labels
+        self.iter = 0
+        if self.crf:
+            print("Generating 2-d labels")
+        self.task_name = task_name
+        self.batch_size = batch_size
+        self.length_limit = length_limit
+        self.dataset, self.orig_idx, self.label_counts = self.get_dataset()
+        print("Dataset size : {}".format(len(self.dataset)))
+        self.data_len = len(self.dataset)
+        self.l2ind, self.word2ind, self.vocab_size = self.get_vocabs()
+        # self.pos_voc = Vocab(self.pos2ind)
+        self.label_vocab = Vocab(self.l2ind)
+        self.word_vocab = Vocab(self.word2ind)
+        self.batched_dataset, self.sentence_lens = sents2batches(self.dataset, batch_size=self.batch_size)
+        self.for_eval = for_eval
+        self.num_cats = len(self.l2ind)
+        print("Number of NER categories: {}".format(self.num_cats))
+        self.bert_tokenizer = tokenizer
+        self.val_index = 0
+
+    def get_ind2sent(self, sent):
+        return " ".join([self.word2ind[w] for w in sent])
+
+    def get_vocabs(self):
+        l2ind = {PAD: PAD_IND, START_TAG: START_IND, END_TAG: END_IND}
+        word2ix = {PAD: PAD_IND, START_TAG: START_IND, END_TAG: END_IND}
+        for sent in self.dataset:
+            for word in sent.words:
+                if word not in word2ix:
+                    word2ix[word] = len(word2ix)
+            for l in self.labels:
+                if l not in l2ind:
+                    l2ind[l] = len(l2ind)
+        vocab_size = len(word2ix)
+        return l2ind, word2ix, vocab_size
+
+    def get_dataset(self):
+        corpus =  data_reader(self.file_path,encoding='utf-8')
+        new_dataset = []
+        for s in corpus:
+            if len(s.words) < self.length_limit or len(s.words)>200:
+                continue
+            # s.labels = [START_TAG] + s.labels + [END_TAG]
+            # s.preprocessed = " ".join(START_TAG,s.preprocessed,END_TAG)
+            new_dataset.append(s)
+        return new_dataset, 0, 0
+
+    ## compatible with getSent and for word embeddings
+    def prepare_sent(self, sent, word2ix):
+        idx = [word2ix[word[0]] for word in sent]
+        return torch.tensor(idx, dtype=torch.long)
+
+    def prepare_label(self, labs, l2ix):
+        idx = [l2ix[lab] for lab in labs]
+        return torch.tensor(idx, dtype=torch.long)
+
+    def getword2vec(self, row):
+        key = row[0].lower()
+        root = row[1][:row[1].find("+")].encode().decode("unicode-escape")
+        while (len(key) > 0):
+            if key in word_vectors:
+                return word_vectors[key]
+            elif root.lower() in word_vectors:
+                return word_vectors[root.lower()]
+            else:
+                return word_vectors["OOV"]
+        return 0
+
+    def get_1d_targets(self, targets):
+        prev_tag = self.l2ind[START_TAG]
+        tagset_size = self.num_cats
+        targets_1d = []
+        for current_tag in targets:
+            targets_1d.append(current_tag * (tagset_size) + prev_tag)
+            prev_tag = current_tag
+        return targets_1d
+
+    def getword2vec2(self, row):
+        key = row[0].lower()
+        root = row[1][:row[1].find("+")].encode().decode("unicode-escape")  ## for turkish special chars
+        while (len(key) > 0):
+            if key in word_vectors:
+                return 2
+            elif root.lower() in word_vectors:
+                return 1
+            else:
+                return 0
+        return 0
+
+    def __len__(self):
+        return len(self.batched_dataset)
+
+    def __getitem__(self, idx, random=True):
+        """
+            Indexing for the DepDataset
+            converts all the input into tensor before passing
+
+            input is of form :
+                word_ids  (Batch_size, Sentence_lengths)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        if not self.for_eval:
+            if random:
+                idx = np.random.randint(len(self.batched_dataset))
+            idx = idx % len(self.batched_dataset)
+        batch = self.batched_dataset[idx]
+        lens = self.sentence_lens[idx]
+        tok_inds = []
+        ner_inds = []
+        tokens = []
+        for x in batch:
+            preprocessed = x.preprocessed
+            labels = x.labels
+            tokens.append(x.words)
+            if self.crf:
+                ner_inds.append(self.get_1d_targets(self.label_vocab.map(labels)))
+            else:
+                ner_inds.append(self.label_vocab.map(labels))
+        i = 0
+        max_bert_len = 0
+        for sent, l in zip(batch, lens):
+            my_tokens = [x for x in sent.preprocessed]
+            sentence = " ".join(my_tokens)
+            masks[i, :l] = torch.tensor([0] * l, dtype=torch.bool)
+            i += 1
+            bert_tokens = self.bert_tokenizer.tokenize(sentence)
+            bert_lens.append(len(bert_tokens))
+            # bert_tokens = ["[CLS]"] + bert_tokens
+            max_bert_len = max(max_bert_len, len(bert_tokens))
+            ## bert_ind = 0 since we already put CLS as the SOS  token
+            b2tok, ind = bert2token(my_tokens, bert_tokens, bert_ind=0)
+            assert ind == len(my_tokens), "Bert ids do not match token size"
+            bert_batch_before_padding.append(bert_tokens)
+            bert2toks.append(b2tok)
+        bert_batch_after_padding, bert_lens = \
+            pad_trunc_batch(bert_batch_before_padding, max_len=max_bert_len, bert=True)
+        # print(bert_batch_after_padding)
+        bert2tokens_padded, _ = pad_trunc_batch(bert2toks, max_len=max_bert_len, bert=True, b2t=True)
+        bert_batch_ids = torch.LongTensor([self.bert_tokenizer.convert_tokens_to_ids(sent) for \
+                                           sent in bert_batch_after_padding])
+        bert_seq_ids = torch.LongTensor([[0 for i in range(len(bert_batch_after_padding[0]))] \
+                                         for j in range(len(bert_batch_after_padding))])
+        # dep_rels = torch.tensor([])
+        # dep_inds = torch.tensor([])
+        data = torch.tensor(lens), bert_batch_ids, bert_seq_ids, torch.tensor(
+            bert2tokens_padded, dtype=torch.long)
+        return tokens, bert_batch_after_padding, data
+
+
 if __name__ == "__main__":
-    data_path = 'toy_ner_data.tsv'
-    reader = DataReader(data_path, "NER")
+    # data_path = 'toy_ner_data.tsv'
+    # reader = DataReader(data_path, "NER")
     # print(sum(map(len,reader.dataset))/reader.data_len)
     # batched_dataset, sentence_lens = group_into_batch(reader.dataset,batch_size = 300)
+    ner_file_path = 'biobert_data/datasets/NER/BC2GM/ent_train.tsv'
+    biobert_model_name = "dmis-lab/biobert-v1.1"
+    length_limit = 10
+    bert_tokenizer = BertTokenizer.from_pretrained(biobert_model_name)
+    dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=bert_tokenizer,
+                                 batch_size=1, crf=False, length_limit=length_limit)
