@@ -329,7 +329,6 @@ class DataReader:
                 labels = [x[-1] for x in example[1:-1]] #Skip begin end
                 if all([x=="O" for x in labels]):
                     print("Skipping")
-                    c +=1
                 else:
                     dataset.append(example)
             print("Before: {} after : {}  skipping unlabeled sentences...".format(len(new_dataset),len(dataset)))
