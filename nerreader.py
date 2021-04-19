@@ -326,7 +326,7 @@ class DataReader:
         if self.skip_unlabeled:
             dataset = []
             for example in new_dataset:
-                labels = [x[-1] for x in example]
+                labels = [x[-1] for x in example[1:-1]] #Skip begin end
                 if all([x=="O" for x in labels]):
                     print("Skipping")
                     c +=1
