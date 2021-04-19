@@ -8,6 +8,7 @@ from transformers import BertTokenizer
 from vocab import Vocab, VOCAB_PREF
 from utils import sort_dataset, unsort_dataset
 from data_cleaner import data_reader
+
 PAD = "[PAD]"
 START_TAG = "[CLS]"
 END_TAG = "[SEP]"
@@ -109,8 +110,8 @@ def pad_trunc_batch(batch, max_len, pad=PAD, pad_ind=PAD_IND, bert=False, b2t=Fa
             padded_batch.append(padded_sent)
     return padded_batch, sent_lens
 
-def sents2batches(dataset,batch_size):
 
+def sents2batches(dataset, batch_size):
     batched_dataset = []
     sentence_lens = []
     current_len = 0
@@ -119,6 +120,7 @@ def sents2batches(dataset,batch_size):
     ## they are already in sorted order
     current = []
     return dataset, [len(x.preprocessed.split(" ")) for x in dataset]
+
 
 def group_into_batch(dataset, batch_size):
     """
@@ -206,7 +208,8 @@ def ner_document_reader(file_path, sent_len=None):
 
 class DataReader:
 
-    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False,length_limit=0,skip_unlabeled = False):
+    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False, length_limit=0,
+                 skip_unlabeled=False):
         self.for_eval = for_eval
         self.file_path = file_path
         self.crf = crf  # Generate 2-d labels
@@ -305,7 +308,7 @@ class DataReader:
                     # new_dataset.append(sent)
                     sent = []
                 else:
-                    sent = [] #Ignore very short sentences
+                    sent = []  # Ignore very short sentences
             else:
                 if len(line.strip()) < 2:
                     continue
@@ -326,12 +329,12 @@ class DataReader:
         if self.skip_unlabeled:
             dataset = []
             for example in new_dataset:
-                labels = [x[-1] for x in example[1:-1]] #Skip begin end
-                if all([x=="O" for x in labels]):
+                labels = [x[-1] for x in example[1:-1]]  # Skip begin end
+                if all([x == "O" for x in labels]):
                     print("Skipping")
                 else:
                     dataset.append(example)
-            print("Before: {} after : {}  skipping unlabeled sentences...".format(len(new_dataset),len(dataset)))
+            print("Before: {} after : {}  skipping unlabeled sentences...".format(len(new_dataset), len(dataset)))
             new_dataset = dataset
         new_dataset, orig_idx = sort_dataset(new_dataset, sort=True)
         print("Label counts {}".format(label_counts))
@@ -492,12 +495,15 @@ class DataReader:
         return tokens, bert_batch_after_padding, data
 
 
-
 class NerDataReader:
 
-    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False,length_limit=0):
+    def __init__(self, file_path, task_name,
+                 tokenizer, batch_size=300,
+                 for_eval=False, crf=False,
+                 length_limit=10, skip_unlabeled=False):
         self.for_eval = for_eval
         self.file_path = file_path
+        self.skip_unlabeled = skip_unlabeled
         self.crf = crf  # Generate 2-d labels
         self.iter = 0
         if self.crf:
@@ -536,10 +542,10 @@ class NerDataReader:
         return l2ind, word2ix, vocab_size
 
     def get_dataset(self):
-        corpus =  data_reader(self.file_path,encoding='utf-8')
+        corpus = data_reader(self.file_path, encoding='utf-8', skip_unlabeled=self.skip_unlabeled)
         new_dataset = []
         for s in corpus:
-            if len(s.words) < self.length_limit or len(s.words)>200:
+            if len(s.words) < self.length_limit or len(s.words) > 200:
                 continue
             # s.labels = [START_TAG] + s.labels + [END_TAG]
             # s.preprocessed = " ".join(START_TAG,s.preprocessed,END_TAG)
@@ -659,6 +665,6 @@ if __name__ == "__main__":
     length_limit = 10
     bert_tokenizer = BertTokenizer.from_pretrained(biobert_model_name)
     dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=bert_tokenizer,
-                                 batch_size=1, crf=False, length_limit=length_limit)
+                            batch_size=1, crf=False, length_limit=length_limit)
     tokens, bert_batch_after_padding, d = dataset[0]
     print(tokens)

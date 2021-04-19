@@ -794,8 +794,10 @@ def get_ner_vectors(similarity, args):
     length_limit = args.ner_length_limit
     if not hasattr(similarity, "ner_sentences"):
         print("Generating ner vectors and sentences")
-        dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
-                             batch_size=256, crf=False, length_limit=length_limit,skip_unlabeled = True)
+        # dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
+        #                      batch_size=256, crf=False, length_limit=length_limit,skip_unlabeled = True)
+        dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
+                             batch_size=1, crf=False, length_limit=length_limit,skip_unlabeled = True)
         print("Total number of sentences: {}".format(len(dataset.dataset)))
         all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
