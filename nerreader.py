@@ -206,11 +206,12 @@ def ner_document_reader(file_path, sent_len=None):
 
 class DataReader:
 
-    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False,length_limit=0):
+    def __init__(self, file_path, task_name, tokenizer, batch_size=300, for_eval=False, crf=False,length_limit=0,skip_unlabeled = False):
         self.for_eval = for_eval
         self.file_path = file_path
         self.crf = crf  # Generate 2-d labels
         self.iter = 0
+        sef.skip_unlabeled = skip_unlabeled
         if self.crf:
             print("Generating 2-d labels")
         self.task_name = task_name
@@ -261,11 +262,6 @@ class DataReader:
     def get_vocabs(self):
         l2ind = {PAD: PAD_IND, START_TAG: START_IND, END_TAG: END_IND}
         word2ix = {PAD: PAD_IND, START_TAG: START_IND, END_TAG: END_IND}
-        # pos2ind = {PAD : PAD_IND, START_TAG:START_IND, END_TAG: END_IND}
-        # l2ind = {PAD : PAD_IND, START_TAG:START_IND, END_TAG: END_IND, ROOT_TAG:PAD_IND }
-        # word2ix = {PAD : PAD_IND, START_TAG:START_IND, END_TAG: END_IND ,ROOT_TAG:PAD_IND}
-        # pos2ind = {PAD : PAD_IND, START_TAG:START_IND, END_TAG: END_IND ,ROOT_TAG:PAD_IND}
-        # print(self.label_counts)
 
         for x in self.label_counts:
             if x not in l2ind:
@@ -327,6 +323,17 @@ class DataReader:
         print("Number of sentences : {} ".format(len(new_dataset)))
         print("Cropped long sentences for {}  : {} ".format(self.file_path, cropped_long_sentence))
         # print(new_dataset)
+        if self.skip_unlabeled:
+            dataset = []
+            for example in new_dataset:
+                labels = [x[-1] for x in example]
+                if all([x=="O" for x in labels]):
+                    print("Skipping")
+                    c +=1
+                else:
+                    dataset.append(example)
+            print("Before: {} after : {}  skipping unlabeled sentences...".format(len(new_dataset),len(dataset)))
+            new_dataset = dataset
         new_dataset, orig_idx = sort_dataset(new_dataset, sort=True)
         print("Label counts {}".format(label_counts))
         return new_dataset, orig_idx, label_counts
@@ -654,3 +661,5 @@ if __name__ == "__main__":
     bert_tokenizer = BertTokenizer.from_pretrained(biobert_model_name)
     dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=bert_tokenizer,
                                  batch_size=1, crf=False, length_limit=length_limit)
+    tokens, bert_batch_after_padding, d = dataset[0]
+    print(tokens)
