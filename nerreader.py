@@ -535,7 +535,7 @@ class NerDataReader:
             for word in sent.words:
                 if word not in word2ix:
                     word2ix[word] = len(word2ix)
-            for l in self.labels:
+            for l in sent.labels:
                 if l not in l2ind:
                     l2ind[l] = len(l2ind)
         vocab_size = len(word2ix)
