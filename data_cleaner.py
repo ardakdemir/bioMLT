@@ -34,7 +34,7 @@ def data_reader(dataset_path, encoding='utf-8', skip_unlabeled=False):
     corpus = []
     dataset = open(dataset_path, encoding=encoding).read().split("\n\n")
     for d in dataset:
-        words, labels = zip(*[x.split("\t") for x in d.split("\n")])
+        words, labels = zip(*[[x.split("\t")[0]]+[x.split("\t")[-1]] for x in d.split("\n")])
         if all([x == "O" for x in labels]):
             continue
         sent = " ".join(words)
