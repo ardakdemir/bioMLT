@@ -510,11 +510,11 @@ class Similarity(nn.Module):
         print("BERT output dim {}".format(self.bert_out_dim))
 
         print("Generating qas vectors...")
-        qas_vectors = self.load_store_qas_vectors()
-        self.qas_vectors = qas_vectors
-        qas_vocab = get_qas_vocab(self.args)
-        print("QAS vocab contains {} words".format(len(qas_vocab)))
-        self.qas_vocab = qas_vocab
+        # qas_vectors = self.load_store_qas_vectors()
+        # self.qas_vectors = qas_vectors
+        # qas_vocab = get_qas_vocab(self.args)
+        # print("QAS vocab contains {} words".format(len(qas_vocab)))
+        # self.qas_vocab = qas_vocab
 
     def _get_bert_batch_hidden(self, hiddens, bert2toks, layers=[-2, -3, -4]):
         meanss = torch.mean(torch.stack([hiddens[i] for i in layers]), 0)
