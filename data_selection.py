@@ -9,7 +9,7 @@ import json
 import os
 import torch.nn as nn
 from tqdm import tqdm, trange
-from nerreader import DataReader, ner_document_reader
+from nerreader import DataReader, ner_document_reader, NerDataReader
 import argparse
 import datetime
 from stopwords import english_stopwords

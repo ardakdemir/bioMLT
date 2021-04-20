@@ -22,7 +22,7 @@ def remove_stopwords(text):
 
 
 def data_cleaner(sentence):
-    cleaned = re.sub('[^A-Za-z0-9\s\t]+', '', sent)
+    cleaned = re.sub('[^A-Za-z0-9\s\t]+', '', sentence)
     cleaned = cleaned.replace("\ufeff", "")
     cleaned = remove_stopwords(cleaned)
     return cleaned
