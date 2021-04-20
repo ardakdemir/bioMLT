@@ -1229,7 +1229,14 @@ def store_ner_folder_vectors():
     ner_folder = args.ner_root_folder
     for ner_dataset in os.listdir(ner_folder):
         p = os.path.join(ner_folder, ner_dataset)
-        args.ner_train_file = os.path.join(p, "ent_train.tsv")
+        if os.path.isdir(p):
+            args.ner_train_file = os.path.join(p, "ent_train.tsv")
+        elif p.endswith("txt"):
+            args.ner_train_file = p
+        else:
+            print("Skipping: {}".format(p))
+            continue
+        print("Generating features for {}".format(p))
         similarity = Similarity()
         store_ner_vectors(similarity, args)
 
