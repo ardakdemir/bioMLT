@@ -119,7 +119,7 @@ def sents2batches(dataset, batch_size):
 
     ## they are already in sorted order
     current = []
-    return dataset, [len(x.preprocessed.split(" ")) for x in dataset]
+    return [[x] for x in dataset], [[len(x.preprocessed.split(" "))] for x in dataset]
 
 
 def group_into_batch(dataset, batch_size):
