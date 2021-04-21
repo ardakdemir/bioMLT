@@ -889,7 +889,7 @@ def get_ner_vectors(similarity, args):
         dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
                              batch_size=1, crf=False, length_limit=length_limit,skip_unlabeled = True)
         print("Total number of sentences: {}".format(len(dataset.dataset)))
-        all_vectors, ner_sentences, ner_labels = get_bert_vectors(similarity, dataset, dataset_type="ner")
+        all_vectors, ner_sentences, ner_labels = get_bert_vectors2(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
         similarity.ner_sentences = ner_sentences
