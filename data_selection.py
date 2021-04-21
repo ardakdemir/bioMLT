@@ -631,6 +631,95 @@ class Similarity(nn.Module):
         self.all_test_entities = all_test_entities
 
 
+def get_bert_vectors2(similarity, dataset, dataset_type="qas"):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dataset_vector = []
+    eval_dataloader = DataLoader(dataset,
+                                 batch_size=1) if dataset_type == "qas" else dataset  # Doesnt work with batch_size > 1 atm
+    similarity.bert_model = similarity.bert_model.to(device)
+    print("Getting bert vectors...")
+    i = 0
+    s = len(dataset)
+    print("Number of batches: {}".format(s))
+    sentences = []
+    labels = []
+    for batch in tqdm(eval_dataloader, desc="Bert vec generation"):
+        if i >= s:
+            break
+        i = i + 1
+        with torch.no_grad():
+            if dataset_type == "qas":
+                # batch = tuple(t.to(device) for t in batch)
+                # bert_inputs = {
+                #     "input_ids": batch[0],
+                #     "attention_mask": batch[1],
+                #     "token_type_ids": batch[2],
+                # }
+                bert2toks = batch[-1]
+
+                # do not input padding part!!
+                input_ids = []
+                attention_mask = []
+                token_type_ids = []
+                for i, inp_ids in enumerate(batch[0]):
+                    pad_length = sum([1 if a else 0 for a in inp_ids == 0])
+                    l = len(inp_ids) - pad_length
+                    input_ids.append(inp_ids[:l])
+                    attention_mask.append(batch[1][i][:l])
+                    token_type_ids.append(batch[2][i][:l])
+                bert_inputs = {
+                    "input_ids": torch.stack(input_ids).to(device),
+                    "attention_mask": torch.stack(attention_mask).to(device),
+                    "token_type_ids": torch.stack(token_type_ids).to(device),
+                }
+            elif dataset_type == "ner":
+                data, bert_input = batch
+                bert_inputs = {k:d.to(device) for k,d in bert_input.items()}
+                labels = [d.labels for d in data]
+                tokens = [d.words for d in data ]
+                label_vocab = dataset.label_vocab
+                for toks, my_labels in zip(tokens, labels):
+                    # my_labels = label_vocab.unmap(n_inds)
+                    # print("Tokens: {}".format(toks))
+                    # print("Labels: {}".format(my_labels))
+                    # print("# tokens: {}  # labels: {}".format(len(toks), len(my_labels)))
+                    sentence = []
+                    my_labs = []
+                    for t, l in zip(toks[1:-1], my_labels[1:-1]):
+                        if t == "[PAD]" or t == "[SEP]":
+                            break
+                        else:
+                            sentence.append(t)
+                            my_labs.append(l)
+                    sentences.append(sentence)
+                    labels.append(my_labs)
+
+            if i == 1:
+                print("Bert Inputs")
+                print(bert_inputs)
+            outputs = similarity.bert_model(**bert_inputs)
+            # print("Output shape: {}".format(outputs[-1][0].shape))
+            layers = [-4,-3,-2,-1]
+            bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
+            # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
+
+            # CLS-based approach
+            cls_vector = bert_hiddens[:, 0, :]
+            # print("CLS vector shape: {}".format(cls_vector.shape))
+            # dataset_vector.extend(cls_vector.detach().cpu())
+
+            # Mean-based approach
+            mean_vector = torch.mean(bert_hiddens[:, :, :], dim=1)
+            dataset_vector.extend(mean_vector.detach().cpu())
+
+    dataset_vectors = torch.stack(dataset_vector)
+
+    dataset_vectors = dataset_vectors.detach().cpu().numpy()
+    print("Shape {}".format(dataset_vectors.shape))
+    return dataset_vectors, sentences, labels
+
+
+
 def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset_vector = []
@@ -718,6 +807,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
     print("Shape {}".format(dataset_vectors.shape))
     return dataset_vectors, sentences, labels
+
 
 
 def get_qas_vocab(args):

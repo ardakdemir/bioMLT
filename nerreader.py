@@ -626,33 +626,8 @@ class NerDataReader:
                 ner_inds.append(self.label_vocab.map(labels))
         i = 0
         max_bert_len = 0
-        for sent, l in zip(batch, lens):
-            my_tokens = [x for x in sent.preprocessed]
-            sentence = " ".join(my_tokens)
-            masks[i, :l] = torch.tensor([0] * l, dtype=torch.bool)
-            i += 1
-            bert_tokens = self.bert_tokenizer.tokenize(sentence)
-            bert_lens.append(len(bert_tokens))
-            # bert_tokens = ["[CLS]"] + bert_tokens
-            max_bert_len = max(max_bert_len, len(bert_tokens))
-            ## bert_ind = 0 since we already put CLS as the SOS  token
-            b2tok, ind = bert2token(my_tokens, bert_tokens, bert_ind=0)
-            assert ind == len(my_tokens), "Bert ids do not match token size"
-            bert_batch_before_padding.append(bert_tokens)
-            bert2toks.append(b2tok)
-        bert_batch_after_padding, bert_lens = \
-            pad_trunc_batch(bert_batch_before_padding, max_len=max_bert_len, bert=True)
-        # print(bert_batch_after_padding)
-        bert2tokens_padded, _ = pad_trunc_batch(bert2toks, max_len=max_bert_len, bert=True, b2t=True)
-        bert_batch_ids = torch.LongTensor([self.bert_tokenizer.convert_tokens_to_ids(sent) for \
-                                           sent in bert_batch_after_padding])
-        bert_seq_ids = torch.LongTensor([[0 for i in range(len(bert_batch_after_padding[0]))] \
-                                         for j in range(len(bert_batch_after_padding))])
-        # dep_rels = torch.tensor([])
-        # dep_inds = torch.tensor([])
-        data = torch.tensor(lens), bert_batch_ids, bert_seq_ids, torch.tensor(
-            bert2tokens_padded, dtype=torch.long)
-        return tokens, bert_batch_after_padding, data
+        bert_input = self.bert_tokenizer([x.preprocessed for x in batch], truncation=True, padding=True, return_tensors="pt")
+        return batch, bert_input
 
 
 if __name__ == "__main__":
@@ -666,5 +641,5 @@ if __name__ == "__main__":
     bert_tokenizer = BertTokenizer.from_pretrained(biobert_model_name)
     dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=bert_tokenizer,
                             batch_size=1, crf=False, length_limit=length_limit)
-    tokens, bert_batch_after_padding, d = dataset[0]
+    batch, bert_input = dataset[0]
     print(tokens)
