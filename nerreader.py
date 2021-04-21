@@ -626,7 +626,8 @@ class NerDataReader:
                 ner_inds.append(self.label_vocab.map(labels))
         i = 0
         max_bert_len = 0
-        bert_input = self.bert_tokenizer([x.preprocessed for x in batch], truncation=True, padding=True, return_tensors="pt")
+        bert_input = self.bert_tokenizer([x.preprocessed for x in batch], truncation=True, padding=True,
+                                         return_tensors="pt")
         return batch, bert_input
 
 
@@ -642,4 +643,4 @@ if __name__ == "__main__":
     dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=bert_tokenizer,
                             batch_size=1, crf=False, length_limit=length_limit)
     batch, bert_input = dataset[0]
-    print(tokens)
+    print(bert_input)

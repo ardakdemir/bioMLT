@@ -674,9 +674,9 @@ def get_bert_vectors2(similarity, dataset, dataset_type="qas"):
                 }
             elif dataset_type == "ner":
                 data, bert_input = batch
-                bert_inputs = {k:d.to(device) for k,d in bert_input.items()}
+                bert_inputs = {k: d.to(device) for k, d in bert_input.items()}
                 labels = [d.labels for d in data]
-                tokens = [d.words for d in data ]
+                tokens = [d.words for d in data]
                 label_vocab = dataset.label_vocab
                 for toks, my_labels in zip(tokens, labels):
                     # my_labels = label_vocab.unmap(n_inds)
@@ -699,7 +699,7 @@ def get_bert_vectors2(similarity, dataset, dataset_type="qas"):
                 print(bert_inputs)
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
-            layers = [-4,-3,-2,-1]
+            layers = [-4, -3, -2, -1]
             bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
             # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
 
@@ -717,7 +717,6 @@ def get_bert_vectors2(similarity, dataset, dataset_type="qas"):
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
     print("Shape {}".format(dataset_vectors.shape))
     return dataset_vectors, sentences, labels
-
 
 
 def get_bert_vectors(similarity, dataset, dataset_type="qas"):
@@ -789,7 +788,7 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
 
             outputs = similarity.bert_model(**bert_inputs)
             # print("Output shape: {}".format(outputs[-1][0].shape))
-            layers = [-4,-3]
+            layers = [-4, -3]
             bert_hiddens = torch.mean(torch.stack([outputs[-1][i] for i in layers]), 0)
             # bert_hiddens = similarity._get_bert_batch_hidden(outputs[-1], bert2toks)
 
@@ -807,7 +806,6 @@ def get_bert_vectors(similarity, dataset, dataset_type="qas"):
     dataset_vectors = dataset_vectors.detach().cpu().numpy()
     print("Shape {}".format(dataset_vectors.shape))
     return dataset_vectors, sentences, labels
-
 
 
 def get_qas_vocab(args):
@@ -887,13 +885,16 @@ def get_ner_vectors(similarity, args):
         # dataset = DataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
         #                      batch_size=256, crf=False, length_limit=length_limit,skip_unlabeled = True)
         dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
-                             batch_size=1, crf=False, length_limit=length_limit,skip_unlabeled = True)
+                                batch_size=1, crf=False, length_limit=length_limit, skip_unlabeled=True)
         print("Total number of sentences: {}".format(len(dataset.dataset)))
         all_vectors, ner_sentences, ner_labels = get_bert_vectors2(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
         similarity.ner_sentences = ner_sentences
-        print(similarity.ner_sentences[0])
+        try:
+            print(similarity.ner_sentences[0])
+        except Except as e:
+            print("Excecption {} ".format(str(e)))
         similarity.ner_labels = ner_labels
     else:
         print("Ner vectors are already generated")
