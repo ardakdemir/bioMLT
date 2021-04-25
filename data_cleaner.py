@@ -1,7 +1,7 @@
 import re
 import nltk
 from nltk.corpus import stopwords
-
+from tqdm import tqdm
 nltk.download('stopwords')
 nltk.download('punkt')
 
@@ -33,7 +33,7 @@ def data_cleaner(sentence):
 def data_reader(dataset_path, encoding='utf-8', skip_unlabeled=False):
     corpus = []
     dataset = open(dataset_path, encoding=encoding).read().split("\n\n")
-    for d in dataset:
+    for d in tqdm(dataset,desc="Reading the data."):
         words, labels = zip(*[[x.split("\t")[0]]+[x.split("\t")[-1]] for x in d.split("\n")])
         if all([x == "O" for x in labels]):
             continue
