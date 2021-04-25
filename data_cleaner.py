@@ -25,7 +25,7 @@ def remove_stopwords(text):
 
 def data_cleaner(sentence):
     # cleaned = re.sub('[^A-Za-z0-9\s\t]+', '', sentence)
-    cleaned = cleaned.replace("\ufeff", "")
+    cleaned = sentence.replace("\ufeff", "")
     # cleaned = remove_stopwords(cleaned)
     return cleaned
 
@@ -35,6 +35,7 @@ def data_reader(dataset_path, encoding='utf-8', skip_unlabeled=False):
     dataset = open(dataset_path, encoding=encoding).read().split("\n\n")
     i = 0
     for d in tqdm(dataset,desc="Reading the data."):
+        if i<10:print(d.split("\n"))
         words, labels = zip(*[[x.split("\t")[0]]+[x.split("\t")[-1]] for x in d.split("\n")])
         if all([x == "O" for x in labels]):
             continue
