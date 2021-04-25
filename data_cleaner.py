@@ -36,7 +36,9 @@ def data_reader(dataset_path, encoding='utf-8', skip_unlabeled=False):
     i = 0
     for d in tqdm(dataset,desc="Reading the data."):
         if i<10:print(d.split("\n"))
-        words, labels = zip(*[[x.split("\t")[0]]+[x.split("\t")[-1]] for x in d.split("\n")])
+        words = [x.split()[0] for x in d.split("\n")]
+        labels = [x.split()[-1] for x in d.split("\n")]
+
         if all([x == "O" for x in labels]):
             continue
         sent = " ".join(words)
