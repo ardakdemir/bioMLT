@@ -1396,9 +1396,9 @@ def main():
 
     # args = parse_args()
     # similarity = Similarity()
-    # store_ner_vectors(similarity, args)
+    store_ner_vectors(similarity, args)
     # store_vectors()
-    store_ner_folder_vectors()
+    # store_ner_folder_vectors()
 
 
 if __name__ == "__main__":
