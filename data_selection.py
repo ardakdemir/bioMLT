@@ -887,6 +887,9 @@ def get_ner_vectors(similarity, args):
         dataset = NerDataReader(ner_file_path, "NER", for_eval=True, tokenizer=similarity.bert_tokenizer,
                                 batch_size=1, crf=False, length_limit=length_limit, skip_unlabeled=True)
         print("Total number of sentences: {}".format(len(dataset.dataset)))
+        for d in dataset:
+            print(d)
+            break
         all_vectors, ner_sentences, ner_labels = get_bert_vectors2(similarity, dataset, dataset_type="ner")
         vectors = np.array(all_vectors)
         similarity.ner_vectors = vectors
@@ -1197,6 +1200,7 @@ def write_subset_dataset(indices, sentences, labels, save_path):
 
 def store_ner_vectors(similarity, args):
     similarity, vectors, sentences, labels = get_ner_vectors(similarity, args)
+    print(sentences[:10])
     print("Final shape of ner vectors: {}".format(vectors.shape))
     vector_folder = args.vector_save_folder
     dataset_name = args.ner_train_file
