@@ -33,12 +33,16 @@ def data_cleaner(sentence):
 def data_reader(dataset_path, encoding='utf-8', skip_unlabeled=False):
     corpus = []
     dataset = open(dataset_path, encoding=encoding).read().split("\n\n")
+    i = 0
     for d in tqdm(dataset,desc="Reading the data."):
         words, labels = zip(*[[x.split("\t")[0]]+[x.split("\t")[-1]] for x in d.split("\n")])
         if all([x == "O" for x in labels]):
             continue
         sent = " ".join(words)
         cleaned = data_cleaner(sent)
+        if i <10:
+            print(sent,cleaned)
         sent = Sentence(sent, labels, cleaned)
         corpus.append(sent)
+        i+=1
     return corpus
