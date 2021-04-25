@@ -1394,8 +1394,8 @@ def generate_store_ner_subsets():
 def main():
     # generate_store_ner_subsets()
 
-    # args = parse_args()
-    # similarity = Similarity()
+    args = parse_args()
+    similarity = Similarity()
     store_ner_vectors(similarity, args)
     # store_vectors()
     # store_ner_folder_vectors()
