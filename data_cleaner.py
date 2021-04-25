@@ -36,7 +36,7 @@ def data_reader(dataset_path, encoding='utf-8', skip_unlabeled=False):
     dataset = open(dataset_path, encoding=encoding).read().split("\n\n")
     i = 0
     for d in tqdm(dataset, desc="Reading the data."):
-        if i < 10: print(d.split("\n"))
+        if i < 10: print("Instance: ",d.split("\n"))
         words = [x.split()[0] for x in d.split("\n") if len(x.split() > 0)]
         labels = [x.split()[-1] for x in d.split("\n") if len(x.split() > 0)]
 
