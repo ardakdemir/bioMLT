@@ -125,8 +125,7 @@ def squad_convert_example_to_features(example,
     spans = []
     print("\n\nBefore truncation completed")
 
-    truncated_query = tokenizer.encode(example.question_text, add_special_tokens=False, max_length=max_query_length,
-                                       truncation=True)
+    truncated_query = tokenizer.encode(example.question_text, add_special_tokens=False, max_length=max_query_length)
     print("\n\nTruncation completed")
     sequence_added_tokens = (
         tokenizer.max_len - tokenizer.max_len_single_sentence + 1
@@ -142,7 +141,7 @@ def squad_convert_example_to_features(example,
             truncated_query if tokenizer.padding_side == "right" else span_doc_tokens,
             span_doc_tokens if tokenizer.padding_side == "right" else truncated_query,
             max_length=max_seq_length,
-            truncation=True,
+            # truncation=True,
             return_overflowing_tokens=True,
             pad_to_max_length=True,
             stride=max_seq_length - doc_stride - len(truncated_query) - sequence_pair_added_tokens,
