@@ -46,7 +46,7 @@ def compare_predictions(pred_path, test_path, write=True):
                 c += 1
                 break
         if c == 0:
-            print("ANSWER NOT FOUND FOR {} Question type {}".format(q["id"],q[type]))
+            print("ANSWER NOT FOUND FOR {} Question type: {}".format(q["id"],q["type"]))
             if q["type"] == "yesno":
                 my_json["questions"].append({"id": q["id"],
                                              "exact_answer": "yes",
