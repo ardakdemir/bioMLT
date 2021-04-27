@@ -61,7 +61,7 @@ echo $squad_predict_list_file
 
 
 
-singularity exec --nv ~/singularity/pt-cuda-tf python biomlt_alldata.py --predict --load_model_path $load_model_path  --nbest_path $nbest_path --squad_predict_factoid_file $squad_predict_factoid_file --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file  --pred_path $pred_path
+singularity exec --nv ~/singularity/pt-cuda-tf python biomlt_alldata.py --mode qas --predict --load_model_path $load_model_path  --nbest_path $nbest_path --squad_predict_factoid_file $squad_predict_factoid_file --squad_predict_list_file $squad_predict_list_file --squad_predict_yesno_file $squad_predict_yesno_file  --pred_path $pred_path
 #rm $out_for_bioasq_eval
 
 python ${my_n2b_yesno_path}  --nbest_path $pred_path'_yesno.json' --output_path $out_for_bioasq_eval'_yesno'

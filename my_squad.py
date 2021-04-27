@@ -11,7 +11,6 @@ from transformers.file_utils import is_tf_available, is_torch_available
 from transformers.tokenization_bert import whitespace_tokenize
 from transformers.data.processors.utils import DataProcessor
 
-
 if is_torch_available():
     import torch
     from torch.utils.data import TensorDataset
@@ -28,7 +27,7 @@ def _improve_answer_span(doc_tokens, input_start, input_end, tokenizer, orig_ans
 
     for new_start in range(input_start, input_end + 1):
         for new_end in range(input_end, new_start - 1, -1):
-            text_span = " ".join(doc_tokens[new_start : (new_end + 1)])
+            text_span = " ".join(doc_tokens[new_start: (new_end + 1)])
             if text_span == tok_answer_text:
                 return (new_start, new_end)
 
@@ -96,7 +95,7 @@ def squad_convert_example_to_features(example,
         end_position = example.end_position
         if not is_yes_no:
             # If the answer cannot be found in the text, then skip this example.
-            actual_text = " ".join(example.doc_tokens[start_position : (end_position + 1)])
+            actual_text = " ".join(example.doc_tokens[start_position: (end_position + 1)])
             cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text)).lower()
             if actual_text.lower().find(cleaned_answer_text) == -1:
                 # logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
@@ -124,7 +123,8 @@ def squad_convert_example_to_features(example,
 
     spans = []
 
-    truncated_query = tokenizer.encode(example.question_text, add_special_tokens=False, max_length=max_query_length)
+    truncated_query = tokenizer.encode(example.question_text, add_special_tokens=False, max_length=max_query_length,
+                                       truncation=True)
     sequence_added_tokens = (
         tokenizer.max_len - tokenizer.max_len_single_sentence + 1
         if "roberta" in str(type(tokenizer))
@@ -239,7 +239,8 @@ def squad_convert_example_to_features(example,
                 span["token_type_ids"],
                 cls_index,
                 p_mask.tolist(),
-                example_index=0,  # Can not set unique_id and example_index here. They will be set after multiple processing.
+                example_index=0,
+                # Can not set unique_id and example_index here. They will be set after multiple processing.
                 unique_id=0,
                 paragraph_len=span["paragraph_len"],
                 token_is_max_context=span["token_is_max_context"],
@@ -259,7 +260,7 @@ def squad_convert_example_to_features_init(tokenizer_for_convert):
 
 
 def squad_convert_examples_to_features(
-    examples, tokenizer, max_seq_length, doc_stride, max_query_length, is_training, return_dataset=False, threads=1
+        examples, tokenizer, max_seq_length, doc_stride, max_query_length, is_training, return_dataset=False, threads=1
 ):
     """
     Converts a list of examples into a list of features that can be directly given as input to a model.
@@ -421,9 +422,10 @@ class SquadProcessor(DataProcessor):
 
     train_file = None
     dev_file = None
-    
+
     def __init__(self):
         print("\n\nInitializing My Squad Processor\n\n")
+
     def _get_example_from_tensor_dict(self, tensor_dict, evaluate=False):
         if not evaluate:
             answer = tensor_dict["answers"]["text"][0].numpy().decode("utf-8")
@@ -496,12 +498,12 @@ class SquadProcessor(DataProcessor):
             raise ValueError("SquadProcessor should be instantiated via SquadV1Processor or SquadV2Processor")
 
         with open(
-            os.path.join(data_dir, self.train_file if filename is None else filename), "r", encoding="utf-8"
+                os.path.join(data_dir, self.train_file if filename is None else filename), "r", encoding="utf-8"
         ) as reader:
             input_data = json.load(reader)["data"]
         return self._create_examples(input_data, "train")
 
-    def get_dev_examples(self, data_dir, filename=None,only_data=False):
+    def get_dev_examples(self, data_dir, filename=None, only_data=False):
         """
         Returns the evaluation example from the data directory.
 
@@ -517,13 +519,12 @@ class SquadProcessor(DataProcessor):
             raise ValueError("SquadProcessor should be instantiated via SquadV1Processor or SquadV2Processor")
 
         with open(
-            os.path.join(data_dir, self.dev_file if filename is None else filename), "r", encoding="utf-8"
+                os.path.join(data_dir, self.dev_file if filename is None else filename), "r", encoding="utf-8"
         ) as reader:
             input_data = json.load(reader)["data"]
         return self._create_examples(input_data, "dev", only_data=only_data)
 
-    
-    def downsample_training_dataset(self,examples):
+    def downsample_training_dataset(self, examples):
         downsampled_examples = []
         yes_list = []
         no_list = []
@@ -534,16 +535,15 @@ class SquadProcessor(DataProcessor):
                 no_list.append(example)
         np.random.shuffle(yes_list)
         np.random.shuffle(no_list)
-        min_ = min(len(yes_list),len(no_list))
+        min_ = min(len(yes_list), len(no_list))
         downsampled_examples = yes_list[:min_] + no_list[:min_]
         np.random.shuffle(downsampled_examples)
-        #for d in downsampled_examples:
+        # for d in downsampled_examples:
         #    print("Example answer {} ".format(d.answer_text))
-        print("Generating {} examples for yes and {} examples for no ".format(min_,min_))
+        print("Generating {} examples for yes and {} examples for no ".format(min_, min_))
         return downsampled_examples
 
-
-    def _create_examples(self, input_data, set_type, only_data = False,is_yes_no = False):
+    def _create_examples(self, input_data, set_type, only_data=False, is_yes_no=False):
         print("\n\nI entered my _create_exaamples!!\n\n")
         is_training = set_type == "train"
         examples = []
@@ -560,17 +560,17 @@ class SquadProcessor(DataProcessor):
                     answer_text = None
                     answers = []
                     if "is_impossible" in qa:
-                        is_impossible = qa["is_impossible"] and not qa['answers'] in ['yes','no']
+                        is_impossible = qa["is_impossible"] and not qa['answers'] in ['yes', 'no']
                     else:
                         is_impossible = False
                     is_yes_no = False
                     if not is_impossible:
                         if is_training:
-                            if qa["answers"] in ['yes','no',"Yes","No"]:
-                                answers = [{"text":qa['answers'].lower()}]
+                            if qa["answers"] in ['yes', 'no', "Yes", "No"]:
+                                answers = [{"text": qa['answers'].lower()}]
                                 is_yes_no_dataset = True
                                 answer_text = qa['answers'].lower()
-                                start_position_character = 1 if  answer_text == "yes" else 0
+                                start_position_character = 1 if answer_text == "yes" else 0
                                 is_yes_no = True
                             else:
                                 answer = qa["answers"][0]
@@ -579,8 +579,8 @@ class SquadProcessor(DataProcessor):
 
                         else:
                             if not only_data:
-                                if qa["answers"] in ['yes', 'no',"Yes","No"]:
-                                    answers = [{"text":qa['answers'].lower()}]
+                                if qa["answers"] in ['yes', 'no', "Yes", "No"]:
+                                    answers = [{"text": qa['answers'].lower()}]
                                     is_yes_no = True
                                     answer_text = qa["answers"].lower()
                                     start_position_character = 1 if answer_text == "yes" else 0
@@ -598,13 +598,13 @@ class SquadProcessor(DataProcessor):
                         title=title,
                         is_impossible=is_impossible,
                         answers=answers,
-                        is_yes_no = is_yes_no
+                        is_yes_no=is_yes_no
                     )
 
                     examples.append(example)
-        #if is_training and is_yes_no_dataset:
+        # if is_training and is_yes_no_dataset:
         #    examples = self.downsample_training_dataset(examples)
-           
+
         return examples
 
 
@@ -634,16 +634,16 @@ class SquadExample(object):
     """
 
     def __init__(
-        self,
-        qas_id,
-        question_text,
-        context_text,
-        answer_text,
-        start_position_character,
-        title,
-        answers=[],
-        is_impossible=False,
-        is_yes_no= False
+            self,
+            qas_id,
+            question_text,
+            context_text,
+            answer_text,
+            start_position_character,
+            title,
+            answers=[],
+            is_impossible=False,
+            is_yes_no=False
     ):
         self.qas_id = qas_id
         self.question_text = question_text
@@ -681,9 +681,17 @@ class SquadExample(object):
             self.end_position = char_to_word_offset[
                 min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)
             ]
+
     def __str__(self):
-        s = "Qid: {} question: {} answer: {} answers: {} start_position: {} is_yes_no: {}".format(self.qas_id,self.question_text, self.answer_text,self.answers,self.start_position, self.is_yes_no)
+        s = "Qid: {} question: {} answer: {} answers: {} start_position: {} is_yes_no: {}".format(self.qas_id,
+                                                                                                  self.question_text,
+                                                                                                  self.answer_text,
+                                                                                                  self.answers,
+                                                                                                  self.start_position,
+                                                                                                  self.is_yes_no)
         return s
+
+
 class SquadFeatures(object):
     """
     Single squad example features to be fed to a model.
@@ -710,21 +718,21 @@ class SquadFeatures(object):
     """
 
     def __init__(
-        self,
-        input_ids,
-        attention_mask,
-        token_type_ids,
-        cls_index,
-        p_mask,
-        example_index,
-        unique_id,
-        paragraph_len,
-        token_is_max_context,
-        tokens,
-        token_to_orig_map,
-        start_position,
-        end_position,
-        is_impossible,
+            self,
+            input_ids,
+            attention_mask,
+            token_type_ids,
+            cls_index,
+            p_mask,
+            example_index,
+            unique_id,
+            paragraph_len,
+            token_is_max_context,
+            tokens,
+            token_to_orig_map,
+            start_position,
+            end_position,
+            is_impossible,
     ):
         self.input_ids = input_ids
         self.attention_mask = attention_mask
