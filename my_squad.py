@@ -89,6 +89,7 @@ def squad_convert_example_to_features(example,
                                       is_training,
                                       is_yes_no=False):
     features = []
+    print("\n\nARDAAA's squad converter\n")
     if is_training and (not example.is_impossible or is_yes_no):
         # Get start and end position
         start_position = example.start_position
@@ -122,10 +123,11 @@ def squad_convert_example_to_features(example,
         )
 
     spans = []
+    print("\n\nBefore truncation completed")
 
     truncated_query = tokenizer.encode(example.question_text, add_special_tokens=False, max_length=max_query_length,
                                        truncation=True)
-    print("Truncation completed")
+    print("\n\nTruncation completed")
     sequence_added_tokens = (
         tokenizer.max_len - tokenizer.max_len_single_sentence + 1
         if "roberta" in str(type(tokenizer))
